@@ -14,6 +14,21 @@ const nameKey='my-city-online-name';
 let supabase,scene,state=null,roomCode='',lastSeenRoll=null;
 let inFlight=false,busyAnimation=false,lastCount=-1,pollHandle=null,toastHandle=null;
 let pendingRefresh=null,unloading=false;
+let finishRedirectTimer=null;
+
+// All players receive the shared "finished" status through room-state polling.
+// Show the end notice briefly, then send each browser back to the homepage.
+function returnEveryoneHome(){
+  if(finishRedirectTimer || unloading)return;
+  $('endedGameNotice').hidden=false;
+  $('endedGameExplanation').textContent='Returning everyone to the home screen…';
+  localStorage.removeItem(storageKey);
+  if(pollHandle){clearInterval(pollHandle);pollHandle=null;}
+  finishRedirectTimer=setTimeout(()=>{
+    unloading=true;
+    window.location.replace('./index.html');
+  },2200);
+}
 
 function alertError(error){
   const message=String(error?.message||error||'Something went wrong.');
@@ -79,6 +94,9 @@ async function endGameAsHost(){
   renderRoom();
   try{
     await rpc('mc_end_game',{p_code:roomCode});
+    // The server has confirmed completion. All connected clients (including
+    // the host) now observe the same finished state and redirect home.
+    returnEveryoneHome();
     const next=await rpc('mc_room_state',{p_code:roomCode});
     await updateState(next);
     await refreshActivity();
@@ -209,6 +227,12 @@ async function updateState(next){
   const newRoll=hadState && next.room.roll_seq>lastSeenRoll &&
     !!next.room.last_roll;
   state=next;
+  if(next.room.status==='finished'){
+    lastSeenRoll=next.room.roll_seq;
+    renderRoom();
+    returnEveryoneHome();
+    return;
+  }
   if(lastSeenRoll===null)lastSeenRoll=next.room.roll_seq;
   if(newRoll){
     lastSeenRoll=next.room.roll_seq;
@@ -274,7 +298,7 @@ async function refresh(){
   try{
     const data=await rpc('mc_room_state',{p_code:roomCode});
     await updateState(data);
-    await refreshActivity();
+    if(!finishRedirectTimer)await refreshActivity();
   }catch(error){
     if(!unloading)notify('Connection: '+(error.message||'Refresh failed'));
   }
@@ -285,10 +309,13 @@ async function connectRoom(code){
   history.replaceState({},'',location.pathname+'?room='+encodeURIComponent(roomCode));
   const next=await rpc('mc_room_state',{p_code:roomCode});
   await updateState(next);
-  await refreshActivity();
-  if(!pollHandle)pollHandle=setInterval(refresh,1300);
+  if(!finishRedirectTimer){
+    await refreshActivity();
+    if(!pollHandle)pollHandle=setInterval(refresh,1300);
+  }
 }
 function clearRoomLocally(){
+  if(finishRedirectTimer){clearTimeout(finishRedirectTimer);finishRedirectTimer=null;}
   roomCode='';
   state=null;
   lastSeenRoll=null;
