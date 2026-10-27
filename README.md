@@ -1,3 +1,29 @@
+## Phone controller / shared-screen mode
+
+Use **Play With Friends** on a computer/TV browser to create a multiplayer
+room. The room lobby displays a **QR code** and **Copy Phone Join Link**;
+a QR code is also available in the upper-right **☰ → Phone Join QR** menu
+while playing. Guests scan the QR with their phone camera, enter a display
+name, and join using the mobile-friendly [`controller.html`](./controller.html).
+They can roll, buy, pass, and end their own turns, and privately see their
+balance, properties, and jail status. The shared computer keeps rendering
+the 3D board. Server-side RPCs enforce membership and whose turn it is.
+
+From the full-game **☰ → Controller Mode** menu, a player can switch the
+*same device* to its controller layout, then select **Full Game** to return.
+The homepage also links directly to **Phone Controller** for entering a code
+manually. QR codes are generated in the browser; room codes are embedded in
+the links and **do not grant control of an existing player** without their
+authenticated session.
+
+**Current limitation:** Each different phone is a distinct Supabase
+anonymous account, so it joins as a distinct room member. The TV host's
+own phone cannot independently assume the host's existing identity.
+Host controls remain accessible on the computer/TV or by switching the
+*host's same authenticated device* to controller mode. Trades have not been
+implemented in the multiplayer backend; this first controller supports
+the actions already verified by the server. No SQL migration is required.
+
 # MY CITY — 3D animated board prototype
 
 An original 40-space property game with a **real Three.js 3D board**, 3D pawns that hop around the board, a smooth camera that **follows each space**, working dice, property purchases, sample rent, Chance/Community Chest, a Casino event, Jail and a simple solo computer opponent.
