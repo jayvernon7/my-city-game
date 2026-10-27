@@ -303,6 +303,37 @@ body.game-screen{height:100dvh;overflow:hidden}
  .landing-card-type{margin-bottom:10px}
 }
 </style>
+<style>
+/* Only the current player's cash, without a box or background panel. */
+.game-screen .active-balance {
+  position:absolute;right:22px;bottom:max(22px,env(safe-area-inset-bottom));
+  z-index:24;display:flex;flex-direction:column;align-items:flex-end;
+  gap:3px;pointer-events:none;color:#fffdf3;text-align:right;
+  background:none;border:0;box-shadow:none;padding:0;
+  text-shadow:0 2px 6px #071519,0 1px 16px #071519;
+}
+.game-screen .active-balance-label{
+  font-size:12px;letter-spacing:2px;font-weight:900;color:#d2e9df;
+}
+.game-screen #activeBalanceAmount{
+  font-size:clamp(25px,3.1vw,39px);font-weight:1000;
+  line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap;
+  color:#d8ffdf;
+}
+@media(max-width:720px){
+  .game-screen .active-balance{
+    right:11px;bottom:max(12px,env(safe-area-inset-bottom));gap:2px;
+  }
+  .game-screen .active-balance-label{font-size:10px;letter-spacing:1.5px}
+  .game-screen #activeBalanceAmount{font-size:clamp(22px,6.5vw,29px)}
+}
+@media(orientation:landscape) and (max-height:600px) and (max-width:1100px){
+  .game-screen .active-balance{
+    right:12px;bottom:max(11px,env(safe-area-inset-bottom));
+  }
+  .game-screen #activeBalanceAmount{font-size:clamp(20px,3.4vw,30px)}
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -330,6 +361,10 @@ body.game-screen{height:100dvh;overflow:hidden}
       <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
+    <div id="activeBalance" class="active-balance" aria-live="polite" aria-label="Current player's balance">
+      <span class="active-balance-label">BALANCE</span>
+      <strong id="activeBalanceAmount">$1,500</strong>
+    </div>
     <div class="roll-dock" aria-label="Dice controls">
       <div class="dice-display" id="diceDisplay" aria-label="Dice results">
         <span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span>
