@@ -96,6 +96,8 @@ function render(next){
   if(!next?.room||!next?.me||!Array.isArray(next.players))return;
   state=next;
   const {room,players,me}=next;
+  $('padPlayerName').textContent=me.name;
+  $('padBalance').textContent=MONEY(me.cash);
   if(room.status==='finished'){toast('Game ended. Returning home.');setTimeout(home,900);stop();return;}
   const owned=(me.properties||[]).map(index=>BOARD[index]).filter(Boolean);
   $('padPropertyCount').textContent=String(owned.length);
