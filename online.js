@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { MY_CITY_SUPABASE_URL, MY_CITY_SUPABASE_PUBLISHABLE_KEY } from './online-config.js';
 import { BOARD, COLORS, MONEY } from './board-data.js';
-import { MyCityScene } from './scene3d.js?v=roulette-navigation-v4';
+import { MyCityScene } from './scene3d.js?v=police-escort-v1';
 
 const $=id=>document.getElementById(id);
 const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
@@ -278,7 +278,11 @@ async function replayRoll(move,players){
       await scene.movePawn(seat,position,290);
     }
     // The jail jump is shown after the ordinary dice movement.
-    if(position!==move.to)await scene.movePawn(seat,move.to,700);
+    if(position===30 && move.to===10){
+      await scene.escortToJail(seat);
+    }else if(position!==move.to){
+      await scene.movePawn(seat,move.to,700);
+    }
     await sleep(280);
     $('spaceCard').hidden=true;
     if(['property','transport'].includes(BOARD[move.to]?.type))showSpace(move.to);
