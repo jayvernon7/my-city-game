@@ -44,7 +44,7 @@ function load(){
   }catch{return null}
 }
 function reset(mode){
-  hideLandingCard();
+  hideRoulettePreview();hideLandingCard();
   epoch++;clearTimeout(botTimeout);
   game=makeNewGame(mode);
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.focus(0);scene.updatePositions(game.players,0);
@@ -107,6 +107,20 @@ function setOwnedPropertiesOpen(open){
   panel.hidden=!open;
   $('ownedPropertiesBtn').setAttribute('aria-expanded',String(open));
   if(open)renderOwnedProperties();
+}
+function hideRoulettePreview(){
+  const prompt=$('roulettePreview');
+  if(prompt)prompt.hidden=true;
+}
+function showRoulettePreview(){
+  const prompt=$('roulettePreview');
+  if(!prompt)return;
+  prompt.hidden=false;
+  scene.setMode('roulette');
+  $('followView').classList.remove('chosen');
+  $('overviewView').classList.remove('chosen');
+  $('followView').setAttribute('aria-pressed','false');
+  $('overviewView').setAttribute('aria-pressed','false');
 }
 function hideLandingCard(){const card=$('landingCard');if(card)card.hidden=true}
 function showLandingCard(index){
@@ -180,7 +194,7 @@ async function roll(){
 }
 async function doRoll(){
   if(game.phase!=='roll'||current().bankrupt)return;
-  hideLandingCard();
+  hideLandingCard();hideRoulettePreview();
   const actor=game.turn,p=current(),thisEpoch=++epoch;
   if(p.jailed>0){
     p.jailed--;game.dice=[0,0];game.rollTotal=0;
@@ -220,11 +234,15 @@ async function doRoll(){
     if(from+steps>=40){changeCash(p,200);log(p.name+' passed GO and collected $200.');}
     game.pending=-1;
     await landed(p.at,steps,thisEpoch);
+    if(thisEpoch!==epoch)return;
+    // Show the adjacent roulette table after every completed dice roll.
+    // No roulette wagers, chips, spins, or payouts yet.
+    showRoulettePreview();
   }catch(e){console.error(e);game.phase='end';log('Animation interrupted; you can end the turn.');render()}
   finally{
     $('diceDisplay').classList.remove('rolling');
     // Clear cinematic mode if an animation was cancelled or a new game started.
-    if(thisEpoch===epoch)scene.endDiceView();
+    if(thisEpoch===epoch && scene.cinematicDice)scene.endDiceView();
   }
 }
 function buy(){
@@ -246,7 +264,7 @@ function doPass(){if(game.phase!=='decision')return;log(current().name+' skipped
 function endTurn(){if(game.phase!=='end'||current().bot)return;doEndTurn()}
 function doEndTurn(){
   if(game.phase!=='end')return;
-  hideLandingCard();
+  hideRoulettePreview();hideLandingCard();
   if(winnerCheck()){save();render();return}
   let next=game.turn;
   for(let k=0;k<game.players.length;k++){
@@ -327,6 +345,10 @@ $('ownedPropertiesBtn').addEventListener('click',()=>{
   setOwnedPropertiesOpen($('ownedPropertiesPanel').hidden);
 });
 $('closeOwnedProperties').addEventListener('click',()=>setOwnedPropertiesOpen(false));
+$('rouletteBackToBoard').addEventListener('click',()=>{
+  hideRoulettePreview();
+  changeView('follow');
+});
 $('closeLandingCard')?.addEventListener('click',hideLandingCard);
 $('rollBtn').addEventListener('click',roll);
 $('buyBtn').addEventListener('click',buy);
@@ -346,7 +368,7 @@ $('cancelDialog').addEventListener('click',()=>{$('dialog').hidden=true});
 $('confirmDialog').addEventListener('click',()=>{$('dialog').hidden=true;reset($('mode').value)});
 $('dialog').addEventListener('click',e=>{if(e.target===$('dialog'))$('dialog').hidden=true});
 window.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){$('dialog').hidden=true;setOwnedPropertiesOpen(false);return}
+  if(e.key==='Escape'){$('dialog').hidden=true;setOwnedPropertiesOpen(false);if(!$('roulettePreview').hidden){hideRoulettePreview();changeView('follow')}return}
   if(e.target?.closest('select,input,button'))return;
   if(e.key.toLowerCase()==='r'&&game.phase==='roll'&&!current().bot)roll();
   if(e.key.toLowerCase()==='v')changeView(scene.mode==='follow'?'overview':'follow');
