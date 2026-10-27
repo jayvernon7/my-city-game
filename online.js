@@ -102,7 +102,9 @@ function renderRoom(){
     ?'BUY · '+MONEY(BOARD[room.pending_space].price):'BUY PROPERTY';
 
   const dice=room.dice||[];
-  const known=room.roll_seq>0 && Number.isInteger(dice[0]) && Number.isInteger(dice[1]);
+  const known=room.phase!=='roll' && room.roll_seq>0 &&
+    Number.isInteger(dice[0]) && Number.isInteger(dice[1]) &&
+    dice[0]>=1 && dice[1]>=1;
   $('dieA').textContent=known?faces[dice[0]-1]:'⚀';
   $('dieB').textContent=known?faces[dice[1]-1]:'⚀';
   $('diceTotal').textContent=known?'TOTAL '+(dice[0]+dice[1]):'READY';
@@ -130,12 +132,17 @@ async function updateState(next){
   const newRoll=hadState && next.room.roll_seq>lastSeenRoll &&
     !!next.room.last_roll;
   state=next;
-  renderRoom();
   if(lastSeenRoll===null)lastSeenRoll=next.room.roll_seq;
   if(newRoll){
     lastSeenRoll=next.room.roll_seq;
-    if(!busyAnimation)await replayRoll(next.room.last_roll,next.players);
+    // Start the cinematic animation before copying the server's final pawn
+    // position into the scene; otherwise pieces visibly teleport first.
+    if(!busyAnimation){
+      await replayRoll(next.room.last_roll,next.players);
+      return;
+    }
   }
+  renderRoom();
 }
 async function replayRoll(move,players){
   if(busyAnimation)return;
