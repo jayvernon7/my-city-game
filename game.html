@@ -390,6 +390,49 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .owned-properties-panel{bottom:calc(max(11px,env(safe-area-inset-bottom)) + 54px);max-height:75dvh}
 }
 </style>
+
+<style>
+.game-screen .roulette-preview[hidden]{display:none!important}
+.game-screen .roulette-preview{
+ position:absolute;top:74px;left:18px;z-index:32;
+ width:min(340px,calc(100vw - 36px));padding:17px 18px;
+ border-radius:13px;border:1px solid #bd9757;
+ color:#f6f6e9;background:linear-gradient(145deg,#143d37f5,#0b2c30f5);
+ box-shadow:0 12px 37px #0009;
+}
+.game-screen .roulette-preview-eyebrow{
+ font-size:10px;color:#eac888;letter-spacing:2px;font-weight:900;
+}
+.game-screen .roulette-preview h2{
+ margin:7px 0 5px;font-size:23px;color:#fff9e2;letter-spacing:.6px;
+}
+.game-screen .roulette-preview p{
+ color:#d6e4da;line-height:1.5;font-size:12px;margin:0 0 12px;
+}
+.game-screen .roulette-preview-buttons{
+ display:flex;flex-wrap:wrap;gap:8px;
+}
+.game-screen .roulette-preview-buttons button{
+ padding:10px 12px;border-radius:8px;font-size:10px;
+ letter-spacing:.35px;font-weight:900;cursor:pointer;
+}
+.game-screen #roulettePlayComingSoon{
+ background:#485b57;border:1px solid #738680;color:#c4d2ce;
+ cursor:not-allowed;opacity:.85;
+}
+.game-screen #rouletteBackToBoard{
+ color:#18342d;background:#eac889;border:1px solid #ffdfa5;
+}
+@media(max-width:720px){
+ .game-screen .roulette-preview{
+   top:calc(env(safe-area-inset-top) + 54px);left:8px;
+   width:min(290px,calc(100vw - 16px));padding:11px 13px;
+ }
+ .game-screen .roulette-preview h2{font-size:19px}
+ .game-screen .roulette-preview p{font-size:11px}
+ .game-screen .roulette-preview-buttons button{font-size:9px;padding:8px}
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -435,6 +478,15 @@ body.game-screen{height:100dvh;overflow:hidden}
       </div>
       <p id="ownedPropertiesCount" class="owned-properties-count">0 properties</p>
       <div id="ownedPropertiesList" class="owned-properties-list"></div>
+    </section>
+    <section id="roulettePreview" class="roulette-preview" hidden role="region" aria-labelledby="roulettePreviewTitle">
+      <span class="roulette-preview-eyebrow">AFTER THE ROLL</span>
+      <h2 id="roulettePreviewTitle">ROULETTE TABLE</h2>
+      <p>The American double-zero roulette table is next to your city board. This is a visual preview; roulette play comes next.</p>
+      <div class="roulette-preview-buttons">
+        <button id="roulettePlayComingSoon" type="button" disabled>PLAY · COMING SOON</button>
+        <button id="rouletteBackToBoard" type="button">BACK TO BOARD →</button>
+      </div>
     </section>
     <div class="roll-dock" aria-label="Dice controls">
       <div class="dice-display" id="diceDisplay" aria-label="Dice results">
