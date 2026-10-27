@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { MY_CITY_SUPABASE_URL, MY_CITY_SUPABASE_PUBLISHABLE_KEY } from './online-config.js';
 import { BOARD, COLORS, MONEY } from './board-data.js';
-import { MyCityScene } from './scene3d.js?v=roulette-navigation-v3';
+import { MyCityScene } from './scene3d.js?v=roulette-navigation-v4';
 
 const $=id=>document.getElementById(id);
 const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
@@ -520,6 +520,9 @@ async function init(){
     scene=new MyCityScene($('viewport'),{onSelect:index=>{
       if(['property','transport'].includes(BOARD[index]?.type))showSpace(index);
       else $('spaceCard').hidden=true;
+    },onRoulette:()=>{
+      $('spaceCard').hidden=true;
+      $('roulettePreview').hidden=false;
     }});
     $('onlineLoading').hidden=true;
     const restore=requested||localStorage.getItem(storageKey);
