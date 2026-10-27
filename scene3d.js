@@ -338,24 +338,35 @@ export class MyCityScene {
   }
   rollDice(a,b){
     if(this.diceMotion){this.diceMotion.resolve();this.diceMotion=null}
-    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      this.setDice(a,b);return Promise.resolve();
-    }
-    // Roll on the clear central floor, above the MY CITY plaque.
+    // Different cinematic throw each time: straight, curved, diagonal,
+    // and opposing rolls. Keep dice inside the open central board.
+    const patterns=[
+      {starts:[[-7,4.8],[-7,6.5]],ends:[[6.0,4.8],[5.1,6.2]],curve:[0.3,-0.45],duration:2.0,turns:4.0},
+      {starts:[[-6.6,-5.8],[-5.3,-6.8]],ends:[[5.8,5.7],[6.5,4.3]],curve:[2.0,-1.7],duration:2.3,turns:5.0},
+      {starts:[[6.5,-4.4],[5.3,-6.0]],ends:[[-5.9,5.4],[-4.6,6.6]],curve:[-2.1,1.6],duration:2.15,turns:4.5},
+      {starts:[[-7.0,-2.7],[7.0,2.6]],ends:[[5.9,3.2],[-5.8,-3.0]],curve:[-2.7,2.7],duration:2.4,turns:5.6},
+      {starts:[[1.6,-7.0],[3.3,-6.8]],ends:[[-2.3,6.5],[1.4,6.0]],curve:[2.9,-2.3],duration:2.2,turns:4.7}
+    ];
+    const pattern=patterns[Math.floor(Math.random()*patterns.length)];
     this.dice.forEach((die,i)=>{
-      die.position.set(-7.3+i*1.4,1.10,6.35+i*.5);
-      die.rotation.set(.08,.08,0);
+      die.position.set(pattern.starts[i][0],1.10,pattern.starts[i][1]);
+      die.rotation.set(.13+i*.15,.14,0);
     });
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      this.setDice(a,b,pattern);return Promise.resolve();
+    }
     return new Promise(resolve=>{
-      this.diceMotion={start:this.elapsed,duration:2.0,a,b,resolve};
+      this.diceMotion={start:this.elapsed,duration:pattern.duration,a,b,
+        pattern,resolve};
     });
   }
-  setDice(a,b){
+  setDice(a,b,pattern=null){
     [a,b].forEach((num,i)=>{
       const die=this.dice[i];
       die.material[2].map=this.faceTextures[num-1];die.material[2].needsUpdate=true;
       die.rotation.set(0,0,0);
-      die.position.set(5.3+i*1.45,1.10,6.35+i*.5);
+      if(pattern)die.position.set(pattern.ends[i][0],1.10,pattern.ends[i][1]);
+      else die.position.y=1.10;
     });
   }
   setMode(mode){this.mode=mode}
@@ -462,19 +473,24 @@ export class MyCityScene {
     }
     if(this.diceMotion){
       const m=this.diceMotion,t=clamp((this.elapsed-m.start)/m.duration,0,1);
-      const eased=1-Math.pow(1-t,2.3);
+      const eased=1-Math.pow(1-t,2.4);
+      const p=m.pattern;
       this.dice.forEach((die,i)=>{
-        const startX=-7.3+i*1.4,endX=5.3+i*1.45;
-        const z=6.35+i*.5;
-        die.position.x=lerp(startX,endX,eased);
-        die.position.z=z+.25*Math.sin(t*Math.PI*3+i);
-        const bounce=Math.abs(Math.sin(t*Math.PI*5+i*.35))*(1-t)*1.55;
+        const [x0,z0]=p.starts[i],[x1,z1]=p.ends[i];
+        // Quadratic Bezier curve adds a unique sideways path per throw.
+        const midX=(x0+x1)/2+p.curve[i];
+        const midZ=(z0+z1)/2-p.curve[i]*.65;
+        const u=1-eased;
+        die.position.x=u*u*x0+2*u*eased*midX+eased*eased*x1;
+        die.position.z=u*u*z0+2*u*eased*midZ+eased*eased*z1;
+        // Several lively bounces decrease in height and frequency.
+        const hops=4+(i%2);
+        const bounce=Math.abs(Math.sin(eased*Math.PI*hops+i*.18))*(1-eased)*1.85;
         die.position.y=1.10+bounce;
-        // Rolling rotations gradually slow before settling on the result.
-        const spin=3.8*Math.PI*2*eased;
-        die.rotation.set(spin*(1+i*.12),spin*(.8+i*.10),spin*.55);
+        const spin=p.turns*Math.PI*2*eased;
+        die.rotation.set(spin*(1+i*.13),spin*(.73+i*.11),spin*(.49+i*.07));
       });
-      if(t>=1){this.setDice(m.a,m.b);this.diceMotion=null;m.resolve()}
+      if(t>=1){this.setDice(m.a,m.b,p);this.diceMotion=null;m.resolve()}
     }
     if(this.tinyCar){
       const time=this.elapsed*.65;
