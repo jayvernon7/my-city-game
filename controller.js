@@ -6,8 +6,7 @@ const $=id=>document.getElementById(id);
 const storageKey='my-city-controller-room';
 const nameKey='my-city-online-name';
 const dice=['⚀','⚁','⚂','⚃','⚄','⚅'];
-let supabase,code='',state=null,poll=null,busy=false,toastTimer=null,renderedProps='';
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let supabase,code='',state=null,poll=null,busy=false,toastTimer=null,renderedProps=null;
 function toast(message){
   const el=$('padToast');el.textContent=message;el.classList.add('show');
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3600);
