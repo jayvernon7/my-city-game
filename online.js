@@ -24,6 +24,36 @@ function notify(message){
   const el=$('toast');el.textContent=message;el.classList.add('shown');
   clearTimeout(toastHandle);toastHandle=setTimeout(()=>el.classList.remove('shown'),3400);
 }
+let activityUnavailableWarned=false;
+async function refreshActivity(){
+  if(!roomCode||!supabase||!state)return;
+  const {data,error}=await supabase.rpc('mc_recent_activity',{p_code:roomCode});
+  if(error){
+    if(!activityUnavailableWarned){
+      activityUnavailableWarned=true;
+      notify('Activity log needs its Supabase SQL setup.');
+    }
+    return;
+  }
+  const items=Array.isArray(data)?data.slice(-5):[];
+  const list=$('activityEntries');
+  list.replaceChildren();
+  if(!items.length){
+    const row=document.createElement('li');
+    row.className='activityEmpty';
+    row.textContent='No activity yet';
+    list.append(row);
+    return;
+  }
+  for(const item of items){
+    const row=document.createElement('li');
+    const name=document.createElement('strong');
+    name.className='activityName';
+    name.textContent=String(item.name||'Player')+': ';
+    row.append(name,document.createTextNode(String(item.activity||'')));
+    list.append(row);
+  }
+}
 function myTurn(){
   return !!state && state.room.status==='playing' &&
     state.room.turn_seat===state.me.seat && !state.me.bankrupt;
@@ -64,6 +94,7 @@ function showSpace(index){
 function renderRoom(){
   if(!state)return;
   const {room,players,me}=state;
+  $('activityFeed').hidden=room.status==='lobby';
   $('roomCodeDisplay').hidden=false;
   $('roomCodeText').textContent=room.code;
   $('lobbyCode').textContent=room.code;
@@ -199,6 +230,7 @@ async function refresh(){
   try{
     const data=await rpc('mc_room_state',{p_code:roomCode});
     await updateState(data);
+    await refreshActivity();
   }catch(error){
     if(!unloading)notify('Connection: '+(error.message||'Refresh failed'));
   }
@@ -209,6 +241,7 @@ async function connectRoom(code){
   history.replaceState({},'',location.pathname+'?room='+encodeURIComponent(roomCode));
   const next=await rpc('mc_room_state',{p_code:roomCode});
   await updateState(next);
+  await refreshActivity();
   if(!pollHandle)pollHandle=setInterval(refresh,1300);
 }
 function clearRoomLocally(){
@@ -219,6 +252,8 @@ function clearRoomLocally(){
   localStorage.removeItem(storageKey);
   history.replaceState({},'',location.pathname);
   if(pollHandle){clearInterval(pollHandle);pollHandle=null;}
+  $('activityFeed').hidden=true;
+  $('activityEntries').replaceChildren();
   $('roomCodeDisplay').hidden=true;
   $('privateBalance').hidden=true;
   $('onlineControls').hidden=true;
@@ -276,6 +311,7 @@ async function action(name){
   try{
     const next=await rpc('mc_take_action',{p_code:roomCode,p_action:name});
     await updateState(next);
+    await refreshActivity();
     if(name==='end')restoreView();
     if(name==='buy')notify('Property purchased');
   }catch(error){notify(error.message||'Action failed');}
