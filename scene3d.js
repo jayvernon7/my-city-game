@@ -34,7 +34,7 @@ function textTexture(space){
   const canvas=document.createElement('canvas');canvas.width=640;canvas.height=640;
   const c=canvas.getContext('2d');
   c.fillStyle='#f8f4e8';c.fillRect(0,0,640,640);
-  c.strokeStyle='#d2d5be';c.lineWidth=9;c.strokeRect(16,16,608,608);
+  c.strokeStyle='#203438';c.lineWidth=13;c.strokeRect(12,12,616,616);
   c.fillStyle=INK;
   const special = space.type !== 'property';
   const name=space.name==='Jail / Just Visiting'?'JAIL':space.name;
@@ -81,7 +81,7 @@ function longTileTexture(space,index){
   const ctx=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height;
   ctx.fillStyle='#faf7ed';ctx.fillRect(0,0,w,h);
-  ctx.strokeStyle='#cdd5c6';ctx.lineWidth=6;ctx.strokeRect(10,10,w-20,h-20);
+  ctx.strokeStyle='#203438';ctx.lineWidth=12;ctx.strokeRect(7,7,w-14,h-14);
   const padding=Math.max(28,Math.min(w,h)*.13);
   const usableWidth=w-2*padding;
   const usableHeight=h-2*padding;
@@ -196,7 +196,7 @@ export class MyCityScene {
     }
     for(const space of BOARD){
       const i=space.index,loc=tileLocation(i),{w,d}=tileSize(i);
-      const tile=box(w-.055,.18,d-.055,CREAM,.89);
+      const tile=box(w-.14,.18,d-.14,CREAM,.89);
       tile.position.set(loc.x,.53,loc.z);tile.receiveShadow=true;tile.castShadow=true;tile.userData.index=i;this.scene.add(tile);this.clickMeshes.push(tile);
       const texture=[0,10,20,30].includes(i)?textTexture(space):longTileTexture(space,i);
       // Rotate the printed text on this space without changing its tile or color band.
@@ -205,7 +205,7 @@ export class MyCityScene {
       // All other space lettering is rotated when drawn into its own canvas.
       texture.rotation=[0,10,20,30].includes(i)?labelAngle(i):0;
       texture.needsUpdate=true;
-      let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.075,d-.075),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
+      let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.17,d-.17),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
       label.rotation.x=-Math.PI/2;label.position.set(loc.x,.633,loc.z);label.userData.index=i;
       this.scene.add(label);this.clickMeshes.push(label);
       if(space.color){
