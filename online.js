@@ -85,6 +85,8 @@ function renderRoom(){
   ).join('');
   $('lobbyCount').textContent=players.length+' / '+room.max_players+' players';
   $('startRoom').hidden=!me.host||gameReady;
+  $('cancelRoomBtn').hidden=!me.host||gameReady;
+  $('leaveRoomBtn').textContent=me.host?'← BACK TO ROOMS':'← LEAVE ROOM';
   $('startRoom').disabled=players.length<2;
   $('waitingForHost').hidden=me.host;
   const actor=currentActor();
@@ -209,6 +211,57 @@ async function connectRoom(code){
   await updateState(next);
   if(!pollHandle)pollHandle=setInterval(refresh,1300);
 }
+function clearRoomLocally(){
+  roomCode='';
+  state=null;
+  lastSeenRoll=null;
+  lastCount=-1;
+  localStorage.removeItem(storageKey);
+  history.replaceState({},'',location.pathname);
+  if(pollHandle){clearInterval(pollHandle);pollHandle=null;}
+  $('roomCodeDisplay').hidden=true;
+  $('privateBalance').hidden=true;
+  $('onlineControls').hidden=true;
+  $('turnStatus').hidden=true;
+  $('ownedPropertiesPanel').hidden=true;
+  $('spaceCard').hidden=true;
+  $('roulettePreview').hidden=true;
+  $('lobby').hidden=false;
+  $('lobbyEntry').hidden=false;
+  $('roomLobby').hidden=true;
+  $('joinCode').value='';
+  clearError();
+  scene?.setMode('overview');
+}
+async function leaveRoom(cancel=false){
+  if(!roomCode||inFlight)return;
+  if(state?.room.status!=='lobby'){
+    // Returning from an active match only leaves the page; it does not
+    // delete the match or surrender another player's turn.
+    clearRoomLocally();
+    notify('Returned to rooms. Your active game is unchanged.');
+    return;
+  }
+  const isHost=!!state?.me.host;
+  const prompt=isHost?
+    'Cancel this room for everyone? You can create a new one afterward.':
+    'Leave this room? The host and remaining players can continue waiting.';
+  if(!window.confirm(prompt))return;
+  inFlight=true;
+  $('leaveRoomBtn').disabled=true;
+  $('cancelRoomBtn').disabled=true;
+  try{
+    await rpc('mc_exit_room',{p_code:roomCode});
+    clearRoomLocally();
+    notify(isHost?'Room cancelled.':'You left the room.');
+  }catch(error){
+    alertError(error.message||'Could not leave room');
+  }finally{
+    inFlight=false;
+    $('leaveRoomBtn').disabled=false;
+    $('cancelRoomBtn').disabled=false;
+  }
+}
 async function action(name){
   if(!myTurn()||inFlight||busyAnimation)return;
   if(({roll:'roll',buy:'decision',pass:'decision',end:'end'})[name]!==state.room.phase)return;
@@ -247,6 +300,8 @@ async function createOrJoin(type){
 
 $('createRoom').addEventListener('click',()=>createOrJoin('create'));
 $('joinRoom').addEventListener('click',()=>createOrJoin('join'));
+$('leaveRoomBtn').addEventListener('click',()=>leaveRoom());
+$('cancelRoomBtn').addEventListener('click',()=>leaveRoom(true));
 $('startRoom').addEventListener('click',async()=>{
   clearError();setBusy(true);
   try{
