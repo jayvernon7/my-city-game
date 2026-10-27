@@ -18,8 +18,38 @@
       <button type="button" id="followView">◉ FOLLOW</button>
       <button type="button" id="overviewView">▦ BOARD</button>
     </div>
-    <div class="roomCode" id="roomCodeDisplay" hidden>ROOM <strong id="roomCodeText"></strong></div>
+    <div class="gameMenu" id="gameMenu" hidden>
+      <button type="button" id="gameMenuToggle" class="gameMenuToggle" aria-label="Open game menu" aria-expanded="false" aria-controls="gameMenuDropdown">
+        <span></span><span></span><span></span>
+      </button>
+      <div id="gameMenuDropdown" class="gameMenuDropdown" hidden>
+        <div class="gameMenuRoom">ROOM ID <strong id="roomCodeText"></strong>
+          <button type="button" id="copyMenuRoomCode" aria-label="Copy room invite code">COPY</button>
+        </div>
+        <button type="button" id="openGameSettings" class="menuOption">⚙ SETTINGS</button>
+        <button type="button" id="hostEndGame" class="menuOption danger" hidden>END GAME</button>
+      </div>
+    </div>
   </header>
+
+  <section id="onlineSettingsPanel" class="onlineSettingsPanel" hidden aria-label="Game settings">
+    <div class="settingsPanelTitle">
+      <h2>SETTINGS</h2><button type="button" id="closeGameSettings" aria-label="Close settings">×</button>
+    </div>
+    <div class="settingsPanelRow">
+      <span>CAMERA VIEW</span>
+      <div><button type="button" id="settingFollowView">FOLLOW</button>
+      <button type="button" id="settingBoardView">FULL BOARD</button></div>
+    </div>
+    <div class="settingsPanelRow">
+      <label for="settingActivityToggle">PLAYER ACTIVITY</label>
+      <input type="checkbox" id="settingActivityToggle" checked>
+    </div>
+    <p>These settings affect only your screen.</p>
+  </section>
+  <div id="endedGameNotice" class="endedGameNotice" hidden role="status">
+    <strong>GAME ENDED</strong><span id="endedGameExplanation">The host ended this session.</span>
+  </div>
 
   <div id="turnStatus" class="turnStatus" hidden aria-live="polite">
     <strong id="turnPlayerName">Waiting</strong>
