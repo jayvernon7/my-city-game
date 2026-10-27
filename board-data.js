@@ -60,10 +60,8 @@ export const DEVELOPMENTS = Object.freeze({
 
 // Visual previews only: these do not grant ownership, affect rent, or
 // establish gameplay rules until the development rules are implemented.
-export const DEMO_DEVELOPMENTS = Object.freeze([
-  Object.freeze({index:37,kind:'houses',count:1}), // Marlowe (#38)
-  Object.freeze({index:39,kind:'hotels',count:1})  // Coyle (#40)
-]);
+// No house or hotel preview pieces are placed on the board for now.
+export const DEMO_DEVELOPMENTS = Object.freeze([]);
 
 
 // A ring of exactly 40 cells in a logical 11-by-11 grid, following the
