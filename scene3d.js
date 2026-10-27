@@ -34,7 +34,7 @@ function textTexture(space){
   const canvas=document.createElement('canvas');canvas.width=640;canvas.height=640;
   const c=canvas.getContext('2d');
   c.fillStyle='#f8f4e8';c.fillRect(0,0,640,640);
-  c.strokeStyle='#203438';c.lineWidth=13;c.strokeRect(12,12,616,616);
+  c.strokeStyle='#000000';c.lineWidth=13;c.strokeRect(12,12,616,616);
   c.fillStyle=INK;
   const special = space.type !== 'property';
   const name=space.name==='Jail / Just Visiting'?'JAIL':space.name;
@@ -81,7 +81,7 @@ function longTileTexture(space,index){
   const ctx=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height;
   ctx.fillStyle='#faf7ed';ctx.fillRect(0,0,w,h);
-  ctx.strokeStyle='#203438';ctx.lineWidth=12;ctx.strokeRect(7,7,w-14,h-14);
+  ctx.strokeStyle='#000000';ctx.lineWidth=12;ctx.strokeRect(7,7,w-14,h-14);
   const padding=Math.max(28,Math.min(w,h)*.13);
   const usableWidth=w-2*padding;
   const usableHeight=h-2*padding;
@@ -189,12 +189,12 @@ export class MyCityScene {
   makeBoard(){
     let outside=box(SIDE+1.2,.65,SIDE+1.2,0x0b3034);outside.position.y=-.16;outside.receiveShadow=true;this.scene.add(outside);
     let trim=box(SIDE+.72,.33,SIDE+.72,0xe7bd77);trim.position.y=.15;trim.receiveShadow=true;this.scene.add(trim);
-    let base=box(SIDE+.25,.16,SIDE+.25,0x284f48);base.position.y=.365;base.receiveShadow=true;this.scene.add(base);
+    let base=box(SIDE+.25,.16,SIDE+.25,0x000000);base.position.y=.365;base.receiveShadow=true;this.scene.add(base);
     let inner=box(SIDE-2*CORNER+.05,.055,SIDE-2*CORNER+.05,0xa8d2bd);inner.position.y=.47;inner.receiveShadow=true;this.scene.add(inner);
     // Tiny inner glow-frame: physical geometry rather than a flat board screenshot.
     for(const coord of [-(SIDE-2*CORNER)/2-.02,(SIDE-2*CORNER)/2+.02]){
-      let a=box(.045,.03,SIDE-2*CORNER+.08,0xffefc2);a.position.set(coord,.51,0);this.scene.add(a);
-      let b=box(SIDE-2*CORNER+.08,.03,.045,0xffefc2);b.position.set(0,.51,coord);this.scene.add(b);
+      let a=box(.045,.03,SIDE-2*CORNER+.08,0x000000);a.position.set(coord,.51,0);this.scene.add(a);
+      let b=box(SIDE-2*CORNER+.08,.03,.045,0x000000);b.position.set(0,.51,coord);this.scene.add(b);
     }
     for(const space of BOARD){
       const i=space.index,loc=tileLocation(i),{w,d}=tileSize(i);
