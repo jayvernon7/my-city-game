@@ -62,6 +62,78 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .viewport-top{top:56px;left:8px;right:8px}
  .game-screen .viewport-bottom{display:none}
 }
+
+/* Floating HUD — board remains the full-screen background. */
+.game-screen .sidebar{
+  position:static;display:contents;width:auto;min-width:0;overflow:visible;
+}
+.game-screen .sidebar>.control-card{
+  position:absolute;z-index:18;margin:0;
+  background:linear-gradient(150deg,#13333feF,#0b2530f5);
+  border:1px solid #50767b;box-shadow:0 12px 35px #0009;
+}
+.game-screen .sidebar>.turn-card{
+  left:50%;right:auto;top:auto;bottom:max(14px,env(safe-area-inset-bottom));
+  transform:translateX(-50%);width:min(420px,42vw);
+  max-height:min(47dvh,440px);overflow-y:auto;
+}
+.game-screen .sidebar>.players-card{
+  right:16px;left:auto;top:auto;
+  bottom:max(14px,env(safe-area-inset-bottom));
+  width:min(300px,26vw);max-height:min(45dvh,420px);
+  overflow-y:auto;
+}
+.game-screen .sidebar>.selected-card{
+  right:16px;top:70px;left:auto;bottom:auto;
+  width:min(290px,25vw);max-height:27dvh;overflow-y:auto;
+}
+.game-screen .sidebar>.settings-card{
+  display:none;right:16px;top:66px;bottom:auto;left:auto;
+  width:min(310px,32vw);max-height:46dvh;overflow-y:auto;
+}
+.game-screen.settings-open .sidebar>.settings-card{display:block}
+.game-screen.settings-open .sidebar>.selected-card{display:none}
+.game-screen .sidebar>.activity-card{display:none}
+.game-settings-toggle{right:16px;top:15px}
+.game-screen .stage-head{left:116px;top:15px}
+.game-screen .viewport-bottom{bottom:18px;right:auto;max-width:230px;display:block;line-height:1.7}
+.game-screen .viewport-bottom span{display:block}
+.game-screen .player-cash{color:#aef0be;font-size:18px}
+.game-screen .turn-card .actions{gap:6px}
+.game-screen .turn-card .dice-display{padding:3px;margin:4px 0 8px}
+@media(max-width:1050px) and (min-width:721px){
+ .game-screen .sidebar>.turn-card{width:38vw}
+ .game-screen .sidebar>.players-card{width:26vw}
+ .game-screen .sidebar>.selected-card{width:26vw}
+}
+@media(max-width:720px){
+ .game-screen .sidebar{display:contents}
+ .game-screen .sidebar>.turn-card{
+  left:7px;right:auto;transform:none;bottom:max(8px,env(safe-area-inset-bottom));
+  width:calc(61% - 10px);max-height:36dvh;padding:9px;
+ }
+ .game-screen .sidebar>.players-card{
+  right:7px;left:auto;bottom:max(8px,env(safe-area-inset-bottom));
+  width:calc(39% - 8px);max-height:36dvh;padding:8px;
+ }
+ .game-screen .sidebar>.selected-card{display:none}
+ .game-screen .sidebar>.settings-card{
+  right:7px;top:52px;width:min(290px,calc(100vw - 14px));max-height:50dvh;
+ }
+ .game-screen .viewport-bottom{display:none}
+ .game-screen .stage-head{left:auto;right:7px;top:8px}
+ .game-settings-toggle{left:84px;right:auto;top:8px}
+ .game-screen .player-cash{font-size:13px}
+ .game-screen .turn-card .card-heading{margin-bottom:4px}
+ .game-screen .turn-card .turn-message{max-height:36px;overflow:hidden}
+}
+@media(max-width:390px){
+ .game-screen .sidebar>.turn-card{width:calc(63% - 10px)}
+ .game-screen .sidebar>.players-card{width:calc(37% - 8px)}
+ .game-screen .card-heading{font-size:8px;letter-spacing:.4px}
+ .game-screen .player-name{font-size:10px}
+ .game-screen .player-sub{font-size:9px}
+}
 </style>
 </head>
 <body class="game-screen">
@@ -84,7 +156,7 @@ body.game-screen{height:100dvh;overflow:hidden}
       <div class="stage-foot"><div class="scene-stats"><span><b>40</b> SPACES</span><span><b>8</b> COLOR GROUPS</span><span><b>4</b> CAR SHOPS</span></div><span class="stage-foot-note">Preview · Rules and prices can change</span></div>
     </section>
     <aside class="sidebar" aria-label="Game controls">
-      <section class="control-card players-card"><div class="card-heading"><span>02 / PLAYERS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
+      <section class="control-card players-card"><div class="card-heading"><span>💰 BANK ACCOUNTS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
       <section class="control-card turn-card"><div class="card-heading"><span>03 / YOUR TURN</span><span class="turn-label" id="phaseLabel">READY</span></div><h2 id="turnTitle">Your turn</h2><p id="message" class="turn-message" aria-live="polite">Roll the dice to begin.</p><div class="dice-display" id="diceDisplay"><span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span></div><div class="actions"><button class="primary-btn" type="button" id="rollBtn">🎲 &nbsp; ROLL DICE</button><div class="action-pair"><button type="button" id="buyBtn" class="alt-btn positive" disabled>BUY PROPERTY</button><button type="button" id="passBtn" class="alt-btn" disabled>PASS</button></div><button type="button" id="endBtn" class="alt-btn end-btn" disabled>END TURN →</button></div></section>
       <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
       <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
