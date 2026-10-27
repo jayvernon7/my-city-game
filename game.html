@@ -157,6 +157,67 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .selected-card .space-detail #detailType{font-size:9px}
  .game-screen .selected-card .card-heading{margin-bottom:5px}
 }
+
+/* Focused dice UI: one primary button in the screen's bottom center. */
+.game-screen .sidebar>.turn-card{
+  left:50%;right:auto;top:15px;bottom:auto;
+  transform:translateX(-50%);
+  width:min(360px,33vw);max-height:180px;
+  padding:10px 13px;overflow:hidden;pointer-events:none;
+}
+.game-screen .turn-card .card-heading{margin-bottom:4px}
+.game-screen .turn-card h2{font-size:15px;margin-bottom:3px}
+.game-screen .turn-card .turn-message{min-height:0;max-height:40px;overflow:hidden;font-size:11px}
+.game-screen .turn-card .dice-display{margin:5px 0 0;padding:2px 5px}
+.game-screen .turn-card .dice-display span:not(.roll-total){font-size:26px}
+.game-screen .roll-dock{
+  position:absolute;left:50%;bottom:max(17px,env(safe-area-inset-bottom));
+  transform:translateX(-50%);z-index:23;display:flex;align-items:end;
+  justify-content:center;pointer-events:none;
+}
+.game-screen .roll-main{
+  width:190px;min-height:64px;font-size:17px;
+  border-radius:14px;box-shadow:0 5px 0 #9b452b,0 10px 28px #000a;
+  pointer-events:auto;white-space:nowrap;transition:background .15s,filter .15s;
+}
+.game-screen .roll-main:disabled{
+  background:#596169;color:#c8ced0;border-color:#899296;
+  opacity:1;box-shadow:0 3px 0 #333e45,0 7px 20px #0008;
+  filter:grayscale(1);cursor:not-allowed;
+}
+.game-screen .roll-side-actions{
+  position:absolute;left:calc(50% + 107px);bottom:0;
+  width:140px;display:flex;flex-direction:column;gap:6px;
+  pointer-events:auto;
+}
+.game-screen .roll-side-actions .alt-btn{width:100%;padding:8px 6px;font-size:10px}
+.game-screen .viewport-top{top:62px}
+@media(max-width:1050px) and (min-width:721px){
+  .game-screen .sidebar>.turn-card{top:65px;width:300px}
+  .game-screen .roll-main{width:160px;min-height:58px;font-size:14px}
+  .game-screen .roll-side-actions{left:calc(50% + 88px);width:115px}
+}
+@media(max-width:720px){
+  .game-screen .sidebar>.turn-card{
+    top:54px;left:50%;bottom:auto;transform:translateX(-50%);
+    width:min(250px,61vw);max-height:105px;padding:6px 8px;
+  }
+  .game-screen .turn-card .card-heading{font-size:8px}
+  .game-screen .turn-card h2{font-size:12px}
+  .game-screen .turn-card .turn-message{font-size:9px;max-height:25px}
+  .game-screen .turn-card .dice-display{margin-top:3px}
+  .game-screen .turn-card .dice-display span:not(.roll-total){font-size:19px}
+  .game-screen .roll-dock{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 36dvh + 12px)}
+  .game-screen .roll-main{width:137px;min-height:50px;font-size:12px;padding:8px 5px}
+  .game-screen .roll-side-actions{left:calc(50% + 75px);width:92px;gap:3px}
+  .game-screen .roll-side-actions .alt-btn{font-size:8px;padding:5px 3px}
+  .game-screen .viewport-top{display:none}
+}
+@media(max-width:390px){
+ .game-screen .roll-main{width:112px;font-size:10px}
+ .game-screen .roll-side-actions{left:calc(50% + 62px);width:77px}
+ .game-screen .roll-side-actions .alt-btn{font-size:7px}
+}
 </style>
 </head>
 <body class="game-screen">
@@ -180,11 +241,19 @@ body.game-screen{height:100dvh;overflow:hidden}
     </section>
     <aside class="sidebar" aria-label="Game controls">
       <section class="control-card players-card"><div class="card-heading"><span>💰 BANK ACCOUNTS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
-      <section class="control-card turn-card"><div class="card-heading"><span>03 / YOUR TURN</span><span class="turn-label" id="phaseLabel">READY</span></div><h2 id="turnTitle">Your turn</h2><p id="message" class="turn-message" aria-live="polite">Roll the dice to begin.</p><div class="dice-display" id="diceDisplay"><span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span></div><div class="actions"><button class="primary-btn" type="button" id="rollBtn">🎲 &nbsp; ROLL DICE</button><div class="action-pair"><button type="button" id="buyBtn" class="alt-btn positive" disabled>BUY PROPERTY</button><button type="button" id="passBtn" class="alt-btn" disabled>PASS</button></div><button type="button" id="endBtn" class="alt-btn end-btn" disabled>END TURN →</button></div></section>
+      <section class="control-card turn-card"><div class="card-heading"><span>03 / YOUR TURN</span><span class="turn-label" id="phaseLabel">READY</span></div><h2 id="turnTitle">Your turn</h2><p id="message" class="turn-message" aria-live="polite">Roll the dice to begin.</p><div class="dice-display" id="diceDisplay"><span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span></div></section>
       <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
       <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
+    <div class="roll-dock" aria-label="Dice controls">
+      <button class="primary-btn roll-main" type="button" id="rollBtn">🎲 ROLL DICE</button>
+      <div class="roll-side-actions" aria-label="Turn actions">
+        <button type="button" id="buyBtn" class="alt-btn positive" disabled>BUY PROPERTY</button>
+        <button type="button" id="passBtn" class="alt-btn" disabled>PASS</button>
+        <button type="button" id="endBtn" class="alt-btn end-btn" disabled>END TURN →</button>
+      </div>
+    </div>
   </main>
   <footer class="footer">MY CITY • INDEPENDENT PROTOTYPE <span>Custom board &amp; gameplay — not affiliated with Monopoly or MONOPOLY GO!</span></footer>
 </div>
