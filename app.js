@@ -1,5 +1,5 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js';
+import {MyCityScene} from './scene3d.js?v=roulette-navigation-v2';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
