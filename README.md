@@ -46,6 +46,22 @@ No bundler, Node, paid hosting, database, or API key is required for this initia
 - Prices, rent and Casino/Chance events are **placeholder rules** that can be changed.
 - No online multiplayer, 3D character assets or smartphone/TV pairing yet. Those are later development stages.
 
+## Development pieces — names reserved for future rules
+
+These names are explicitly defined in `board-data.js` and should be used
+consistently when we add the building and upgrade rules:
+
+- **houses** — small **silver** 3D building blocks.
+- **hotels** — taller **gold** 3D building blocks.
+
+**Placement rule:** houses and hotels may appear **only on top of the
+colored strip of a property**. They must not overlap the property's printed
+name, appear on a blank non-property space, or sit in the central board.
+
+The prototype currently places **one house on Marlowe (index 37, space #38)**
+and **one hotel on Coyle (index 39, space #40)** as *visual samples*.
+They do not affect ownership, rent, purchase prices, or rules yet.
+
 ## Board validation
 
 Run `node tests/board.test.mjs` to verify that all 40 names and special-space positions match the design. This is optional and does not affect the deployed game.
