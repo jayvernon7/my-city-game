@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071e28">
 <title>My City — Phone Controller</title>
-<link rel="stylesheet" href="./controller.css?v=player-card-v1">
+<link rel="stylesheet" href="./controller.css?v=properties-popup-v1">
 <script type="importmap">{"imports":{"@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
 </head>
 <body>
@@ -32,13 +32,13 @@
     <p id="waitingHint">Waiting for the host to start the game on the TV…</p>
   </section>
   <div id="activePad" hidden>
-    <section class="playerCard" aria-label="Your player card">
-      <h2>PLAYER CARD</h2>
-      <div class="playerCardName" id="padPlayerName">—</div>
-      <div class="playerCardBalance"><small>BALANCE</small><strong id="padBalance">$0</strong></div>
-      <div class="playerCardProperties"><small>MY PROPERTIES <span id="padPropertyCount">0</span></small><div id="padProperties" class="playerCardPropertyList"></div></div>
+    <div class="propertyShortcut">
+      <button id="padPropertiesOpen" type="button" class="propertyShortcutButton" aria-haspopup="dialog" aria-controls="propertyCardsDialog">
+        <span>MY PROPERTIES</span>
+        <strong id="padPropertyCount">0</strong>
+      </button>
       <p id="padJailNotice" class="jailNotice" hidden>🔒 Your character is in Jail.</p>
-    </section>
+    </div>
     <div class="padCenter">
       <div class="diceBlock" aria-label="Dice"><span id="padDieA">⚀</span><span id="padDieB">⚀</span></div>
     </div>
@@ -53,10 +53,18 @@
       </div>
     </div>
   </div>
+  <section id="propertyCardsDialog" class="propertyCardsOverlay" role="dialog" aria-modal="true" aria-labelledby="propertyCardsTitle" hidden>
+    <div class="propertyCardsSheet">
+      <div class="propertyCardsHeader"><h2 id="propertyCardsTitle">MY PROPERTIES <span id="propertyModalCount">0</span></h2>
+        <button id="padPropertiesClose" type="button" aria-label="Close property cards">×</button>
+      </div>
+      <div id="padProperties" class="propertyCardsGrid"></div>
+    </div>
+  </section>
   <button id="padEndGame" class="dangerButton" type="button" hidden>END GAME FOR EVERYONE</button>
   <button id="padLeave" class="leaveButton" type="button">← LEAVE CONTROLLER</button>
 </section>
 <div id="padToast" class="toast" role="status" aria-live="polite"></div>
 </main>
-<script type="module" src="./controller.js?v=player-card-v1"></script>
+<script type="module" src="./controller.js?v=properties-popup-v1"></script>
 </body></html>
