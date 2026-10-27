@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071e28">
 <title>My City — Phone Controller</title>
-<link rel="stylesheet" href="./controller.css?v=properties-popup-v1">
+<link rel="stylesheet" href="./controller.css?v=player-summary-v2">
 <script type="importmap">{"imports":{"@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
 </head>
 <body>
@@ -32,13 +32,15 @@
     <p id="waitingHint">Waiting for the host to start the game on the TV…</p>
   </section>
   <div id="activePad" hidden>
-    <div class="propertyShortcut">
+    <section class="propertyShortcut" aria-label="Player information">
+      <div class="playerSummaryName" id="padPlayerName">—</div>
+      <div class="playerSummaryBalance"><span>BALANCE</span><strong id="padBalance">$0</strong></div>
       <button id="padPropertiesOpen" type="button" class="propertyShortcutButton" aria-haspopup="dialog" aria-controls="propertyCardsDialog">
         <span>MY PROPERTIES</span>
         <strong id="padPropertyCount">0</strong>
       </button>
       <p id="padJailNotice" class="jailNotice" hidden>🔒 Your character is in Jail.</p>
-    </div>
+    </section>
     <div class="padCenter">
       <div class="diceBlock" aria-label="Dice"><span id="padDieA">⚀</span><span id="padDieB">⚀</span></div>
     </div>
@@ -66,5 +68,5 @@
 </section>
 <div id="padToast" class="toast" role="status" aria-live="polite"></div>
 </main>
-<script type="module" src="./controller.js?v=properties-popup-v1"></script>
+<script type="module" src="./controller.js?v=player-summary-v2"></script>
 </body></html>
