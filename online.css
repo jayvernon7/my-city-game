@@ -1,0 +1,88 @@
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:#effff5;background:#10323c}
+button,input,select{font:inherit}button{cursor:pointer}
+button:disabled{cursor:not-allowed;filter:grayscale(.85);opacity:.65}
+[hidden]{display:none!important}
+#onlineGame{position:fixed;inset:0;width:100%;height:100dvh;overflow:hidden}
+#viewport{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#viewport canvas{width:100%;height:100%;display:block;touch-action:none}
+#onlineLoading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff6d7;font-weight:1000;letter-spacing:2px}
+.onlineTop{position:absolute;left:12px;top:calc(env(safe-area-inset-top) + 12px);right:12px;z-index:12;display:flex;align-items:center;gap:12px;pointer-events:none}
+.onlineTop>*{pointer-events:auto}
+.topBtn,.cameraButtons button,.roomCode{border-radius:10px;background:#103540e9;border:1px solid #7ab1a6;color:#f2fff7;padding:11px 14px;text-decoration:none;font-size:11px;font-weight:900}
+.cameraButtons{display:flex;gap:5px;margin:auto}.cameraButtons button{min-height:39px}
+.roomCode{font-size:11px;letter-spacing:1px;white-space:nowrap}
+.roomCode strong{color:#ffd08b}
+.turnStatus{position:absolute;top:calc(env(safe-area-inset-top) + 68px);left:50%;transform:translateX(-50%);padding:8px 13px;z-index:12;display:flex;gap:10px;align-items:center;border:1px solid #51847e;background:#102f39e9;border-radius:10px;max-width:80vw}
+.turnStatus strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.turnStatus span{color:#ffd08b;font-weight:900;font-size:10px}
+.onlineControls{position:absolute;left:50%;bottom:max(19px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:18;pointer-events:none}
+.diceDisplay{position:absolute;bottom:calc(100% + 11px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;white-space:nowrap;padding:8px 12px;border:1px solid #6e9992;border-radius:11px;background:#123643ed}
+.diceDisplay span{font-size:28px}.diceDisplay strong{font-size:11px;color:#fbd28f}
+.rollBtn{pointer-events:auto;min-width:177px;min-height:64px;color:#132b2b;background:#ffbb76;border:2px solid #ffe4b5;border-radius:12px;box-shadow:0 5px 0 #ad6942;font-size:17px;font-weight:1000}
+.rollBtn:disabled{background:#747c7e;color:#d6dbd9;border-color:#949e9d;opacity:1;box-shadow:0 3px 0 #35464a}
+.secondaryActions{position:absolute;left:calc(50% + 100px);bottom:0;width:124px;display:grid;gap:5px;pointer-events:auto}
+.secondaryActions button{background:#15433d;color:#f7fff9;border:1px solid #8abbaa;padding:7px 5px;border-radius:7px;font-size:10px;font-weight:900}
+.privateBalance{position:absolute;right:18px;bottom:max(16px,env(safe-area-inset-bottom));z-index:22;display:flex;align-items:center;gap:12px}
+.homeIcon{display:grid;place-items:center;color:#fff;background:#143c46c9;border:1px solid #92bcac;border-radius:10px;width:46px;height:46px}
+.balanceText{display:grid;text-align:right;text-shadow:0 3px 10px #011717}
+.balanceText small{font-size:10px;letter-spacing:1.4px;font-weight:950}
+.balanceText strong{font-size:clamp(25px,3vw,38px);font-weight:1000;color:#cbffda;font-variant-numeric:tabular-nums}
+.propertiesPanel,.spaceCard,.roulettePreview{position:absolute;z-index:25;right:17px;bottom:95px;width:min(330px,calc(100vw - 30px));max-height:min(65dvh,490px);overflow-y:auto;border-radius:13px;padding:16px;background:#10343df3;border:1px solid #82b0a3;box-shadow:0 12px 40px #000b}
+.panelHead{display:flex;justify-content:space-between;align-items:center}.panelHead h2{font-size:17px;margin:0}.panelHead button,.spaceCard>button{background:#2a515a;color:#fff;border:1px solid #a2c2b8;border-radius:8px;font-size:22px;width:35px;height:35px}
+.propertiesPanel p{font-size:12px;color:#c2dcd4}
+.propertyItem{display:flex;gap:10px;padding:10px;margin:6px 0;border-radius:8px;background:#265058}
+.swatch{display:block;width:8px;flex:none;border-radius:5px}
+.propertyItem strong{font-size:13px}.propertyItem small{display:block;color:#b7d8cf}
+.spaceCard{right:20px;top:50%;bottom:auto;transform:translateY(-50%);text-align:center;background:#f7f1dd;color:#1b3839;border-color:#dfbb78}
+#spaceCardStripe{position:absolute;top:0;left:0;right:0;height:15px;background:#3b71b9}
+.spaceCard>button{position:absolute;right:10px;top:20px;color:#1b3839;background:#eee2cc}
+.spaceCard small{display:block;margin-top:16px;color:#45615e;font-weight:950;letter-spacing:1px}
+.spaceCard h2{margin:10px 30px;font-size:25px}
+.spaceCard #spaceCardInfo{font-size:13px;font-weight:750}
+.roulettePreview{left:18px;right:auto;top:65px;bottom:auto}
+.roulettePreview h2{margin:0;color:#e9c07f}.roulettePreview p{font-size:12px}
+.roulettePreview button{border:0;border-radius:8px;padding:10px 15px;font-weight:900;color:#173330;background:#f6c984}
+.modalShade{position:absolute;inset:0;z-index:45;background:#061921ce;display:grid;place-items:center;padding:14px;overflow-y:auto}
+.lobbyCard{width:min(470px,100%);max-height:94dvh;overflow-y:auto;padding:27px;border-radius:18px;border:1px solid #80b3a3;background:#113943;box-shadow:0 20px 90px #0009}
+.lobbyCard>small{font-weight:900;letter-spacing:2px;color:#ffcf87}
+.lobbyCard h1{margin:8px 0;font-size:clamp(23px,5vw,31px);line-height:1.12}
+.lobbyCard p{color:#c6dfd6;font-size:13px}
+.lobbyCard label{display:block;color:#b8dccc;letter-spacing:1px;font-size:10px;font-weight:900;margin:15px 0 5px}
+.lobbyCard input,.lobbyCard select{width:100%;min-height:44px;padding:10px 11px;border-radius:9px;border:1px solid #72a9a2;background:#092c36;color:#f5fff8;outline-offset:2px}
+.lobbyCard input::placeholder{color:#81a29f}
+.entryGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.mainAction,.secondaryAction{width:100%;background:#ffc582;color:#183435;border:1px solid #ffe3bb;padding:13px 15px;border-radius:9px;font-weight:1000}
+.secondaryAction{margin-top:11px;background:#226d63;color:#f9fff8;border-color:#5faba0}
+.orLine{text-align:center;margin:17px 0 3px;font-size:10px;font-weight:900;letter-spacing:2px;color:#b4d1c8}
+.errorText{padding:9px 11px;border-radius:9px;color:#fff1ee!important;background:#8c2d32!important;font-weight:800}
+.inviteBox{border:1px solid #7ca898;border-radius:11px;padding:14px;text-align:center;color:#b6d4ca;display:grid;gap:5px;font-size:10px;letter-spacing:2px;font-weight:900}
+.inviteBox strong{font-size:29px;letter-spacing:5px;color:#ffd094}
+.inviteBox button{border-radius:8px;border:1px solid #a5ccb9;background:#225750;color:#fff;padding:8px;font-size:11px;font-weight:950}
+.membersList{display:grid;gap:7px;margin-top:15px}
+.member{padding:11px;background:#20515a;border:1px solid #5b8f8e;border-radius:9px;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.member.active{border-color:#ffc582}
+#startRoom{margin-top:13px}
+.waitingText{text-align:center}
+.smallNote{font-size:10px!important;color:#8fb4ac!important;margin-top:17px}
+#toast{position:absolute;z-index:80;left:50%;bottom:110px;transform:translateX(-50%);background:#112e3bee;color:#fff;padding:9px 16px;border:1px solid #92b2a9;border-radius:8px;max-width:85vw;font-size:12px;font-weight:900;pointer-events:none;opacity:0;transition:opacity .2s}
+#toast.shown{opacity:1}
+@media(max-width:720px){
+ .onlineTop{gap:5px;left:7px;right:7px;top:calc(env(safe-area-inset-top) + 7px)}
+ .topBtn,.cameraButtons button,.roomCode{padding:9px 6px;font-size:9px}
+ .cameraButtons{margin:auto}.roomCode{max-width:95px;overflow:hidden;text-overflow:ellipsis}
+ .turnStatus{top:calc(env(safe-area-inset-top) + 55px);padding:5px 8px;max-width:90vw}
+ .onlineControls{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 58px)}
+ .rollBtn{min-width:132px;min-height:49px;font-size:12px}
+ .secondaryActions{left:calc(50% + 72px);width:88px;gap:3px}
+ .secondaryActions button{font-size:8px;padding:5px 3px}
+ .diceDisplay{padding:5px 8px;gap:5px;bottom:calc(100% + 6px)}
+ .diceDisplay span{font-size:24px}.diceDisplay strong{font-size:9px}
+ .privateBalance{right:10px;bottom:max(9px,env(safe-area-inset-bottom));gap:7px}
+ .homeIcon{width:40px;height:40px}
+ .balanceText small{font-size:9px}.balanceText strong{font-size:25px}
+ .propertiesPanel{right:8px;bottom:75px;max-height:53dvh}
+ .spaceCard{top:43%;right:50%;transform:translate(50%,-50%);width:min(290px,83vw)}
+ .roulettePreview{top:calc(env(safe-area-inset-top) + 52px);left:8px;width:min(280px,80vw);padding:11px}
+ .lobbyCard{padding:18px}
+}
