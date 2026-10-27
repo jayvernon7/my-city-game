@@ -6,7 +6,7 @@ const $=id=>document.getElementById(id);
 const storageKey='my-city-controller-room';
 const nameKey='my-city-online-name';
 const dice=['⚀','⚁','⚂','⚃','⚄','⚅'];
-let supabase,code='',state=null,poll=null,busy=false,toastTimer=null;
+let supabase,code='',state=null,poll=null,busy=false,toastTimer=null,renderedProperties=null;
 let diceChannel=null, pendingDiceSeq=null, diceTimer=null;
 const diceCompleted=new Set();
 function stopDiceClock(){
@@ -45,7 +45,6 @@ function renderDice(room){
   if(room.phase==='roll'||!valid||!Number.isInteger(seq)||seq<1){
     stopDiceClock();pendingDiceSeq=null;
     $('padDieA').textContent='⚀';$('padDieB').textContent='⚀';
-    $('padDiceTotal').textContent='READY';
     return;
   }
   if(!diceCompleted.has(seq)){
@@ -54,12 +53,10 @@ function renderDice(room){
       diceTimer=setTimeout(()=>diceDone(seq),7000);
     }
     $('padDieA').textContent='🎲';$('padDieB').textContent='🎲';
-    $('padDiceTotal').textContent='ROLLING ON SCREEN…';
     return;
   }
   stopDiceClock();pendingDiceSeq=null;
   $('padDieA').textContent=dice[a-1];$('padDieB').textContent=dice[b-1];
-  $('padDiceTotal').textContent='TOTAL '+(a+b);
 }
 function toast(message){
   const el=$('padToast');el.textContent=message;el.classList.add('show');
@@ -100,6 +97,27 @@ function render(next){
   const {room,players,me}=next;
   if(room.status==='finished'){toast('Game ended. Returning home.');setTimeout(home,900);stop();return;}
   $('padPlayerName').textContent=me.name;
+  $('padBalance').textContent=MONEY(me.cash);
+  const owned=(me.properties||[]).map(index=>BOARD[index]).filter(Boolean);
+  $('padPropertyCount').textContent=String(owned.length);
+  const propertyKey=(me.properties||[]).join(',');
+  if(renderedProperties!==propertyKey){
+    renderedProperties=propertyKey;
+    const list=$('padProperties');list.replaceChildren();
+    if(!owned.length){
+      const empty=document.createElement('p');
+      empty.className='playerCardEmpty';
+      empty.textContent='No properties yet';
+      list.append(empty);
+    }else{
+      for(const property of owned){
+        const row=document.createElement('div');
+        row.className='playerCardProperty';
+        row.textContent=property.name;
+        list.append(row);
+      }
+    }
+  }
   const lobby=room.status==='lobby';
   $('waitingPanel').hidden=!lobby;
   $('activePad').hidden=lobby;
