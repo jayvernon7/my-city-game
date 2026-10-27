@@ -60,6 +60,24 @@ table and shows a noninteractive preview panel. Players can choose
 marked coming soon. No bets, wagers, spins, chips, or roulette results change
 the game yet; that logic will be implemented after its rules are decided.
 
+## Cancel or leave a multiplayer room
+
+**One-time setup:** In your My City Supabase project's SQL Editor, run
+[`supabase/mycity_cancel_room.sql`](./supabase/mycity_cancel_room.sql)
+to enable the new **Cancel Room** and **Leave Room** buttons.
+
+While the room is **waiting in the lobby**:
+- The host may **Back to Rooms** without deleting the room; write down the
+  invite code if you plan to rejoin later.
+- The host may **Cancel Room** to permanently close that room for everyone.
+  A confirmation is shown; the database enforces host-only cancellation.
+- Other players may **Leave Room** to remove their membership without
+  affecting the host or remaining players.
+
+After a game starts, returning to the rooms menu only leaves the current
+screen. It doesn't cancel the ongoing match. This first version does not
+support deleting active matches from the lobby.
+
 ## Online multiplayer (new — setup required)
 
 **The online frontend and the Supabase backend schema have been committed but
