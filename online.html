@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#081b25">
 <title>My City — Play with Friends</title>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
-<link rel="stylesheet" href="./online.css">
+<link rel="stylesheet" href="./online.css?v=guest-home-fix-20261027">
 </head>
 <body>
 <div id="onlineGame">
@@ -49,6 +49,7 @@
   </section>
   <div id="endedGameNotice" class="endedGameNotice" hidden role="status">
     <strong>GAME ENDED</strong><span id="endedGameExplanation">The host ended this session.</span>
+    <button type="button" id="endedGameGoHome" class="endedGameGoHome">RETURN HOME NOW</button>
   </div>
 
   <div id="turnStatus" class="turnStatus" hidden aria-live="polite">
@@ -138,6 +139,6 @@
   </section>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./online.js"></script>
+<script type="module" src="./online.js?v=guest-home-fix-20261027"></script>
 </body>
 </html>
