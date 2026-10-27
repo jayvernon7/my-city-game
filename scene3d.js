@@ -157,6 +157,7 @@ export class MyCityScene {
     this.clock=new THREE.Clock();this.elapsed=0;
     this.mode='follow';this.zoom=1;this.azimuth=.48;this.elevation=1.01;
     this.focusIndex=0;this.selected=0;this.cinematicDice=false;
+    this.exploreTarget=new THREE.Vector3(0,.6,0);
     this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
@@ -354,6 +355,12 @@ export class MyCityScene {
     });
   }
   setMode(mode){this.mode=mode}
+  inspectSpace(index){
+    const space=this.spaces[index];
+    if(!space)return;
+    this.mode='explore';this.exploreTarget.set(space.loc.x,.6,space.loc.z);
+    this.zoom=Math.min(this.zoom,.9);
+  }
   focus(playerIndex){this.focusIndex=playerIndex}
   resize(){
     const w=Math.max(100,this.container.clientWidth),h=Math.max(100,this.container.clientHeight);
@@ -380,7 +387,7 @@ export class MyCityScene {
         const hits=ray.intersectObjects(this.clickMeshes,false);
         if(hits.length&&Number.isInteger(hits[0].object.userData.index)){
           const selected=hits[0].object.userData.index;
-          this.makeSelection(selected);this.onSelect(selected);
+          this.makeSelection(selected);this.inspectSpace(selected);this.onSelect(selected);
         }
       }
       down=null;
@@ -418,11 +425,12 @@ export class MyCityScene {
     const target=this.cinematicDice
       ?new THREE.Vector3(3.35,.9,3.15)
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
+      :this.mode==='explore'?this.exploreTarget.clone()
       :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
     if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.cinematicDice?8.5:(this.mode==='overview'?54:17))*this.zoom*
+    const distance=(this.cinematicDice?8.5:(this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
       (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
