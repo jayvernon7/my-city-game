@@ -1,5 +1,5 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js?v=roulette-navigation-v2';
+import {MyCityScene} from './scene3d.js?v=roulette-navigation-v3';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -345,6 +345,9 @@ $('ownedPropertiesBtn').addEventListener('click',()=>{
   setOwnedPropertiesOpen($('ownedPropertiesPanel').hidden);
 });
 $('closeOwnedProperties').addEventListener('click',()=>setOwnedPropertiesOpen(false));
+$('rouletteZoomIn').addEventListener('click',()=>scene.zoomRoulette(.55));
+$('rouletteZoomOut').addEventListener('click',()=>scene.zoomRoulette(1.6));
+$('rouletteResetCamera').addEventListener('click',()=>scene.resetRouletteView());
 $('rouletteBackToBoard').addEventListener('click',()=>{
   hideRoulettePreview();
   changeView('follow');
