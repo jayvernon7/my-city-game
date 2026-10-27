@@ -68,39 +68,43 @@ function textTexture(space){
   return texture;
 }
 
-/* Long, legible edge labels. Text follows the length of each property
-   (radially into the board), matching a traditional property board. */
+/* All labels read left-to-right across the board, including the
+   top and bottom rows. Fit complete names on each space by wrapping. */
 function longTileTexture(space,index){
-  const vertical = (index>=1 && index<=9)||(index>=21 && index<=29);
-  const w=vertical?760:1280,h=vertical?1280:760;
-  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const {w:tileW,d:tileD}=tileSize(index);
+  const canvas=document.createElement('canvas');
+  const scale=300;
+  canvas.width=Math.round(tileW*scale);
+  canvas.height=Math.round(tileD*scale);
   const c=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
   c.fillStyle='#f8f4e8';c.fillRect(0,0,w,h);
-  c.strokeStyle='#d2d5be';c.lineWidth=8;c.strokeRect(9,9,w-18,h-18);
-  // Use the full length of the enlarged cell, avoiding its colored strip.
-  c.save();
-  c.translate(w/2,h/2);
-  if(vertical)c.rotate(-Math.PI/2);
-  const longSize=vertical?h:w, shortSize=vertical?w:h;
+  c.strokeStyle='#d2d5be';c.lineWidth=8;c.strokeRect(10,10,w-20,h-20);
+  // Horizontal baseline on every tile. Text never rotates.
   const name=space.name;
-  const maxWidth=longSize*.86;
-  let font=space.type==='property'?112:105,lines=[];
-  for(;font>=44;font-=3){
+  const maxWidth=w*.88;
+  const maxHeight=h*.75;
+  let font=Math.min(125,Math.floor(w*.23)),lines=[];
+  for(;font>=27;font-=2){
     c.font=`900 ${font}px system-ui,Arial,sans-serif`;
     lines=wrap(c,name,maxWidth);
-    if(lines.length<=2 && lines.every(line=>c.measureText(line).width<=maxWidth))break;
+    if(lines.length<=4 &&
+       lines.every(line=>c.measureText(line).width<=maxWidth) &&
+       lines.length*font*1.15<=maxHeight)break;
   }
-  const lineHeight=font*1.2;
-  const startY=-((lines.length-1)*lineHeight)/2;
+  const lineHeight=font*1.15;
+  const startY=h*.47-((lines.length-1)*lineHeight)/2;
   c.textAlign='center';c.textBaseline='middle';c.fillStyle=INK;
-  // Slightly outward from the inner color strip, giving long names room.
-  lines.forEach((line,i)=>c.fillText(line,0,startY+i*lineHeight,maxWidth));
+  lines.forEach((line,i)=>c.fillText(line,w/2,startY+i*lineHeight,maxWidth));
   if(space.type==='property'){
-    c.font='750 42px system-ui,Arial,sans-serif';
+    c.font=`750 ${Math.min(30,Math.floor(w*.075))}px system-ui,Arial,sans-serif`;
     c.fillStyle='#607c73';
-    c.fillText('PROPERTY',0,shortSize*.34,maxWidth);
+    c.fillText('PROPERTY',w/2,h*.87,maxWidth);
+  }else if(space.type==='transport'){
+    c.font=`750 ${Math.min(30,Math.floor(w*.075))}px system-ui,Arial,sans-serif`;
+    c.fillStyle='#607c73';
+    c.fillText('CAR SHOP',w/2,h*.87,maxWidth);
   }
-  c.restore();
   const texture=new THREE.CanvasTexture(canvas);
   texture.colorSpace=THREE.SRGBColorSpace;
   texture.anisotropy=8;
