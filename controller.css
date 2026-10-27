@@ -133,3 +133,63 @@
   #activePad .padCenter{grid-column:1}
   #activePad .actionPad{grid-column:2}
 }
+
+/* Compact property count and clickable property cards drawer. */
+#activePad{grid-template-columns:minmax(125px,.8fr) minmax(70px,.58fr) minmax(185px,1.2fr)}
+.propertyShortcut{min-width:0;align-self:center;display:grid;gap:7px}
+.propertyShortcutButton{
+  width:100%;min-height:78px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:5px;padding:12px;border-radius:14px;
+  color:#e5ffef;background:linear-gradient(145deg,#164b4e,#10343b);
+  border:1px solid #86bdaa;box-shadow:0 6px 17px #001f2499;
+}
+.propertyShortcutButton span{font-size:12px;letter-spacing:.8px;font-weight:950}
+.propertyShortcutButton strong{font-size:30px;line-height:1;color:#ffda9c}
+.propertyShortcutButton:active{transform:scale(.97)}
+.propertyShortcutButton:focus-visible{outline:3px solid #ffe0a5;outline-offset:3px}
+.propertyCardsOverlay{
+  position:fixed;inset:0;z-index:100;background:#04131cdb;
+  display:grid;place-items:center;padding:15px;
+}
+.propertyCardsSheet{
+  width:min(680px,96vw);max-height:min(88dvh,580px);display:flex;flex-direction:column;
+  background:#143641;border:1px solid #a1c7b8;border-radius:16px;
+  box-shadow:0 20px 65px #000c;overflow:hidden;
+}
+.propertyCardsHeader{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 17px;border-bottom:1px solid #5d8582;gap:12px;
+}
+.propertyCardsHeader h2{font-size:16px;margin:0;letter-spacing:.7px}
+.propertyCardsHeader h2 span{color:#ffd18a}
+.propertyCardsHeader button{
+  font-size:25px;line-height:1;color:#fff;background:#315f62;
+  border:1px solid #85aaa0;border-radius:9px;width:42px;height:42px;
+}
+.propertyCardsGrid{
+  padding:14px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
+  align-content:start;gap:11px;
+}
+.propertyDetailCard{
+  position:relative;min-width:0;background:#f5f0e3;color:#18373b;
+  border:2px solid #d0c5ac;border-radius:10px;
+  box-shadow:0 5px 0 #071e28;overflow:hidden;padding:0 12px 12px;
+}
+.propertyDetailStripe{height:14px;margin:0 -12px 12px}
+.propertyDetailCard small{font-size:10px;letter-spacing:1.1px;font-weight:950;color:#53676a}
+.propertyDetailCard h3{font-size:17px;line-height:1.2;margin:8px 0 12px;overflow-wrap:anywhere}
+.propertyDetailCard p{border-top:1px solid #c9c5b6;padding-top:8px;margin:0;font-size:12px;font-weight:850}
+.propertyCardsEmpty{color:#c5e4d9;font-size:14px;text-align:center;grid-column:1/-1}
+@media (orientation:landscape) and (max-height:650px){
+  #activePad{grid-template-columns:minmax(118px,.86fr) minmax(60px,.5fr) minmax(185px,1.28fr)}
+  .propertyShortcutButton{min-height:82px}
+  .propertyShortcutButton span{font-size:10px}
+  .propertyShortcutButton strong{font-size:27px}
+  .propertyCardsSheet{max-height:94dvh;width:min(700px,94vw)}
+  .propertyCardsGrid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+}
+@media (orientation:portrait) and (max-width:750px){
+  #activePad{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  #activePad .propertyShortcut{grid-column:1/-1}
+  #activePad .propertyShortcutButton{min-height:70px}
+}
