@@ -31,7 +31,8 @@ async function refreshActivity(){
   if(error){
     if(!activityUnavailableWarned){
       activityUnavailableWarned=true;
-      notify('Activity log needs its Supabase SQL setup.');
+      notify('Activity log error: '+(error.message||error.code||'Unknown problem'));
+      console.error('My City activity log RPC error:',error);
     }
     return;
   }
