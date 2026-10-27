@@ -60,6 +60,22 @@ table and shows a noninteractive preview panel. Players can choose
 marked coming soon. No bets, wagers, spins, chips, or roulette results change
 the game yet; that logic will be implemented after its rules are decided.
 
+## Shared multiplayer activity feed
+
+A minimal bottom-left activity feed shows the **five newest events** during
+multiplayer games. Its format is `Player name: activity`. As a sixth event
+arrives, the oldest of the previous five disappears automatically. The log
+syncs to every room member (approximately every 1.3 seconds) and never exposes
+another player's balance or owned-property list.
+
+**Required one-time Supabase update:** run
+[`supabase/mycity_activity_log.sql`](./supabase/mycity_activity_log.sql)
+in the **My City** project's SQL Editor. The script creates the
+`mc_activity_log` table, server-side triggers for joins/starts, dice rolls,
+purchases, passes, turn endings and money changes, and the membership-checked
+`mc_recent_activity` function. Existing rooms remain intact, but activity
+begins recording only after this migration is installed.
+
 ## Cancel or leave a multiplayer room
 
 **One-time setup:** In your My City Supabase project's SQL Editor, run
