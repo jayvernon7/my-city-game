@@ -122,9 +122,11 @@ function longTileTexture(space,index){
 // St. Marys → Go To Jail: upside-down 180°
 // Pembroke Ave → Coyle: counterclockwise 90°
 function labelAngle(index){
-  if(index>=11 && index<=20)return -Math.PI/2;
-  if(index>=21 && index<=30)return Math.PI;
-  if(index>=31 && index<=39)return Math.PI/2;
+  // Keep GO through Jail (indices 0–10) as they are.
+  // Flip the existing orientation of every other space by 180 degrees.
+  if(index>=11 && index<=20)return Math.PI/2;
+  if(index>=21 && index<=30)return 0;
+  if(index>=31 && index<=39)return -Math.PI/2;
   return 0;
 }
 
