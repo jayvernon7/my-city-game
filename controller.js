@@ -76,6 +76,7 @@ function controllerLink(targetCode){
 function stop(){
   if(poll)clearInterval(poll);
   poll=null;
+  stopDiceChannel();
 }
 function home(){
   stop();localStorage.removeItem(storageKey);
@@ -83,6 +84,7 @@ function home(){
 }
 function setJoined(roomCode){
   code=roomCode;
+  startDiceChannel();
   localStorage.setItem(storageKey,code);
   history.replaceState({},'',location.pathname+'?room='+encodeURIComponent(code));
   $('joinScreen').hidden=true;
@@ -118,11 +120,7 @@ function render(next){
   $('padBalance').textContent=MONEY(me.cash);
   $('padPosition').textContent=BOARD[me.at]?.name||'Unknown';
   $('padJailNotice').hidden=!(self?.jailed);
-  const a=room.dice?.[0],b=room.dice?.[1];
-  const hasDice=Number.isInteger(a)&&a>0&&a<=6&&Number.isInteger(b)&&b>0&&b<=6;
-  $('padDieA').textContent=hasDice?dice[a-1]:'⚀';
-  $('padDieB').textContent=hasDice?dice[b-1]:'⚀';
-  $('padDiceTotal').textContent=hasDice?'TOTAL '+(a+b):'READY';
+  renderDice(room);
   $('padRoll').disabled=busy||!myTurn||room.phase!=='roll';
   $('padBuy').disabled=busy||!myTurn||room.phase!=='decision';
   $('padPass').disabled=busy||!myTurn||room.phase!=='decision';
