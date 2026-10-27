@@ -15,19 +15,27 @@ let supabase,scene,state=null,roomCode='',lastSeenRoll=null;
 let inFlight=false,busyAnimation=false,lastCount=-1,pollHandle=null,toastHandle=null;
 let pendingRefresh=null,unloading=false;
 let finishRedirectTimer=null;
+let finishedRedirecting=false;
 
 // All players receive the shared "finished" status through room-state polling.
 // Show the end notice briefly, then send each browser back to the homepage.
+function goHomeNow(){
+  // Navigation needs no RPC and never depends on host permissions.
+  localStorage.removeItem(storageKey);
+  unloading=true;
+  window.location.replace('./index.html');
+}
 function returnEveryoneHome(){
-  if(finishRedirectTimer || unloading)return;
-  $('endedGameNotice').hidden=false;
-  $('endedGameExplanation').textContent='Returning everyone to the home screen…';
+  if(finishedRedirecting || unloading)return;
+  finishedRedirecting=true;
   localStorage.removeItem(storageKey);
   if(pollHandle){clearInterval(pollHandle);pollHandle=null;}
-  finishRedirectTimer=setTimeout(()=>{
-    unloading=true;
-    window.location.replace('./index.html');
-  },2200);
+  // Navigate even if a scene redraw or animation is still running.
+  const notice=$('endedGameNotice');
+  const explanation=$('endedGameExplanation');
+  if(notice)notice.hidden=false;
+  if(explanation)explanation.textContent='Returning all players to the home screen…';
+  finishRedirectTimer=setTimeout(goHomeNow,1200);
 }
 
 function alertError(error){
@@ -94,14 +102,9 @@ async function endGameAsHost(){
   renderRoom();
   try{
     await rpc('mc_end_game',{p_code:roomCode});
-    // The server has confirmed completion. All connected clients (including
-    // the host) now observe the same finished state and redirect home.
+    // Server committed finish. Redirect host immediately; guests will
+    // observe it via their next independent state check.
     returnEveryoneHome();
-    const next=await rpc('mc_room_state',{p_code:roomCode});
-    await updateState(next);
-    await refreshActivity();
-    hideRoulette();
-    notify('The game has ended for everyone.');
   }catch(error){
     const missing=error.code==='PGRST202'||/could not find the function/i.test(error.message||'');
     notify(missing
@@ -229,8 +232,9 @@ async function updateState(next){
   state=next;
   if(next.room.status==='finished'){
     lastSeenRoll=next.room.roll_seq;
-    renderRoom();
+    // Redirect first, before any 3D rendering can throw or block the flow.
     returnEveryoneHome();
+    try{renderRoom();}catch(error){console.error('Finished room render:',error);}
     return;
   }
   if(lastSeenRoll===null)lastSeenRoll=next.room.roll_seq;
@@ -294,9 +298,18 @@ function restoreView(){
   hideRoulette();scene.setMode('follow');
 }
 async function refresh(){
-  if(!roomCode||inFlight||unloading)return;
+  if(!roomCode||unloading||finishedRedirecting)return;
   try{
-    const data=await rpc('mc_room_state',{p_code:roomCode});
+    const checkedRoomCode=roomCode;
+    const data=await rpc('mc_room_state',{p_code:checkedRoomCode});
+    // This runs before the animation and before other state processing,
+    // including when another in-flight move has set inFlight=true.
+    if(data?.room?.status==='finished'){
+      returnEveryoneHome();
+      return;
+    }
+    if(checkedRoomCode!==roomCode)return;
+    if(inFlight)return;
     await updateState(data);
     if(!finishRedirectTimer)await refreshActivity();
   }catch(error){
@@ -316,6 +329,7 @@ async function connectRoom(code){
 }
 function clearRoomLocally(){
   if(finishRedirectTimer){clearTimeout(finishRedirectTimer);finishRedirectTimer=null;}
+  finishedRedirecting=false;
   roomCode='';
   state=null;
   lastSeenRoll=null;
@@ -436,6 +450,7 @@ $('settingActivityToggle').addEventListener('change',e=>{
   if(state)renderRoom();
 });
 $('hostEndGame').addEventListener('click',endGameAsHost);
+$('endedGameGoHome').addEventListener('click',goHomeNow);
 document.addEventListener('pointerdown',e=>{
   if(!$('gameMenu').contains(e.target))closeGameMenu();
 });
@@ -473,6 +488,15 @@ $('backFromRoulette').addEventListener('click',restoreView);
 $('followView').addEventListener('click',restoreView);
 $('overviewView').addEventListener('click',()=>{hideRoulette();scene.setMode('overview');});
 window.addEventListener('beforeunload',()=>{unloading=true;if(pollHandle)clearInterval(pollHandle);});
+// On mobile a tab may be suspended while the host ends the game.
+// Immediately recheck when the guest comes back, rather than relying on
+// the browser to resume its old interval in a timely manner.
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && roomCode && !finishedRedirecting)refresh();
+});
+window.addEventListener('pageshow',()=>{
+  if(roomCode && !finishedRedirecting)refresh();
+});
 
 async function init(){
   $('playerName').value=localStorage.getItem(nameKey)||'';
