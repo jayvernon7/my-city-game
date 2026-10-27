@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { MY_CITY_SUPABASE_URL, MY_CITY_SUPABASE_PUBLISHABLE_KEY } from './online-config.js';
 import { BOARD, COLORS, MONEY } from './board-data.js';
-import { MyCityScene } from './scene3d.js?v=roulette-navigation-v2';
+import { MyCityScene } from './scene3d.js?v=roulette-navigation-v3';
 
 const $=id=>document.getElementById(id);
 const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
@@ -484,6 +484,9 @@ $('endBtn').addEventListener('click',()=>action('end'));
 $('ownedPropertiesBtn').addEventListener('click',()=>toggleOwned($('ownedPropertiesPanel').hidden));
 $('closeProperties').addEventListener('click',()=>toggleOwned(false));
 $('closeSpaceCard').addEventListener('click',()=>{$('spaceCard').hidden=true});
+$('rouletteZoomIn').addEventListener('click',()=>scene.zoomRoulette(.55));
+$('rouletteZoomOut').addEventListener('click',()=>scene.zoomRoulette(1.6));
+$('rouletteResetCamera').addEventListener('click',()=>scene.resetRouletteView());
 $('backFromRoulette').addEventListener('click',restoreView);
 $('followView').addEventListener('click',restoreView);
 $('overviewView').addEventListener('click',()=>{hideRoulette();scene.setMode('overview');});
