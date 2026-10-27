@@ -14,6 +14,7 @@ const nameKey='my-city-online-name';
 let supabase,scene,state=null,roomCode='',lastSeenRoll=null;
 let inFlight=false,busyAnimation=false,lastCount=-1,pollHandle=null,toastHandle=null;
 let pendingRefresh=null,unloading=false;
+let diceSyncChannel=null;
 let finishRedirectTimer=null;
 let finishedRedirecting=false;
 
@@ -93,6 +94,25 @@ async function copyPhoneJoinLink(){
   catch{notify('Phone controller link: '+phoneJoinLink());}
 }
 let activityUnavailableWarned=false;
+function startDiceSync(){
+  if(diceSyncChannel||!roomCode||!supabase)return;
+  diceSyncChannel=supabase.channel('mycity-dice-'+roomCode,{config:{broadcast:{ack:false}}});
+  diceSyncChannel.subscribe();
+}
+function stopDiceSync(){
+  if(!diceSyncChannel)return;
+  const old=diceSyncChannel;
+  diceSyncChannel=null;
+  supabase?.removeChannel(old);
+}
+function announceDiceFinished(move){
+  // Broadcast only after the on-screen THREE.js dice animation resolves.
+  // Each phone compares roll_seq to avoid revealing a different player's roll.
+  if(!diceSyncChannel||!state?.room)return;
+  diceSyncChannel.send({type:'broadcast',event:'dice_animation_complete',payload:{
+    roll_seq:state.room.roll_seq,seat:move.seat
+  }}).catch(error=>console.warn('Dice-sync broadcast unavailable',error));
+}
 async function refreshActivity(){
   if(!roomCode||!supabase||!state)return;
   const {data,error}=await supabase.rpc('mc_recent_activity',{p_code:roomCode});
@@ -319,6 +339,7 @@ async function replayRoll(move,players){
     scene.focus(seat);scene.beginDiceView();
     await sleep(550);
     await scene.rollDice(move.a,move.b);
+    announceDiceFinished(move);
     await sleep(340);
     scene.endDiceView();
     await sleep(350);
@@ -372,6 +393,7 @@ async function refresh(){
 }
 async function connectRoom(code){
   roomCode=String(code).toUpperCase();
+  startDiceSync();
   localStorage.setItem(storageKey,roomCode);
   history.replaceState({},'',location.pathname+'?room='+encodeURIComponent(roomCode));
   const next=await rpc('mc_room_state',{p_code:roomCode});
@@ -382,6 +404,7 @@ async function connectRoom(code){
   }
 }
 function clearRoomLocally(){
+  stopDiceSync();
   if(finishRedirectTimer){clearTimeout(finishRedirectTimer);finishRedirectTimer=null;}
   finishedRedirecting=false;
   roomCode='';
@@ -551,7 +574,7 @@ $('rouletteResetCamera').addEventListener('click',()=>scene.resetRouletteView())
 $('backFromRoulette').addEventListener('click',restoreView);
 $('followView').addEventListener('click',restoreView);
 $('overviewView').addEventListener('click',()=>{hideRoulette();scene.setMode('overview');});
-window.addEventListener('beforeunload',()=>{unloading=true;if(pollHandle)clearInterval(pollHandle);});
+window.addEventListener('beforeunload',()=>{unloading=true;stopDiceSync();if(pollHandle)clearInterval(pollHandle);});
 // On mobile a tab may be suspended while the host ends the game.
 // Immediately recheck when the guest comes back, rather than relying on
 // the browser to resume its old interval in a timely manner.
