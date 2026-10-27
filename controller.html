@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071e28">
+<title>My City — Phone Controller</title>
+<link rel="stylesheet" href="./controller.css?v=controller-v1">
+<script type="importmap">{"imports":{"@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
+</head>
+<body>
+<main class="controllerApp">
+<header class="controllerHeader"><a href="./index.html" class="homeLink">← HOME</a><span>MY CITY <em>CONTROLLER</em></span><a id="fullGameLink" href="./online.html" class="viewLink" hidden>FULL GAME ↗</a></header>
+<section id="joinScreen" class="joinScreen">
+  <div class="eyebrow">YOUR PHONE IS THE CONTROLLER</div>
+  <h1>JOIN THE CITY</h1>
+  <p>Scan the QR code on the host's screen, or enter a room code. Your phone controls your character while the TV shows the board.</p>
+  <label for="controllerName">YOUR NAME</label>
+  <input id="controllerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Player name">
+  <label for="controllerCode">ROOM CODE</label>
+  <input id="controllerCode" type="text" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="8-character room code">
+  <button type="button" id="controllerJoin" class="primaryButton">JOIN GAME →</button>
+  <p id="joinError" class="error" role="alert" hidden></p>
+  <small id="connectingState">Connecting to My City…</small>
+</section>
+<section id="padScreen" class="padScreen" hidden>
+  <div class="padRoom"><div><small>ROOM CODE</small><strong id="padRoomCode">—</strong></div><div><small>PLAYING AS</small><strong id="padPlayerName">—</strong></div><button type="button" id="padSwitch" class="outlineButton">FULL GAME</button></div>
+  <section id="waitingPanel" class="waitingPanel" hidden>
+    <h2>WAITING ROOM</h2>
+    <p id="waitingCount"></p><div id="waitingNames"></div>
+    <button id="padStart" class="primaryButton" type="button" hidden>START GAME</button>
+    <p id="waitingHint">Waiting for the host to start the game on the TV…</p>
+  </section>
+  <div id="activePad" hidden>
+    <div class="turnBlock"><small>WHO'S PLAYING</small><h2 id="padTurn">—</h2><p id="padPhase"></p></div>
+    <div class="moneyBlock"><div><small>YOUR BALANCE</small><strong id="padBalance">$0</strong></div><div class="positionBlock"><small>YOUR LOCATION</small><strong id="padPosition">GO</strong></div></div>
+    <div class="diceBlock"><span id="padDieA">⚀</span><span id="padDieB">⚀</span><strong id="padDiceTotal">READY</strong></div>
+    <div class="actionPad">
+      <button id="padRoll" class="rollButton" type="button" disabled>🎲 ROLL DICE</button>
+      <div class="actionRow"><button id="padBuy" type="button" disabled>BUY PROPERTY</button><button id="padPass" type="button" disabled>PASS</button></div>
+      <button id="padEnd" type="button" disabled>END TURN →</button>
+    </div>
+    <section class="myProperties"><button id="padPropertiesToggle" class="propertiesToggle" type="button" aria-expanded="false">⌂ MY PROPERTIES <span id="padPropertyCount">0</span> ▾</button><div id="padProperties" hidden></div></section>
+    <p id="padJailNotice" class="jailNotice" hidden>🔒 Your character is in Jail.</p>
+    <p class="secondaryNote">Your balance and property list stay private to this controller.</p>
+  </div>
+  <button id="padEndGame" class="dangerButton" type="button" hidden>END GAME FOR EVERYONE</button>
+  <button id="padLeave" class="leaveButton" type="button">← LEAVE CONTROLLER</button>
+</section>
+<div id="padToast" class="toast" role="status" aria-live="polite"></div>
+</main>
+<script type="module" src="./controller.js?v=controller-v1"></script>
+</body></html>
