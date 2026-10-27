@@ -206,3 +206,11 @@ button:disabled{cursor:not-allowed;filter:grayscale(.85);opacity:.65}
    Its Back to Board button remains clickable. */
 .roulettePreview{pointer-events:none}
 .roulettePreview button{pointer-events:auto}
+
+/* Fine-grained roulette map navigation without blocking the 3D canvas. */
+.rouletteMapButtons{display:flex;gap:5px;flex-wrap:wrap;margin:9px 0}
+.roulettePreview .rouletteMapButtons button{
+  flex:1;min-width:78px;pointer-events:auto;
+  color:#fff1c9;background:#235c51;border:1px solid #99c3a5;
+  padding:9px 7px;border-radius:7px;font-size:10px;font-weight:900
+}
