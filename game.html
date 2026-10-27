@@ -38,6 +38,9 @@ body.game-screen{height:100dvh;overflow:hidden}
 .game-screen .primary-btn{padding:10px}
 .game-screen .alt-btn{padding:8px 5px}
 .game-screen .settings-card,.game-screen .activity-card{display:none}
+.game-screen.settings-open .settings-card{display:block}
+.game-settings-toggle{position:absolute;z-index:25;top:15px;right:350px;padding:12px 14px;background:#102d37e8;border:1px solid #91b8af;color:#fff4d4;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer}
+.game-screen.settings-open .game-settings-toggle{background:#265f63}
 .game-screen .dialog-backdrop{z-index:100}
 @media(max-width:720px){
  .game-screen .sidebar{right:7px;left:7px;top:auto;bottom:7px;width:auto;min-width:0;max-height:39dvh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:6px;overflow:auto;padding:0}
@@ -53,6 +56,7 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .pawn-dot{width:15px;height:15px}
  .game-screen .player-cash{grid-column:2;font-size:12px}
  .game-screen .stage-head{left:auto;right:7px;top:8px}
+ .game-settings-toggle{right:auto;left:84px;top:8px;padding:9px;font-size:10px}
  .game-exit{top:8px;left:7px;padding:9px;font-size:10px}
  .game-screen .camera-btn{padding:8px 6px;font-size:9px}
  .game-screen .viewport-top{top:56px;left:8px;right:8px}
@@ -61,7 +65,7 @@ body.game-screen{height:100dvh;overflow:hidden}
 </style>
 </head>
 <body class="game-screen">
-<div class="app"><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
+<div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
   <header class="masthead">
     <div class="brand">
       <div class="mark" aria-hidden="true">◆</div>
@@ -83,7 +87,7 @@ body.game-screen{height:100dvh;overflow:hidden}
       <section class="control-card players-card"><div class="card-heading"><span>02 / PLAYERS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
       <section class="control-card turn-card"><div class="card-heading"><span>03 / YOUR TURN</span><span class="turn-label" id="phaseLabel">READY</span></div><h2 id="turnTitle">Your turn</h2><p id="message" class="turn-message" aria-live="polite">Roll the dice to begin.</p><div class="dice-display" id="diceDisplay"><span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span></div><div class="actions"><button class="primary-btn" type="button" id="rollBtn">🎲 &nbsp; ROLL DICE</button><div class="action-pair"><button type="button" id="buyBtn" class="alt-btn positive" disabled>BUY PROPERTY</button><button type="button" id="passBtn" class="alt-btn" disabled>PASS</button></div><button type="button" id="endBtn" class="alt-btn end-btn" disabled>END TURN →</button></div></section>
       <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
-      <section class="control-card settings-card"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
+      <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
   </main>
@@ -91,6 +95,12 @@ body.game-screen{height:100dvh;overflow:hidden}
 </div>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
 <script type="module" src="./app.js"></script>
+<script>
+document.getElementById('settingsToggle').addEventListener('click',function(){
+ const open=document.body.classList.toggle('settings-open');
+ this.setAttribute('aria-expanded',String(open));
+});
+</script>
 <script>
   // If the CDN isn't reachable or WebGL isn't available, show an explanation.
   setTimeout(() => {
