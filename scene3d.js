@@ -593,12 +593,18 @@ export class MyCityScene {
     this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
   }
   installInteraction(){
-    const c=this.renderer.domElement,ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
+    const c=this.renderer.domElement;
+    const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
     const fingers=new Map();
     let down=null,pinch=null,wasMulti=false;
     const pair=()=>{
       const [a,b]=Array.from(fingers.values());
-      return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,dist:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y))};
+      return {
+        x:(a.x+b.x)/2,
+        y:(a.y+b.y)/2,
+        dist:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),
+        angle:Math.atan2(b.y-a.y,b.x-a.x)
+      };
     };
     const free=()=>{
       if(this.mode!=='explore'){
@@ -607,15 +613,21 @@ export class MyCityScene {
         this.mode='explore';
       }
     };
+    // Map-like movement: drag the terrain with your finger/mouse.
+    // Horizontal screen direction corresponds to (cos azimuth, -sin azimuth).
+    // Vertical screen direction points away from the viewer on the board.
     const pan=(dx,dy)=>{
       free();
-      const amount=this.zoom*22/Math.max(280,c.clientHeight);
+      const amount=(this.zoom*27/Math.max(260,c.clientHeight))*
+        Math.max(.6,Math.min(2,this.camera.aspect));
       const sn=Math.sin(this.azimuth),cs=Math.cos(this.azimuth);
-      this.exploreTarget.x=clamp(this.exploreTarget.x+(-dx*cs+dy*sn)*amount,-18,18);
-      this.exploreTarget.z=clamp(this.exploreTarget.z+(dx*sn+dy*cs)*amount,-18,18);
+      this.exploreTarget.x=clamp(this.exploreTarget.x+(-dx*cs-dy*sn)*amount,-18,18);
+      this.exploreTarget.z=clamp(this.exploreTarget.z+(dx*sn-dy*cs)*amount,-18,18);
     };
+    c.style.touchAction='none';
     c.addEventListener('contextmenu',e=>e.preventDefault());
     c.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse' && ![0,1,2].includes(e.button))return;
       fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       try{c.setPointerCapture(e.pointerId)}catch{}
       if(fingers.size===1){
@@ -630,21 +642,31 @@ export class MyCityScene {
     c.addEventListener('pointermove',e=>{
       if(!fingers.has(e.pointerId))return;
       fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-      if(fingers.size>=2 && pinch){
+      if(fingers.size===2 && pinch){
         const now=pair();
-        this.zoom=clamp(this.zoom*pinch.dist/now.dist,.35,2.6);
+        free();
+        // Two fingers: spread/pinch to zoom, twist to rotate, slide to pan.
+        this.zoom=clamp(this.zoom*pinch.dist/now.dist,.3,3);
+        let delta=now.angle-pinch.angle;
+        if(delta>Math.PI)delta-=2*Math.PI;
+        if(delta< -Math.PI)delta+=2*Math.PI;
+        this.azimuth-=delta;
         pan(now.x-pinch.x,now.y-pinch.y);
-        pinch=now;return;
+        pinch=now;
+        return;
       }
-      if(!down||down.id!==e.pointerId)return;
+      if(fingers.size>2 || !down || down.id!==e.pointerId)return;
       const dx=e.clientX-down.x,dy=e.clientY-down.y;
-      if(Math.abs(dx)+Math.abs(dy)>6)down.moved=true;
+      if(Math.abs(dx)+Math.abs(dy)>5)down.moved=true;
       if(down.moved){
-        if(e.shiftKey||down.button===2){
-          pan(e.clientX-down.lastX,e.clientY-down.lastY);
+        if(e.shiftKey || down.button===2){
+          // Right-click/Shift-drag rotates and tilts like a 3D map.
+          free();
+          this.azimuth=down.yaw-dx*.007;
+          this.elevation=clamp(down.elevation+dy*.005,.32,1.53);
         }else{
-          this.azimuth=down.yaw-dx*.008;
-          this.elevation=clamp(down.elevation+dy*.006,.42,1.5);
+          // A normal left-click drag or one-finger swipe pans the board.
+          pan(e.clientX-down.lastX,e.clientY-down.lastY);
         }
       }
       down.lastX=e.clientX;down.lastY=e.clientY;
@@ -656,12 +678,14 @@ export class MyCityScene {
       fingers.delete(e.pointerId);
       if(tap){
         const rect=c.getBoundingClientRect();
-        pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+        pointer.set((e.clientX-rect.left)/rect.width*2-1,
+          -(e.clientY-rect.top)/rect.height*2+1);
         ray.setFromCamera(pointer,this.camera);
         const hits=ray.intersectObjects(this.clickMeshes,false);
-        if(hits.length&&Number.isInteger(hits[0].object.userData.index)){
+        if(hits.length && Number.isInteger(hits[0].object.userData.index)){
           const selected=hits[0].object.userData.index;
-          this.makeSelection(selected);this.inspectSpace(selected);this.onSelect(selected);
+          this.makeSelection(selected);this.inspectSpace(selected);
+          this.onSelect(selected);
         }
       }
       if(fingers.size===2)pinch=pair();
@@ -670,10 +694,30 @@ export class MyCityScene {
     };
     c.addEventListener('pointerup',end);
     c.addEventListener('pointercancel',end);
+    c.addEventListener('lostpointercapture',e=>{
+      fingers.delete(e.pointerId);
+      if(fingers.size<2)pinch=null;
+      if(down?.id===e.pointerId)down=null;
+      if(fingers.size===0)wasMulti=false;
+    });
     c.addEventListener('wheel',e=>{
       e.preventDefault();free();
-      this.zoom=clamp(this.zoom*Math.exp(e.deltaY*.001),.35,2.6);
+      this.zoom=clamp(this.zoom*Math.exp(e.deltaY*.001),.3,3);
     },{passive:false});
+    // Double-click or double-tap zooms toward an inspected location.
+    c.addEventListener('dblclick',e=>{
+      e.preventDefault();
+      const rect=c.getBoundingClientRect();
+      pointer.set((e.clientX-rect.left)/rect.width*2-1,
+        -(e.clientY-rect.top)/rect.height*2+1);
+      ray.setFromCamera(pointer,this.camera);
+      const hits=ray.intersectObjects(this.clickMeshes,false);
+      free();
+      if(hits.length){
+        this.exploreTarget.set(hits[0].point.x,.6,hits[0].point.z);
+      }
+      this.zoom=clamp(this.zoom*.7,.3,3);
+    });
   }
   animate(){
     const dt=Math.min(this.clock.getDelta(),.05);this.elapsed+=dt;
