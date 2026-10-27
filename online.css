@@ -214,3 +214,14 @@ button:disabled{cursor:not-allowed;filter:grayscale(.85);opacity:.65}
   color:#fff1c9;background:#235c51;border:1px solid #99c3a5;
   padding:9px 7px;border-radius:7px;font-size:10px;font-weight:900
 }
+
+/* Shared screen / TV phone-controller QR invite. */
+.gameMenuDropdown a.menuOption{display:block;text-decoration:none}
+.lobbyPhoneInvite{margin:12px 0 4px;padding:12px;border:1px solid #6ca194;border-radius:11px;background:#0e3038;display:flex;gap:12px;align-items:center}
+.lobbyPhoneInvite>div:last-child{min-width:0;flex:1}.lobbyPhoneInvite strong{font-size:11px;font-weight:1000;color:#ffe1a5}.lobbyPhoneInvite p{font-size:11px;margin:4px 0 8px}.lobbyPhoneInvite button,#copyPhoneLink{font-size:10px;color:#f6fff9;background:#28574e;border:1px solid #77b09d;border-radius:7px;padding:8px;font-weight:900}
+.lobbyPhoneQR,.phoneQRCode{background:#fff;color:#234;padding:6px;border-radius:8px;flex:none;display:grid;place-items:center;min-width:112px;min-height:112px}
+.lobbyPhoneQR img{width:104px;height:104px;image-rendering:pixelated}.phoneQRCode img{width:230px;height:230px;max-width:60vw;max-height:60vw;image-rendering:pixelated}
+.phoneQRPanel{position:absolute;z-index:43;top:calc(env(safe-area-inset-top) + 64px);right:12px;width:min(320px,calc(100vw - 24px));padding:18px;border:1px solid #87c3ae;border-radius:15px;background:#113941f9;box-shadow:0 20px 70px #000c;text-align:center}
+.phoneQRPanel h2{margin:4px 0;color:#ffe0a5;font-size:19px;letter-spacing:1px}.phoneQRPanel p{font-size:12px;color:#d0ede3}.phoneQRPanel .phoneQRCode{width:max-content;margin:12px auto}.phoneQRPanel>strong{display:block;color:#ffe0a5;font-size:22px;letter-spacing:3px;margin:8px 0}
+.phoneQRPanel .phoneQRClose{position:absolute;top:7px;right:8px;color:#fff;background:#295860;border:1px solid #76a89e;border-radius:8px;width:34px;height:34px;font-size:24px}
+@media(max-width:450px){.lobbyPhoneInvite{gap:8px;padding:8px}.lobbyPhoneQR{min-width:90px;min-height:90px}.lobbyPhoneQR img{width:80px;height:80px}.lobbyPhoneInvite strong{font-size:10px}.lobbyPhoneInvite p{font-size:10px}}
