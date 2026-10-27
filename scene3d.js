@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createRouletteTable, ROULETTE_ORIGIN } from './roulette3d.js';
 import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js';
 
 const SIDE = 33;
@@ -169,7 +170,7 @@ export class MyCityScene {
     this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];this.developmentMeshes=[];
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
-    this.makeLights();this.makeBoard();this.makeDevelopments(DEMO_DEVELOPMENTS);this.makeCity();this.makeDice();this.makeAtmosphere();
+    this.makeLights();this.makeBoard();this.makeDevelopments(DEMO_DEVELOPMENTS);this.makeCity();this.makeDice();this.makeRouletteTable();this.makeAtmosphere();
     this.makeSelection(0);
     this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(container);this.resize();
     this.installInteraction();
@@ -320,6 +321,10 @@ export class MyCityScene {
       die.position.set(-6.5+i*1.45,1.12,6.45);die.rotation.set(0,0,0);
       die.castShadow=true;this.scene.add(die);this.dice.push(die);
     }
+  }
+  makeRouletteTable(){
+    this.rouletteTable=createRouletteTable(THREE);
+    this.scene.add(this.rouletteTable);
   }
   makeAtmosphere(){
     const ground=box(190,.12,190,0x0e343b);ground.position.y=-1.3;ground.receiveShadow=true;this.scene.add(ground);
@@ -548,7 +553,7 @@ export class MyCityScene {
       else die.position.y=1.10;
     });
   }
-  setMode(mode){this.mode=mode}
+  setMode(mode){this.mode=mode;if(mode==='roulette')this.zoom=1;}
   inspectSpace(index){
     const space=this.spaces[index];
     if(!space)return;
@@ -684,14 +689,15 @@ export class MyCityScene {
     }
     const target=this.cinematicDice
       ?new THREE.Vector3((this.dice[0].position.x+this.dice[1].position.x)/2,.8,(this.dice[0].position.z+this.dice[1].position.z)/2)
+      :this.mode==='roulette'?new THREE.Vector3(ROULETTE_ORIGIN.x,.8,ROULETTE_ORIGIN.z)
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
       :this.mode==='explore'?this.exploreTarget.clone()
       :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
     if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.cinematicDice?13.2:(this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
-      (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
+    const distance=(this.cinematicDice?13.2:(this.mode==='roulette'?45:this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
+      (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='roulette'?Math.max(1,narrow*.79):this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
     const factor=1-Math.exp(-dt*(this.cinematicDice?5.3:this.mode==='follow'?4.1:2.3));
