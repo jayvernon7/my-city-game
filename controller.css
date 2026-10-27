@@ -1,2 +1,74 @@
 :root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#071e28;color:#f3fff6}body{font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.43;cursor:not-allowed}[hidden]{display:none!important}
 .controllerApp{width:min(540px,100%);min-height:100dvh;margin:0 auto;padding:18px 18px calc(20px + env(safe-area-inset-bottom));background:linear-gradient(#123e42,#071e28 55%)}.controllerHeader{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:25px}.controllerHeader>span{font-weight:950;letter-spacing:1px;font-size:13px;white-space:nowrap}.controllerHeader em{font-style:normal;color:#ffd084}.controllerHeader a{color:#cbecdf;text-decoration:none;font-size:11px;font-weight:850}.eyebrow{font-size:10px;color:#f6c586;letter-spacing:2px;font-weight:950}.joinScreen h1{font-size:clamp(30px,7vw,45px);line-height:1;margin:8px 0 15px}.joinScreen p{color:#c1d9d5}.joinScreen label{display:block;margin:20px 0 7px;font-size:11px;font-weight:950;letter-spacing:1.5px;color:#c9eee2}.joinScreen input{width:100%;min-height:55px;background:#062830;border:1px solid #669e98;border-radius:11px;padding:13px;color:white;font-size:18px}.joinScreen small{display:block;text-align:center;margin-top:14px;color:#aacac0}.error{color:#ffb6a9!important;padding:12px;background:#632936;border-radius:10px}.primaryButton{border:2px solid #ffe2aa;border-radius:12px;padding:17px 14px;width:100%;background:#ffc178;color:#142f30;font-size:17px;font-weight:1000;margin-top:20px}.primaryButton:disabled{opacity:.45}.padRoom{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#153d43;padding:13px;border-radius:12px;border:1px solid #608e86;margin-bottom:13px}.padRoom>div{min-width:0}.padRoom small,.turnBlock small,.moneyBlock small{display:block;color:#a9cfc4;font-size:10px;font-weight:950;letter-spacing:1px}.padRoom strong{font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis}.outlineButton{flex:none;background:#29635c;color:#f9fff4;border:1px solid #80b0a2;border-radius:8px;padding:10px 7px;font-size:10px;font-weight:950}.waitingPanel,.turnBlock,.moneyBlock,.diceBlock,.myProperties{background:#10333e;border:1px solid #4e837c;border-radius:13px;padding:16px;margin-bottom:12px}.waitingPanel h2{margin:0}.waitingPanel p{color:#bcd8d0}.waitingPanel #waitingNames{font-size:14px;line-height:2}.turnBlock{text-align:center}.turnBlock h2{margin:5px 0;font-size:clamp(24px,7vw,34px);line-height:1.2}.turnBlock p{margin:4px;color:#ffd08b;font-size:13px;font-weight:950}.moneyBlock{display:flex;justify-content:space-between;gap:12px;align-items:center}.moneyBlock strong{display:block;font-size:clamp(23px,7vw,31px);color:#d1ffdf}.moneyBlock .positionBlock{text-align:right}.positionBlock strong{font-size:14px;color:#f5fffb;overflow-wrap:anywhere}.diceBlock{display:flex;justify-content:center;gap:20px;align-items:center;text-align:center}.diceBlock span{font-size:50px;line-height:1}.diceBlock strong{font-size:12px;color:#ffcb82}.actionPad{display:grid;gap:10px;margin:14px 0}.actionPad button{border:1px solid #c5f3dc;border-radius:13px;padding:18px 10px;font-weight:1000;min-height:60px;color:#f9fffa;background:#296c5d;font-size:17px}.actionPad .rollButton{background:#ffc17d;color:#14332e;border-color:#ffe0ac;min-height:82px;font-size:23px}.actionRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actionPad #padEnd{background:#265879}.myProperties{padding:0}.propertiesToggle{width:100%;padding:15px;background:transparent;border:0;color:#ddffee;text-align:left;font-weight:950;display:flex;gap:10px;justify-content:space-between}.myProperties #padProperties{padding:0 15px 14px}.propItem{padding:8px 0;border-bottom:1px solid #3f6b69;display:flex;gap:8px;justify-content:space-between;font-size:13px}.secondaryNote{text-align:center;color:#9fc6bb;font-size:11px}.jailNotice{padding:13px;text-align:center;background:#584235;border:1px solid #a77d5e;border-radius:10px}.dangerButton,.leaveButton{width:100%;margin:12px 0 0;border:1px solid #e2a7a2;border-radius:9px;background:#622f3b;color:white;padding:13px;font-weight:900}.leaveButton{background:transparent;border-color:#638b87;color:#bfdbd2}.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(440px,90vw);text-align:center;z-index:30;background:#27464b;color:#fff;padding:13px;border:1px solid #b8dacf;border-radius:10px;box-shadow:0 10px 30px #0008;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}@media(max-width:380px){.controllerApp{padding:12px}.diceBlock{gap:12px}.diceBlock span{font-size:42px}.padRoom{padding:9px}}
+
+/* Four Xbox-inspired FACE BUTTONS. Color conveys the action; buttons have no letters. */
+#activePad{display:grid;gap:12px}
+#activePad .padStats,#activePad .padCenter{min-width:0;display:grid;gap:10px;align-content:start}
+#activePad .turnBlock,#activePad .moneyBlock,#activePad .diceBlock,#activePad .myProperties{margin:0}
+#activePad .actionPad{margin:0;position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,auto) auto;gap:5px;align-items:center;justify-items:center;padding:15px 8px 10px;background:#102f39;border:1px solid #517f7a;border-radius:22px}
+#activePad .faceButton{
+  appearance:none;aspect-ratio:1/1;width:clamp(62px,16vw,89px);height:auto;min-height:0;padding:0;
+  border-radius:50%;border:4px solid #ffffff4d;box-shadow:inset 0 4px 7px #ffffff55,inset 0 -8px 13px #0007,0 5px 0 #041922,0 8px 18px #0009;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:transform .1s,filter .1s;
+}
+#activePad .faceButton:active:not(:disabled){transform:translateY(3px) scale(.96);box-shadow:inset 0 3px 8px #0007,0 2px 0 #041922}
+#activePad .faceButton:focus-visible{outline:3px solid white;outline-offset:5px}
+#activePad .faceButton:disabled{opacity:.42;filter:grayscale(.55)}
+#activePad .faceYellow{grid-area:1/2;background:radial-gradient(circle at 38% 29%,#fff7a1,#f1b831 65%,#9f690c)}
+#activePad .faceBlue{grid-area:2/1;background:radial-gradient(circle at 38% 29%,#a0d9ff,#267bcb 65%,#154478)}
+#activePad .faceRed{grid-area:2/3;background:radial-gradient(circle at 38% 29%,#ffaaa3,#d94641 65%,#842422)}
+#activePad .faceGreen{grid-area:3/2;background:radial-gradient(circle at 38% 29%,#b6f7a9,#49ad4e 65%,#215f28)}
+#activePad .controllerLegend{grid-column:1/-1;grid-row:4;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:center;color:#d3f0e5;font-size:10px;font-weight:800;padding-top:4px}
+.controllerLegend span{display:inline-flex;align-items:center;gap:4px}.controllerLegend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.legendYellow{background:#f1bf42}.legendBlue{background:#3688de}.legendRed{background:#e6504a}.legendGreen{background:#57b859}
+.rotateTip{display:none;color:#ffdfa6;background:#19454d;text-align:center;border:1px solid #72afa1;border-radius:11px;padding:12px;font-size:13px}
+@media (orientation:portrait) and (max-width:750px){
+  .padScreen:not([hidden]) .rotateTip{display:block}
+  #activePad .faceButton{width:clamp(65px,19vw,87px)}
+}
+/* Turn sideways: dashboard on left, dice in center, ABXY-style pad on RIGHT. */
+@media (orientation:landscape) and (max-height:650px){
+  html,body{height:100%;overflow:hidden}
+  .controllerApp{width:100%;height:100dvh;min-height:0;max-width:none;padding:5px max(9px,env(safe-area-inset-right)) 5px max(9px,env(safe-area-inset-left));overflow:hidden}
+  .controllerHeader{height:27px;margin:0 0 4px;gap:12px}
+  .controllerHeader>span{font-size:11px}
+  .controllerHeader a{font-size:10px}
+  .joinScreen{height:calc(100% - 35px);overflow:auto;padding-bottom:14px;max-width:520px;margin:auto}
+  .joinScreen h1{font-size:24px;margin:5px 0}.joinScreen p{margin:4px 0;font-size:12px}
+  .joinScreen label{margin:6px 0 3px}.joinScreen input{min-height:39px;font-size:16px}
+  .joinScreen .primaryButton{margin-top:10px;padding:9px}
+  .padScreen{height:calc(100% - 32px);overflow:hidden;position:relative;display:flex;flex-direction:column;gap:4px}
+  .padScreen .padRoom{margin:0;padding:2px 11px;flex:none;min-height:29px;border-radius:8px}
+  .padRoom small{font-size:8px;line-height:1}.padRoom strong{font-size:11px;line-height:1.2}.padRoom .outlineButton{padding:5px 8px;font-size:10px}
+  #activePad{min-height:0;flex:1;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(195px,1.1fr);gap:8px;align-items:center}
+  #activePad .padStats,#activePad .padCenter{height:100%;min-height:0;gap:5px;align-content:center}
+  #activePad .turnBlock,#activePad .moneyBlock,#activePad .diceBlock{padding:8px 10px;border-radius:9px}
+  #activePad .turnBlock small,#activePad .moneyBlock small{font-size:8px}
+  #activePad .turnBlock h2{font-size:clamp(15px,3.2vh,25px);line-height:1.12;margin:3px 0}
+  #activePad .turnBlock p{font-size:10px;margin:0}
+  #activePad .moneyBlock strong{font-size:clamp(17px,3.5vh,26px)}
+  #activePad .positionBlock strong{font-size:11px}
+  #activePad .diceBlock{gap:8px;flex-wrap:wrap}
+  #activePad .diceBlock span{font-size:clamp(30px,9vh,55px)}
+  #activePad .diceBlock strong{font-size:10px;min-width:55px}
+  #activePad .myProperties{max-height:30vh;overflow-y:auto}
+  #activePad .propertiesToggle{padding:8px;font-size:10px}
+  #activePad .secondaryNote{display:none}
+  #activePad .jailNotice{padding:6px;font-size:10px;margin:0}
+  #activePad .actionPad{height:100%;min-height:0;width:100%;padding:3px 10px 0;gap:0;grid-template-rows:repeat(3,minmax(0,1fr)) auto;border-radius:45px}
+  #activePad .faceButton{width:min(21vh,9.8vw,94px);min-width:46px;max-height:100%;border-width:3px}
+  #activePad .controllerLegend{gap:2px 7px;font-size:8px;padding:1px 0 4px}
+  #activePad .controllerLegend i{width:7px;height:7px}
+  .padScreen>.dangerButton,.padScreen>.leaveButton{position:absolute;bottom:2px;font-size:9px;padding:4px 7px;width:auto;margin:0;max-width:42%;z-index:5}
+  .padScreen>.leaveButton{left:0}.padScreen>.dangerButton{right:0}
+  .waitingPanel{height:100%;overflow:auto;margin:0;padding:10px}
+  .waitingPanel h2{font-size:19px}
+  .waitingPanel .primaryButton{width:auto;margin:7px 0;padding:9px 18px}
+}
+@media(orientation:landscape) and (max-height:390px){
+  #activePad{grid-template-columns:minmax(0,1fr) minmax(0,.85fr) minmax(180px,1.2fr);gap:4px}
+  #activePad .actionPad{border:0;background:none}
+  #activePad .faceButton{width:min(21vh,10vw,73px)}
+  #activePad .moneyBlock{padding:5px 7px}
+}
