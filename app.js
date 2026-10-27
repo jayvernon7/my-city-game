@@ -38,6 +38,7 @@ function load(){
   }catch{return null}
 }
 function reset(mode){
+  hideLandingCard();
   epoch++;clearTimeout(botTimeout);
   game=makeNewGame(mode);
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.focus(0);scene.updatePositions(game.players,0);
@@ -73,6 +74,25 @@ function winnerCheck(){
   return false;
 }
 function setPhase(phase){game.phase=phase;save();render()}
+function hideLandingCard(){const card=$('landingCard');if(card)card.hidden=true}
+function showLandingCard(index){
+  const space=BOARD[index];
+  // Only purchasable street properties and Car Shops get a card.
+  // Excludes GO, Jail, Casino, Go To Jail, both utilities,
+  // Community Chest, Chance, and all tax spaces.
+  if(!space||!['property','transport'].includes(space.type))return;
+  const card=$('landingCard');if(!card)return;
+  $('landingCardName').textContent=space.name;
+  $('landingCardType').textContent=space.type==='transport'?'CAR SHOP':'PROPERTY';
+  $('landingCardStripe').style.background=space.color?COLORS[space.color]:'#6998a0';
+  $('landingCardPrice').textContent=MONEY(space.price);
+  const owner=game.owners[index];
+  $('landingCardRent').textContent=owner>=0?MONEY(rentFor(index,game.rollTotal||7)):
+    MONEY(space.type==='transport'?25:Math.max(2,Math.round(space.price*.12)));
+  $('landingCardOwner').textContent=owner<0?'AVAILABLE TO BUY':
+    'OWNED BY '+game.players[owner].name;
+  card.hidden=false;
+}
 const CHANCE=[
   ['Pay for a car repair: $100.',-100],['Surprise bonus! Collect $150.',150],
   ['Pay a $50 ticket.',-50],['Collect $75 from a lucky find.',75],['You earned $100 from your side hustle!',100]
@@ -118,7 +138,7 @@ async function landed(i,roll,moveEpoch){
   }
   scene.updateOwners(game.owners);
   if(!winnerCheck() && game.phase!=='decision')game.phase='end';
-  save();render();scheduleBot();
+  save();render();showLandingCard(i);scheduleBot();
 }
 async function roll(){
   if(game.phase!=='roll'||current().bankrupt||current().bot)return;
@@ -126,6 +146,7 @@ async function roll(){
 }
 async function doRoll(){
   if(game.phase!=='roll'||current().bankrupt)return;
+  hideLandingCard();
   const actor=game.turn,p=current(),thisEpoch=++epoch;
   if(p.jailed>0){
     p.jailed--;game.dice=[0,0];game.rollTotal=0;
@@ -183,6 +204,7 @@ function doBuy(){
   changeCash(p,-BOARD[i].price);game.owners[i]=game.turn;game.pending=-1;
   log('🏠 '+p.name+' bought '+BOARD[i].name+' for '+MONEY(BOARD[i].price)+'.');
   scene.updateOwners(game.owners);
+  showLandingCard(i);
   setPhase('end');scheduleBot();
 }
 function pass(){if(game.phase!=='decision'||current().bot)return;doPass()}
@@ -190,6 +212,7 @@ function doPass(){if(game.phase!=='decision')return;log(current().name+' skipped
 function endTurn(){if(game.phase!=='end'||current().bot)return;doEndTurn()}
 function doEndTurn(){
   if(game.phase!=='end')return;
+  hideLandingCard();
   if(winnerCheck()){save();render();return}
   let next=game.turn;
   for(let k=0;k<game.players.length;k++){
@@ -263,6 +286,7 @@ function renderDetails(){
   $('detailBody').textContent=detail;
 }
 
+$('closeLandingCard')?.addEventListener('click',hideLandingCard);
 $('rollBtn').addEventListener('click',roll);
 $('buyBtn').addEventListener('click',buy);
 $('passBtn').addEventListener('click',pass);
