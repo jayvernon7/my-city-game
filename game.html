@@ -394,6 +394,8 @@ body.game-screen{height:100dvh;overflow:hidden}
 <style>
 .game-screen .roulette-preview[hidden]{display:none!important}
 .game-screen .roulette-preview{
+ /* Gestures should reach the 3D canvas even through the floating info card. */
+ pointer-events:none;
  position:absolute;top:74px;left:18px;z-index:32;
  width:min(340px,calc(100vw - 36px));padding:17px 18px;
  border-radius:13px;border:1px solid #bd9757;
@@ -413,6 +415,7 @@ body.game-screen{height:100dvh;overflow:hidden}
  display:flex;flex-wrap:wrap;gap:8px;
 }
 .game-screen .roulette-preview-buttons button{
+ pointer-events:auto;
  padding:10px 12px;border-radius:8px;font-size:10px;
  letter-spacing:.35px;font-weight:900;cursor:pointer;
 }
@@ -482,7 +485,7 @@ body.game-screen{height:100dvh;overflow:hidden}
     <section id="roulettePreview" class="roulette-preview" hidden role="region" aria-labelledby="roulettePreviewTitle">
       <span class="roulette-preview-eyebrow">AFTER THE ROLL</span>
       <h2 id="roulettePreviewTitle">ROULETTE TABLE</h2>
-      <p>The American double-zero roulette table is next to your city board. This is a visual preview; roulette play comes next.</p>
+      <p>The American double-zero roulette table is next to your city board. Drag anywhere to explore the table. Scroll or pinch to zoom; right-drag or twist to rotate. Roulette play comes next.</p>
       <div class="roulette-preview-buttons">
         <button id="roulettePlayComingSoon" type="button" disabled>PLAY · COMING SOON</button>
         <button id="rouletteBackToBoard" type="button">BACK TO BOARD →</button>
@@ -512,7 +515,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   <p id="landingCardOwner" class="landing-card-owner">AVAILABLE TO BUY</p>
 </aside>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js"></script>
+<script type="module" src="./app.js?v=roulette-navigation-v2"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
