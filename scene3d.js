@@ -101,7 +101,7 @@ export class MyCityScene {
     container.appendChild(this.renderer.domElement);
     this.clock=new THREE.Clock();this.elapsed=0;
     this.mode='follow';this.zoom=1;this.azimuth=.48;this.elevation=1.01;
-    this.focusIndex=0;this.selected=0;
+    this.focusIndex=0;this.selected=0;this.cinematicDice=false;
     this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
@@ -244,6 +244,7 @@ export class MyCityScene {
     return new THREE.Vector3(loc.x+dx,.75,loc.z+dz);
   }
   setPlayers(players){
+    this.cinematicDice=false;
     if(this.motion){this.motion.resolve();this.motion=null}
     if(this.diceMotion){this.diceMotion.resolve();this.diceMotion=null}
     for(const p of this.pawns){this.scene.remove(p);}
@@ -292,6 +293,14 @@ export class MyCityScene {
     return new Promise(resolve=>{
       this.motion={playerId,from:pawn.position.clone(),to:dest,start:this.elapsed,duration:duration/1000,resolve};
     });
+  }
+  beginDiceView(){
+    this.mode='follow';
+    this.cinematicDice=true;
+  }
+  endDiceView(){
+    this.cinematicDice=false;
+    this.mode='follow';
   }
   rollDice(a,b){
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){this.setDice(a,b);return Promise.resolve()}
@@ -367,14 +376,18 @@ export class MyCityScene {
       else{x=-7.8;z=7.8-(p-24)*1.95;theta=Math.PI/2}
       this.tinyCar.position.set(x,.54,z);this.tinyCar.rotation.y=theta;
     }
-    const target=this.mode==='overview'?new THREE.Vector3(0,.25,0):(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
-    target.y=this.mode==='overview'?0:.6;
+    const target=this.cinematicDice
+      ?new THREE.Vector3(3.35,.9,3.15)
+      :this.mode==='overview'?new THREE.Vector3(0,.25,0)
+      :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
+    if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.mode==='overview'?45.5:15)*this.zoom*(this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75));
+    const distance=(this.cinematicDice?8.5:(this.mode==='overview'?45.5:15))*this.zoom*
+      (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
-    const factor=1-Math.exp(-dt*(this.mode==='follow'?4.1:2.3));
+    const factor=1-Math.exp(-dt*(this.cinematicDice?5.3:this.mode==='follow'?4.1:2.3));
     if(!this.hasCameraPosition){this.camera.position.copy(desired);this.currentCamTarget.copy(target);this.hasCameraPosition=true}
     else {this.camera.position.lerp(desired,factor);this.currentCamTarget.lerp(target,factor)}
     this.camera.lookAt(this.currentCamTarget);
