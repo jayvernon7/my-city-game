@@ -690,7 +690,7 @@ export class MyCityScene {
     if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.cinematicDice?11:(this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
+    const distance=(this.cinematicDice?13.2:(this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
       (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
