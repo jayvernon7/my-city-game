@@ -87,3 +87,49 @@
 @media(orientation:landscape) and (max-height:390px){
   #activePad{grid-template-columns:minmax(0,1fr) minmax(180px,1fr)}
 }
+
+/* Controller v1.3 — unified player card on the left, dice in the middle,
+   four colored gamepad buttons on the right. */
+#activePad{grid-template-columns:minmax(0,1fr) minmax(0,.55fr) minmax(0,1fr);gap:10px}
+#activePad .playerCard{
+  min-width:0;align-self:stretch;background:linear-gradient(145deg,#164b4e,#102e3a);
+  border:1px solid #79aca0;border-radius:17px;padding:14px;
+  display:flex;flex-direction:column;gap:7px;overflow:hidden
+}
+.playerCard h2{color:#ffd597;margin:0 0 4px;font-size:13px;letter-spacing:1.2px}
+.playerCardName{font-size:clamp(17px,3.5vw,25px);font-weight:1000;line-height:1.12;overflow-wrap:anywhere}
+.playerCardBalance{padding:8px 0;border-block:1px solid #557977}
+.playerCard small{display:block;color:#b9dad3;font-weight:900;font-size:10px;letter-spacing:.8px}
+.playerCardBalance strong{font-size:clamp(20px,4vw,30px);color:#d8ffdf;line-height:1.25}
+.playerCardProperties{min-height:0;display:flex;flex-direction:column;flex:1}
+.playerCardProperties small{display:flex;justify-content:space-between;gap:8px}
+.playerCardPropertyList{min-height:0;overflow:auto;overscroll-behavior:contain;margin-top:5px}
+.playerCardProperty{font-size:12px;padding:4px 0;border-bottom:1px solid #42696b;line-height:1.25;overflow-wrap:anywhere}
+.playerCardEmpty{font-size:11px;color:#9ac1b7;margin:5px 0}
+#activePad .padCenter{min-width:0;align-content:center;justify-items:center}
+#activePad .diceBlock{background:transparent;border:0;padding:3px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+#activePad .diceBlock span{font-size:clamp(30px,6vw,58px)}
+#activePad .playerCard .jailNotice{padding:6px;margin:4px 0;font-size:10px}
+@media(orientation:landscape) and (max-height:650px){
+  #activePad{grid-template-columns:minmax(140px,1.12fr) minmax(60px,.55fr) minmax(190px,1fr);gap:6px}
+  #activePad .playerCard{height:100%;min-height:0;padding:7px 11px;gap:3px;border-radius:11px}
+  .playerCard h2{font-size:10px;margin:0}
+  .playerCardName{font-size:clamp(13px,3.4vh,20px)}
+  .playerCardBalance{padding:3px 0}
+  .playerCard small{font-size:8px}
+  .playerCardBalance strong{font-size:clamp(16px,4vh,24px)}
+  .playerCardPropertyList{margin-top:2px}
+  .playerCardProperty{font-size:10px;padding:3px 0}
+  #activePad .padCenter{height:100%;min-height:0;align-content:center}
+  #activePad .diceBlock{padding:0}
+  #activePad .diceBlock span{font-size:clamp(25px,8vh,55px)}
+}
+@media(orientation:landscape) and (max-height:390px){
+  #activePad{grid-template-columns:minmax(132px,1.12fr) minmax(54px,.5fr) minmax(180px,1fr)}
+}
+@media(orientation:portrait) and (max-width:750px){
+  #activePad{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  #activePad .playerCard{grid-column:1/-1;max-height:260px}
+  #activePad .padCenter{grid-column:1}
+  #activePad .actionPad{grid-column:2}
+}
