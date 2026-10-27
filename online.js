@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { MY_CITY_SUPABASE_URL, MY_CITY_SUPABASE_PUBLISHABLE_KEY } from './online-config.js';
 import { BOARD, COLORS, MONEY } from './board-data.js';
-import { MyCityScene } from './scene3d.js?v=police-escort-v1';
+import { MyCityScene } from './scene3d.js?v=jail-cage-v1';
 
 const $=id=>document.getElementById(id);
 const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
@@ -207,7 +207,7 @@ function renderRoom(){
   $('dieB').textContent=known?faces[dice[1]-1]:'⚀';
   $('diceTotal').textContent=known?'TOTAL '+(dice[0]+dice[1]):'READY';
 
-  const scenePlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt}));
+  const scenePlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt,jailed:p.jailed}));
   if(!busyAnimation){
     if(lastCount!==scenePlayers.length){
       scene.setPlayers(scenePlayers);
@@ -258,8 +258,12 @@ async function replayRoll(move,players){
   $('spaceCard').hidden=true;
   renderRoom();
   const seat=move.seat;
-  const startPlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt}));
-  if(startPlayers[seat])startPlayers[seat].at=move.from;
+  const startPlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt,jailed:p.jailed}));
+  if(startPlayers[seat]){
+    startPlayers[seat].at=move.from;
+    // Do not display the bars until the officer reaches Jail.
+    startPlayers[seat].jailed=false;
+  }
   if(lastCount!==startPlayers.length){
     scene.setPlayers(startPlayers);
     lastCount=startPlayers.length;
