@@ -1,5 +1,5 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js?v=police-escort-v1';
+import {MyCityScene} from './scene3d.js?v=jail-cage-v1';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -163,6 +163,7 @@ async function landed(i,roll,moveEpoch){
     await scene.escortToJail(game.turn);
     if(moveEpoch!==epoch)return;
     p.at=10;p.jailed=1;selected=10;scene.makeSelection(10);
+    scene.updatePositions(game.players,game.turn);
   }
   else if(s.type==='tax'){
     const amount=i===4?200:100;changeCash(p,-amount);log(p.name+' paid '+MONEY(amount)+' in '+s.name+'.');
@@ -203,6 +204,8 @@ async function doRoll(){
   const actor=game.turn,p=current(),thisEpoch=++epoch;
   if(p.jailed>0){
     p.jailed--;game.dice=[0,0];game.rollTotal=0;
+    // This served jail turn completes the sentence; lift the cage now.
+    scene.updatePositions(game.players,game.turn);
     log(p.name+' misses this turn in Jail.');setPhase('end');scheduleBot();return;
   }
   const a=Math.floor(Math.random()*6)+1,b=Math.floor(Math.random()*6)+1,steps=a+b;
