@@ -5,7 +5,8 @@
 <meta name="theme-color" content="#081b25">
 <title>My City — Play with Friends</title>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
-<link rel="stylesheet" href="./online.css?v=roulette-navigation-v3">
+<link rel="stylesheet" href="./online.css?v=phone-controller-v1">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 </head>
 <body>
 <div id="onlineGame">
@@ -26,12 +27,23 @@
         <div class="gameMenuRoom">ROOM ID <strong id="roomCodeText"></strong>
           <button type="button" id="copyMenuRoomCode" aria-label="Copy room invite code">COPY</button>
         </div>
+        <a id="openPhoneController" class="menuOption" href="./controller.html">📱 CONTROLLER MODE</a>
+        <button type="button" id="showPhoneQR" class="menuOption">▦ PHONE JOIN QR</button>
         <button type="button" id="openGameSettings" class="menuOption">⚙ SETTINGS</button>
         <button type="button" id="hostEndGame" class="menuOption danger" hidden>END GAME</button>
       </div>
     </div>
   </header>
 
+
+  <section id="phoneQRPanel" class="phoneQRPanel" hidden aria-label="Join game with phone">
+    <button id="closePhoneQR" class="phoneQRClose" type="button" aria-label="Close QR code">×</button>
+    <h2>SCAN TO JOIN</h2>
+    <p>Scan with your phone camera to turn your phone into a controller.</p>
+    <div id="phoneQRCode" class="phoneQRCode" aria-label="QR code linking to phone controller"></div>
+    <strong id="phoneQRCodeText">—</strong>
+    <button id="copyPhoneLink" type="button">COPY CONTROLLER LINK</button>
+  </section>
   <section id="onlineSettingsPanel" class="onlineSettingsPanel" hidden aria-label="Game settings">
     <div class="settingsPanelTitle">
       <h2>SETTINGS</h2><button type="button" id="closeGameSettings" aria-label="Close settings">×</button>
@@ -126,6 +138,7 @@
       <div id="roomLobby" hidden>
         <div class="inviteBox">INVITE CODE <strong id="lobbyCode"></strong>
           <button id="copyInvite" type="button">COPY LINK</button></div>
+        <div class="lobbyPhoneInvite"><div id="lobbyPhoneQR" class="lobbyPhoneQR" aria-label="Scan to join as phone controller"></div><div><strong>USE YOUR PHONE AS A CONTROLLER</strong><p>Scan the QR code with your phone camera, then enter your name.</p><button id="copyLobbyPhoneLink" type="button">COPY PHONE JOIN LINK</button></div></div>
         <div id="membersList" class="membersList"></div>
         <p id="lobbyCount"></p>
         <button id="startRoom" class="mainAction" type="button" hidden>START GAME</button>
@@ -140,6 +153,6 @@
   </section>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./online.js?v=jail-cage-v1"></script>
+<script type="module" src="./online.js?v=phone-controller-v1"></script>
 </body>
 </html>
