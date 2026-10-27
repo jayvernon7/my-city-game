@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071e28">
 <title>My City — Phone Controller</title>
-<link rel="stylesheet" href="./controller.css?v=minimal-gamepad-v2">
+<link rel="stylesheet" href="./controller.css?v=player-card-v1">
 <script type="importmap">{"imports":{"@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
 </head>
 <body>
@@ -24,7 +24,7 @@
 </section>
 <section id="padScreen" class="padScreen" hidden>
   <p id="rotateTip" class="rotateTip">↻ Rotate your phone sideways to use the game controller.</p>
-  <div class="padRoom"><div><small>ROOM CODE</small><strong id="padRoomCode">—</strong></div><div><small>PLAYING AS</small><strong id="padPlayerName">—</strong></div><button type="button" id="padSwitch" class="outlineButton">FULL GAME</button></div>
+  <div class="padRoom"><div><small>ROOM CODE</small><strong id="padRoomCode">—</strong></div><button type="button" id="padSwitch" class="outlineButton">FULL GAME</button></div>
   <section id="waitingPanel" class="waitingPanel" hidden>
     <h2>WAITING ROOM</h2>
     <p id="waitingCount"></p><div id="waitingNames"></div>
@@ -32,9 +32,15 @@
     <p id="waitingHint">Waiting for the host to start the game on the TV…</p>
   </section>
   <div id="activePad" hidden>
-    <div class="padCenter">
-      <div class="diceBlock"><span id="padDieA">⚀</span><span id="padDieB">⚀</span><strong id="padDiceTotal">READY</strong></div>
+    <section class="playerCard" aria-label="Your player card">
+      <h2>PLAYER CARD</h2>
+      <div class="playerCardName" id="padPlayerName">—</div>
+      <div class="playerCardBalance"><small>BALANCE</small><strong id="padBalance">$0</strong></div>
+      <div class="playerCardProperties"><small>MY PROPERTIES <span id="padPropertyCount">0</span></small><div id="padProperties" class="playerCardPropertyList"></div></div>
       <p id="padJailNotice" class="jailNotice" hidden>🔒 Your character is in Jail.</p>
+    </section>
+    <div class="padCenter">
+      <div class="diceBlock" aria-label="Dice"><span id="padDieA">⚀</span><span id="padDieB">⚀</span></div>
     </div>
     <div class="actionPad" role="group" aria-label="Game controller face buttons">
       <button id="padRoll" class="faceButton faceYellow" aria-label="Roll dice" title="Roll dice" type="button" disabled></button>
@@ -52,5 +58,5 @@
 </section>
 <div id="padToast" class="toast" role="status" aria-live="polite"></div>
 </main>
-<script type="module" src="./controller.js?v=minimal-gamepad-v2"></script>
+<script type="module" src="./controller.js?v=player-card-v1"></script>
 </body></html>
