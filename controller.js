@@ -6,7 +6,7 @@ const $=id=>document.getElementById(id);
 const storageKey='my-city-controller-room';
 const nameKey='my-city-online-name';
 const dice=['⚀','⚁','⚂','⚃','⚄','⚅'];
-let supabase,code='',state=null,poll=null,busy=false,toastTimer=null,renderedProps=null;
+let supabase,code='',state=null,poll=null,busy=false,toastTimer=null;
 let diceChannel=null, pendingDiceSeq=null, diceTimer=null;
 const diceCompleted=new Set();
 function stopDiceClock(){
@@ -112,14 +112,9 @@ function render(next){
     $('padStart').disabled=players.length<2;
     return;
   }
-  const actor=players.find(p=>p.seat===room.turn_seat);
   const self=players.find(p=>p.seat===me.seat);
   const myTurn=room.turn_seat===me.seat && !me.bankrupt && room.status==='playing';
-  $('padTurn').textContent=myTurn?'YOUR TURN':(actor?.name||'Player')+'’S TURN';
-  $('padPhase').textContent=myTurn?({roll:'Roll the dice',decision:'Buy or pass?',end:'Finish your turn'})[room.phase]||'Waiting':'Wait for your turn';
-  $('padBalance').textContent=MONEY(me.cash);
-  $('padPosition').textContent=BOARD[me.at]?.name||'Unknown';
-  $('padJailNotice').hidden=!(self?.jailed);
+  $('padJailNotice').hidden=!self?.jailed;
   renderDice(room);
   $('padRoll').disabled=busy||!myTurn||room.phase!=='roll';
   $('padBuy').disabled=busy||!myTurn||room.phase!=='decision';
@@ -131,21 +126,7 @@ function render(next){
   const buyLabel=pending?'Buy '+(pending.name||'property')+' for '+MONEY(pending.price):'Buy property';
   $('padBuy').setAttribute('aria-label',buyLabel);
   $('padBuy').title=buyLabel;
-  const props=(me.properties||[]).map(i=>BOARD[i]).filter(Boolean);
-  $('padPropertyCount').textContent=String(props.length);
-  const key=(me.properties||[]).join(',');
-  if(key!==renderedProps){
-    renderedProps=key;
-    $('padProperties').replaceChildren();
-    if(!props.length){
-      const row=document.createElement('p');row.textContent='No properties owned yet.';$('padProperties').append(row);
-    }else for(const p of props){
-      const row=document.createElement('div');row.className='propItem';
-      const label=document.createElement('strong');label.textContent=p.name;
-      const amount=document.createElement('span');amount.textContent=MONEY(p.price);
-      row.append(label,amount);$('padProperties').append(row);
-    }
-  }
+
 }
 async function refresh(){
   if(!code||busy||document.hidden)return;
@@ -222,11 +203,6 @@ $('padEnd').addEventListener('click',()=>action('end'));
 $('padStart').addEventListener('click',startRoom);
 $('padEndGame').addEventListener('click',endGame);
 $('padLeave').addEventListener('click',home);
-$('padPropertiesToggle').addEventListener('click',()=>{
-  const next=$('padProperties').hidden;
-  $('padProperties').hidden=!next;
-  $('padPropertiesToggle').setAttribute('aria-expanded',String(next));
-});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
 window.addEventListener('pageshow',()=>{if(code)refresh();});
 window.addEventListener('beforeunload',stop);
