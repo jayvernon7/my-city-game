@@ -254,6 +254,14 @@ body.game-screen{height:100dvh;overflow:hidden}
 }
 </style>
 <link rel="stylesheet" href="./mobile-game.css?v=1">
+<style>
+/* Hide informational HUD panels on all screen sizes.
+   Keep DOM IDs available for the existing game state/render logic. */
+.game-screen .sidebar>.selected-card,
+.game-screen .sidebar>.players-card {
+  display:none !important;
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
