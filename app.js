@@ -80,6 +80,34 @@ function winnerCheck(){
   return false;
 }
 function setPhase(phase){game.phase=phase;save();render()}
+function renderOwnedProperties(){
+  const panel=$('ownedPropertiesPanel');
+  if(!panel || panel.hidden || !game)return;
+  const player=current();
+  const entries=BOARD.filter((space,index)=>game.owners[index]===game.turn);
+  $('ownedPropertiesTitle').textContent=player.name+'’s Properties';
+  $('ownedPropertiesCount').textContent=entries.length+' '+(entries.length===1?'property':'properties')+' owned';
+  const list=$('ownedPropertiesList');
+  if(!entries.length){
+    list.innerHTML='<div class="owned-properties-empty">No properties owned yet.</div>';
+    return;
+  }
+  list.innerHTML=entries.map(space=>{
+    const type=space.type==='transport'?'Car Shop':space.type==='utility'?'Utility':'Property';
+    const color=space.color?COLORS[space.color]:'#81bfc1';
+    return '<div class="owned-property">'+
+      '<span class="owned-property-swatch" style="background:'+color+'"></span>'+
+      '<div><div class="owned-property-name">'+escapeHTML(space.name)+'</div>'+
+      '<div class="owned-property-sub">'+type+' · Space '+(space.index+1)+'</div></div>'+
+      '<span class="owned-property-price">'+MONEY(space.price)+'</span></div>';
+  }).join('');
+}
+function setOwnedPropertiesOpen(open){
+  const panel=$('ownedPropertiesPanel');
+  panel.hidden=!open;
+  $('ownedPropertiesBtn').setAttribute('aria-expanded',String(open));
+  if(open)renderOwnedProperties();
+}
 function hideLandingCard(){const card=$('landingCard');if(card)card.hidden=true}
 function showLandingCard(index){
   const space=BOARD[index];
@@ -247,6 +275,7 @@ function render(){
   $('roundBadge').textContent='ROUND '+game.round;
   // Display only the balance of the player whose turn it is.
   $('activeBalanceAmount').textContent=MONEY(actor.cash);
+  renderOwnedProperties();
   const label={roll:'ROLL',moving:'MOVING',decision:'BUY OR PASS',end:'TURN COMPLETE',over:'GAME OVER'};
   $('phaseLabel').textContent=label[game.phase]||'READY';
   $('turnTitle').textContent=game.phase==='over'?'Game over':actor.name+'’s turn';
@@ -294,6 +323,10 @@ function renderDetails(){
   $('detailBody').textContent=detail;
 }
 
+$('ownedPropertiesBtn').addEventListener('click',()=>{
+  setOwnedPropertiesOpen($('ownedPropertiesPanel').hidden);
+});
+$('closeOwnedProperties').addEventListener('click',()=>setOwnedPropertiesOpen(false));
 $('closeLandingCard')?.addEventListener('click',hideLandingCard);
 $('rollBtn').addEventListener('click',roll);
 $('buyBtn').addEventListener('click',buy);
@@ -313,7 +346,7 @@ $('cancelDialog').addEventListener('click',()=>{$('dialog').hidden=true});
 $('confirmDialog').addEventListener('click',()=>{$('dialog').hidden=true;reset($('mode').value)});
 $('dialog').addEventListener('click',e=>{if(e.target===$('dialog'))$('dialog').hidden=true});
 window.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){$('dialog').hidden=true;return}
+  if(e.key==='Escape'){$('dialog').hidden=true;setOwnedPropertiesOpen(false);return}
   if(e.target?.closest('select,input,button'))return;
   if(e.key.toLowerCase()==='r'&&game.phase==='roll'&&!current().bot)roll();
   if(e.key.toLowerCase()==='v')changeView(scene.mode==='follow'?'overview':'follow');
