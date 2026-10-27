@@ -367,22 +367,70 @@ export class MyCityScene {
     this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
   }
   installInteraction(){
-    const c=this.renderer.domElement;const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
-    let down=null;
+    const c=this.renderer.domElement,ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
+    const fingers=new Map();
+    let down=null,pinch=null,wasMulti=false;
+    const pair=()=>{
+      const [a,b]=Array.from(fingers.values());
+      return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,dist:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y))};
+    };
+    const free=()=>{
+      if(this.mode!=='explore'){
+        this.exploreTarget.copy(this.currentCamTarget);
+        this.exploreTarget.y=.6;
+        this.mode='explore';
+      }
+    };
+    const pan=(dx,dy)=>{
+      free();
+      const amount=this.zoom*22/Math.max(280,c.clientHeight);
+      const sn=Math.sin(this.azimuth),cs=Math.cos(this.azimuth);
+      this.exploreTarget.x=clamp(this.exploreTarget.x+(-dx*cs+dy*sn)*amount,-18,18);
+      this.exploreTarget.z=clamp(this.exploreTarget.z+(dx*sn+dy*cs)*amount,-18,18);
+    };
+    c.addEventListener('contextmenu',e=>e.preventDefault());
     c.addEventListener('pointerdown',e=>{
-      down={x:e.clientX,y:e.clientY,yaw:this.azimuth,elevation:this.elevation,moved:false};
+      fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       try{c.setPointerCapture(e.pointerId)}catch{}
+      if(fingers.size===1){
+        down={id:e.pointerId,x:e.clientX,y:e.clientY,
+          lastX:e.clientX,lastY:e.clientY,button:e.button,
+          yaw:this.azimuth,elevation:this.elevation,moved:false};
+        wasMulti=false;
+      }else if(fingers.size===2){
+        pinch=pair();wasMulti=true;down=null;free();
+      }
     });
     c.addEventListener('pointermove',e=>{
-      if(!down)return;
+      if(!fingers.has(e.pointerId))return;
+      fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(fingers.size>=2 && pinch){
+        const now=pair();
+        this.zoom=clamp(this.zoom*pinch.dist/now.dist,.35,2.6);
+        pan(now.x-pinch.x,now.y-pinch.y);
+        pinch=now;return;
+      }
+      if(!down||down.id!==e.pointerId)return;
       const dx=e.clientX-down.x,dy=e.clientY-down.y;
-      if(Math.abs(dx)+Math.abs(dy)>5)down.moved=true;
-      if(down.moved){this.azimuth=down.yaw-dx*.008;this.elevation=clamp(down.elevation+dy*.006,.54,1.5)}
+      if(Math.abs(dx)+Math.abs(dy)>6)down.moved=true;
+      if(down.moved){
+        if(e.shiftKey||down.button===2){
+          pan(e.clientX-down.lastX,e.clientY-down.lastY);
+        }else{
+          this.azimuth=down.yaw-dx*.008;
+          this.elevation=clamp(down.elevation+dy*.006,.42,1.5);
+        }
+      }
+      down.lastX=e.clientX;down.lastY=e.clientY;
     });
-    const release=e=>{
-      if(!down)return;
-      if(!down.moved){
-        const rect=c.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+    const end=e=>{
+      if(!fingers.has(e.pointerId))return;
+      const tap=fingers.size===1 && down && !down.moved &&
+        !wasMulti && down.button===0 && e.type==='pointerup';
+      fingers.delete(e.pointerId);
+      if(tap){
+        const rect=c.getBoundingClientRect();
+        pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
         ray.setFromCamera(pointer,this.camera);
         const hits=ray.intersectObjects(this.clickMeshes,false);
         if(hits.length&&Number.isInteger(hits[0].object.userData.index)){
@@ -390,11 +438,16 @@ export class MyCityScene {
           this.makeSelection(selected);this.inspectSpace(selected);this.onSelect(selected);
         }
       }
-      down=null;
+      if(fingers.size===2)pinch=pair();
+      else {pinch=null;down=null;}
+      if(fingers.size===0)wasMulti=false;
     };
-    c.addEventListener('pointerup',release);
-    c.addEventListener('pointercancel',()=>{down=null});
-    c.addEventListener('wheel',e=>{e.preventDefault();this.zoom=clamp(this.zoom+(e.deltaY>0?.11:-.11),.6,1.6)},{passive:false});
+    c.addEventListener('pointerup',end);
+    c.addEventListener('pointercancel',end);
+    c.addEventListener('wheel',e=>{
+      e.preventDefault();free();
+      this.zoom=clamp(this.zoom*Math.exp(e.deltaY*.001),.35,2.6);
+    },{passive:false});
   }
   animate(){
     const dt=Math.min(this.clock.getDelta(),.05);this.elapsed+=dt;
