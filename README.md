@@ -60,6 +60,22 @@ table and shows a noninteractive preview panel. Players can choose
 marked coming soon. No bets, wagers, spins, chips, or roulette results change
 the game yet; that logic will be implemented after its rules are decided.
 
+## Multiplayer room menu and host-controlled end game
+
+The top-right room ID box has been replaced by a **three-horizontal-line menu**.
+Opening it shows the room ID (with a copy button), **Settings** (camera
+view and optional activity-feed visibility), and **End Game** **only for
+the room host while a match is playing**.
+
+**Required one-time Supabase update:** run
+[`supabase/mycity_end_game.sql`](./supabase/mycity_end_game.sql)
+in your **My City** Supabase project's SQL Editor. This creates
+`mc_end_game`, which verifies the caller is the host, locks the room,
+and marks the ongoing match as finished. All clients polling the room
+will see that no further Roll/Buy/Pass/End Turn actions are allowed.
+A confirmation appears before the host ends a game. End Game **does not
+delete** room records, member balances or property ownership.
+
 ## Shared multiplayer activity feed
 
 A minimal bottom-left activity feed shows the **five newest events** during
