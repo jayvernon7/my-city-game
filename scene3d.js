@@ -580,7 +580,52 @@ export class MyCityScene {
       else die.position.y=1.10;
     });
   }
-  setMode(mode){this.mode=mode;if(mode==='roulette')this.zoom=1;}
+  setMode(mode){
+    this.mode=mode;
+    if(mode==='roulette'){
+      this.zoom=1;
+      this.exploreTarget.set(ROULETTE_ORIGIN.x,1.08,ROULETTE_ORIGIN.z);
+    }
+  }
+  // Zoom to the exact roulette felt/wheel location under a pointer.
+  // This works even while looking from the opposite side of the table.
+  roulettePoint(clientX,clientY){
+    const rect=this.renderer.domElement.getBoundingClientRect();
+    if(!rect.width||!rect.height)return null;
+    const pointer=new THREE.Vector2(
+      ((clientX-rect.left)/rect.width)*2-1,
+      -((clientY-rect.top)/rect.height)*2+1
+    );
+    const ray=new THREE.Raycaster();
+    ray.setFromCamera(pointer,this.camera);
+    const hits=ray.intersectObject(this.rouletteTable,true);
+    if(hits.length)return hits[0].point;
+    // The table is a flat betting surface around y=1.1; allow aiming
+    // even at the tiny gaps between number boxes.
+    const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-1.1);
+    const point=new THREE.Vector3();
+    return ray.ray.intersectPlane(plane,point)?point:null;
+  }
+  focusRouletteAt(x,z){
+    if(!['roulette','rouletteExplore'].includes(this.mode))return;
+    this.mode='rouletteExplore';
+    this.exploreTarget.set(
+      clamp(x,ROULETTE_ORIGIN.x-7.2,ROULETTE_ORIGIN.x+7.2),
+      1.1,
+      clamp(z,ROULETTE_ORIGIN.z-16.8,ROULETTE_ORIGIN.z+16.8)
+    );
+  }
+  zoomRoulette(factor,clientX,clientY){
+    if(!['roulette','rouletteExplore'].includes(this.mode))return;
+    const point=Number.isFinite(clientX)&&Number.isFinite(clientY)
+      ?this.roulettePoint(clientX,clientY):null;
+    if(point)this.focusRouletteAt(point.x,point.z);
+    else if(this.mode==='roulette')this.mode='rouletteExplore';
+    this.zoom=clamp(this.zoom*factor,.055,3.25);
+  }
+  resetRouletteView(){
+    this.setMode('roulette');
+  }
   inspectSpace(index){
     const space=this.spaces[index];
     if(!space)return;
@@ -610,7 +655,7 @@ export class MyCityScene {
       // Preserve roulette focus when the user first interacts, without
       // unexpectedly switching from the table to the city board.
       if(this.mode==='roulette'){
-        this.exploreTarget.set(ROULETTE_ORIGIN.x,.8,ROULETTE_ORIGIN.z);
+        this.exploreTarget.set(ROULETTE_ORIGIN.x,1.1,ROULETTE_ORIGIN.z);
         this.mode='rouletteExplore';
       }else if(this.mode!=='explore' && this.mode!=='rouletteExplore'){
         this.exploreTarget.copy(this.currentCamTarget);
@@ -624,15 +669,15 @@ export class MyCityScene {
     const pan=(dx,dy)=>{
       free();
       const roulette=this.mode==='rouletteExplore';
-      const amount=(this.zoom*(roulette?18:27)/Math.max(260,c.clientHeight))*
+      const amount=(this.zoom*(roulette?38:27)/Math.max(220,c.clientHeight))*
         Math.max(.6,Math.min(2,this.camera.aspect));
       const sn=Math.sin(this.azimuth),cs=Math.cos(this.azimuth);
-      const xMin=roulette?ROULETTE_ORIGIN.x-13:-18;
-      const xMax=roulette?ROULETTE_ORIGIN.x+13:18;
+      const xMin=roulette?ROULETTE_ORIGIN.x-7.2:-18;
+      const xMax=roulette?ROULETTE_ORIGIN.x+7.2:18;
       this.exploreTarget.x=clamp(this.exploreTarget.x+(-dx*cs-dy*sn)*amount,xMin,xMax);
       this.exploreTarget.z=clamp(this.exploreTarget.z+(dx*sn-dy*cs)*amount,
-        roulette?ROULETTE_ORIGIN.z-13:-18,
-        roulette?ROULETTE_ORIGIN.z+13:18);
+        roulette?ROULETTE_ORIGIN.z-16.8:-18,
+        roulette?ROULETTE_ORIGIN.z+16.8:18);
     };
     c.style.touchAction='none';
     c.addEventListener('contextmenu',e=>e.preventDefault());
@@ -656,7 +701,11 @@ export class MyCityScene {
         const now=pair();
         free();
         // Two fingers: spread/pinch to zoom, twist to rotate, slide to pan.
-        this.zoom=clamp(this.zoom*pinch.dist/now.dist,.3,3);
+        if(this.mode==='rouletteExplore'){
+          this.zoomRoulette(pinch.dist/now.dist,now.x,now.y);
+        }else{
+          this.zoom=clamp(this.zoom*pinch.dist/now.dist,.3,3);
+        }
         let delta=now.angle-pinch.angle;
         if(delta>Math.PI)delta-=2*Math.PI;
         if(delta< -Math.PI)delta+=2*Math.PI;
@@ -686,7 +735,12 @@ export class MyCityScene {
       const tap=fingers.size===1 && down && !down.moved &&
         !wasMulti && down.button===0 && e.type==='pointerup';
       fingers.delete(e.pointerId);
-      if(tap){
+      if(tap && ['roulette','rouletteExplore'].includes(this.mode)){
+        // A tap on the table moves the camera target to that numbered area;
+        // the next pinch/scroll zooms close enough to read the betting field.
+        const target=this.roulettePoint(e.clientX,e.clientY);
+        if(target)this.focusRouletteAt(target.x,target.z);
+      }else if(tap){
         const rect=c.getBoundingClientRect();
         pointer.set((e.clientX-rect.left)/rect.width*2-1,
           -(e.clientY-rect.top)/rect.height*2+1);
@@ -711,8 +765,13 @@ export class MyCityScene {
       if(fingers.size===0)wasMulti=false;
     });
     c.addEventListener('wheel',e=>{
-      e.preventDefault();free();
-      this.zoom=clamp(this.zoom*Math.exp(e.deltaY*.001),.3,3);
+      e.preventDefault();
+      if(['roulette','rouletteExplore'].includes(this.mode)){
+        this.zoomRoulette(Math.exp(e.deltaY*.001),e.clientX,e.clientY);
+      }else{
+        free();
+        this.zoom=clamp(this.zoom*Math.exp(e.deltaY*.001),.3,3);
+      }
     },{passive:false});
     // Double-click or double-tap zooms toward an inspected location.
     c.addEventListener('dblclick',e=>{
@@ -723,10 +782,12 @@ export class MyCityScene {
       ray.setFromCamera(pointer,this.camera);
       const hits=ray.intersectObjects(this.clickMeshes,false);
       free();
-      if(hits.length && this.mode!=='rouletteExplore'){
-        this.exploreTarget.set(hits[0].point.x,.6,hits[0].point.z);
+      if(this.mode==='rouletteExplore'){
+        this.zoomRoulette(.58,e.clientX,e.clientY);
+      }else{
+        if(hits.length)this.exploreTarget.set(hits[0].point.x,.6,hits[0].point.z);
+        this.zoom=clamp(this.zoom*.7,.3,3);
       }
-      this.zoom=clamp(this.zoom*.7,.3,3);
     });
   }
   animate(){
@@ -774,7 +835,8 @@ export class MyCityScene {
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
       :['explore','rouletteExplore'].includes(this.mode)?this.exploreTarget.clone()
       :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
-    if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
+    if(!this.cinematicDice)target.y=this.mode==='overview'?0:
+      (this.mode==='roulette'||this.mode==='rouletteExplore')?1.1:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
     const distance=(this.cinematicDice?13.2:(this.mode==='roulette'?27:this.mode==='overview'?54:this.mode==='rouletteExplore'?27:this.mode==='explore'?27:17))*this.zoom*
