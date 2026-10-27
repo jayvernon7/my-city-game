@@ -1,6 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {MY_CITY_SUPABASE_URL, MY_CITY_SUPABASE_PUBLISHABLE_KEY} from './online-config.js';
-import {BOARD,MONEY} from './board-data.js';
+import {BOARD,MONEY,COLORS} from './board-data.js';
 
 const $=id=>document.getElementById(id);
 const storageKey='my-city-controller-room';
@@ -86,6 +86,7 @@ function setJoined(roomCode){
   history.replaceState({},'',location.pathname+'?room='+encodeURIComponent(code));
   $('joinScreen').hidden=true;
   $('padScreen').hidden=false;
+  $('propertyCardsDialog').hidden=true;
   $('padRoomCode').textContent=code;
   $('fullGameLink').href=controllerLink(code);
   $('fullGameLink').hidden=false;
@@ -96,25 +97,33 @@ function render(next){
   state=next;
   const {room,players,me}=next;
   if(room.status==='finished'){toast('Game ended. Returning home.');setTimeout(home,900);stop();return;}
-  $('padPlayerName').textContent=me.name;
-  $('padBalance').textContent=MONEY(me.cash);
   const owned=(me.properties||[]).map(index=>BOARD[index]).filter(Boolean);
   $('padPropertyCount').textContent=String(owned.length);
+  $('propertyModalCount').textContent=String(owned.length);
   const propertyKey=(me.properties||[]).join(',');
   if(renderedProperties!==propertyKey){
     renderedProperties=propertyKey;
     const list=$('padProperties');list.replaceChildren();
     if(!owned.length){
       const empty=document.createElement('p');
-      empty.className='playerCardEmpty';
-      empty.textContent='No properties yet';
+      empty.className='propertyCardsEmpty';
+      empty.textContent='You do not own any properties yet.';
       list.append(empty);
     }else{
       for(const property of owned){
-        const row=document.createElement('div');
-        row.className='playerCardProperty';
-        row.textContent=property.name;
-        list.append(row);
+        const card=document.createElement('article');
+        card.className='propertyDetailCard';
+        const stripe=document.createElement('div');
+        stripe.className='propertyDetailStripe';
+        stripe.style.background=property.color?COLORS[property.color]||'#b5d5ca':'#c4b27c';
+        const type=document.createElement('small');
+        type.textContent=property.type==='property'?'PROPERTY':property.type==='transport'?'CAR SHOP':'UTILITY';
+        const name=document.createElement('h3');
+        name.textContent=property.name;
+        const price=document.createElement('p');
+        price.textContent='Purchase price: '+MONEY(property.price);
+        card.append(stripe,type,name,price);
+        list.append(card);
       }
     }
   }
@@ -214,6 +223,21 @@ async function join(){
 $('controllerJoin').addEventListener('click',join);
 $('controllerName').addEventListener('keydown',e=>{if(e.key==='Enter')join();});
 $('controllerCode').addEventListener('keydown',e=>{if(e.key==='Enter')join();});
+function closePropertyCards(){
+  $('propertyCardsDialog').hidden=true;
+  $('padPropertiesOpen').focus();
+}
+$('padPropertiesOpen').addEventListener('click',()=>{
+  $('propertyCardsDialog').hidden=false;
+  $('padPropertiesClose').focus();
+});
+$('padPropertiesClose').addEventListener('click',closePropertyCards);
+$('propertyCardsDialog').addEventListener('click',event=>{
+  if(event.target===$('propertyCardsDialog'))closePropertyCards();
+});
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!$('propertyCardsDialog').hidden)closePropertyCards();
+});
 $('padRoll').addEventListener('click',()=>action('roll'));
 $('padBuy').addEventListener('click',()=>action('buy'));
 $('padPass').addEventListener('click',()=>action('pass'));
