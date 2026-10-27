@@ -10,7 +10,13 @@ const buyable=i=>['property','transport','utility'].includes(BOARD[i].type);
 let game,scene,epoch=0,botTimeout=null,selected=0;
 
 try {
-  scene=new MyCityScene($('viewport'),{onSelect:i=>{selected=i;renderDetails()}});
+  scene=new MyCityScene($('viewport'),{onSelect:i=>{
+    selected=i;
+    renderDetails();
+    // A space can be inspected at any time, regardless of whose turn it is.
+    hideLandingCard();
+    showLandingCard(i);
+  }});
   $('sceneLoading').hidden=true;
 } catch(err) {
   $('sceneLoading').innerHTML='<div class="load-symbol">!</div><strong>3D VIEW IS UNAVAILABLE</strong><span>Your browser may not support WebGL. Try Chrome or Edge on your computer.</span>';
