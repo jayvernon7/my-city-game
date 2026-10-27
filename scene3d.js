@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BOARD, COLORS, PLAYER_COLORS, gridPosition } from './board-data.js';
+import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js';
 
 const SIDE = 33;
 const CORNER = 4.6;
@@ -167,9 +167,9 @@ export class MyCityScene {
     this.focusIndex=0;this.selected=0;this.cinematicDice=false;
     this.exploreTarget=new THREE.Vector3(0,.6,0);
     this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;
-    this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];
+    this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];this.developmentMeshes=[];
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
-    this.makeLights();this.makeBoard();this.makeCity();this.makeDice();this.makeAtmosphere();
+    this.makeLights();this.makeBoard();this.makeDevelopments(DEMO_DEVELOPMENTS);this.makeCity();this.makeDice();this.makeAtmosphere();
     this.makeSelection(0);
     this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(container);this.resize();
     this.installInteraction();
@@ -229,6 +229,71 @@ export class MyCityScene {
       }
       this.spaces.push({index:i,loc,w,d,tile});
     }
+  }
+  makeDevelopments(placements){
+    // Only draw on colored property strips; never on corners, card spaces,
+    // transports, taxes, or the name area of a space.
+    for(const obj of this.developmentMeshes)this.scene.remove(obj);
+    this.developmentMeshes=[];
+    for(const {index,kind,count=1} of placements){
+      const space=BOARD[index],item=this.spaces[index];
+      if(!item || space?.type!=='property' || !space.color || !DEVELOPMENTS[kind])continue;
+      const isHotel=kind==='hotels';
+      const bandCenter=this.colorStripCenter(index);
+      if(!bandCenter)continue;
+      const number=Math.min(4,Math.max(1,Math.floor(count)));
+      for(let j=0;j<number;j++){
+        const marker=this.makeDevelopmentBlock(kind);
+        const spread=(j-(number-1)/2)*.36;
+        const alongX=(index>=1&&index<=9)||(index>=21&&index<=29);
+        marker.position.set(
+          bandCenter.x+(alongX?spread:0),
+          .708,
+          bandCenter.z+(alongX?0:spread)
+        );
+        this.scene.add(marker);
+        this.developmentMeshes.push(marker);
+      }
+    }
+  }
+  colorStripCenter(index){
+    const space=BOARD[index],item=this.spaces[index];
+    if(!item||!space?.color)return null;
+    const {loc,w,d}=item;
+    if(index>=1&&index<=9)return new THREE.Vector3(loc.x,0,loc.z-d/2+.32);
+    if(index>=11&&index<=19)return new THREE.Vector3(loc.x+w/2-.32,0,loc.z);
+    if(index>=21&&index<=29)return new THREE.Vector3(loc.x,0,loc.z+d/2-.32);
+    if(index>=31&&index<=39)return new THREE.Vector3(loc.x-w/2+.32,0,loc.z);
+    return null;
+  }
+  makeDevelopmentBlock(kind){
+    const isHotel=kind==='hotels';
+    const surface=new THREE.MeshStandardMaterial({
+      color:DEVELOPMENTS[kind].color,
+      metalness:isHotel?.72:.85,
+      roughness:isHotel?.22:.27
+    });
+    const trim=new THREE.MeshStandardMaterial({
+      color:isHotel?0xffe09a:0xe9f0f3,
+      metalness:.7,roughness:.28
+    });
+    const marker=new THREE.Group();
+    // Miniature architectural blocks: silver low houses, gold tall hotels.
+    // Narrow footprint ensures their bases remain on the color strip.
+    const body=new THREE.Mesh(
+      new THREE.BoxGeometry(isHotel?.36:.29,isHotel?.69:.31,isHotel?.34:.29),
+      surface
+    );
+    body.position.y=isHotel?.345:.155;
+    body.castShadow=true;body.receiveShadow=true;marker.add(body);
+    const roof=new THREE.Mesh(
+      new THREE.BoxGeometry(isHotel?.40:.34,isHotel?.075:.06,isHotel?.38:.33),
+      trim
+    );
+    roof.position.y=isHotel?.728:.345;
+    roof.castShadow=true;marker.add(roof);
+    marker.userData.developmentKind=kind;
+    return marker;
   }
   makeCity(){
     // Keep only the MY CITY central plaque. Roads, trees, mini car,
