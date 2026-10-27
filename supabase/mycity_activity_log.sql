@@ -173,8 +173,9 @@ create trigger mc_activity_property_bought_trigger
 -- Host start, dice rolls, property pass and end-turn actions.
 create or replace function public.mc_activity_room_changed()
 returns trigger language plpgsql security definer set search_path = '' as $$
-declare v_name text;
-declare v_activity text;
+declare
+  v_name text;
+  v_activity text;
 begin
   v_activity:=null;
 
