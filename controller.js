@@ -7,6 +7,60 @@ const storageKey='my-city-controller-room';
 const nameKey='my-city-online-name';
 const dice=['⚀','⚁','⚂','⚃','⚄','⚅'];
 let supabase,code='',state=null,poll=null,busy=false,toastTimer=null,renderedProps=null;
+let diceChannel=null, pendingDiceSeq=null, diceTimer=null;
+const diceCompleted=new Set();
+function stopDiceClock(){
+  clearTimeout(diceTimer);
+  diceTimer=null;
+}
+function diceDone(seq){
+  if(!Number.isInteger(seq)||seq<1)return;
+  diceCompleted.add(seq);
+  if(diceCompleted.size>25)diceCompleted.delete(diceCompleted.values().next().value);
+  if(pendingDiceSeq===seq){
+    pendingDiceSeq=null;stopDiceClock();
+    if(state)render(state);
+  }
+}
+function startDiceChannel(){
+  if(!supabase||!code||diceChannel)return;
+  diceChannel=supabase.channel('mycity-dice-'+code);
+  diceChannel.on('broadcast',{event:'dice_animation_complete'},({payload})=>{
+    const seq=Number(payload?.roll_seq);
+    if(state&&seq===state.room.roll_seq&&Number(payload.seat)===state.room.last_roll?.seat){
+      diceDone(seq);
+    }
+  }).subscribe();
+}
+function stopDiceChannel(){
+  stopDiceClock();pendingDiceSeq=null;diceCompleted.clear();
+  if(diceChannel){
+    const channel=diceChannel;diceChannel=null;
+    supabase?.removeChannel(channel);
+  }
+}
+function renderDice(room){
+  const a=room.dice?.[0],b=room.dice?.[1],seq=room.roll_seq;
+  const valid=Number.isInteger(a)&&a>=1&&a<=6&&Number.isInteger(b)&&b>=1&&b<=6;
+  if(room.phase==='roll'||!valid||!Number.isInteger(seq)||seq<1){
+    stopDiceClock();pendingDiceSeq=null;
+    $('padDieA').textContent='⚀';$('padDieB').textContent='⚀';
+    $('padDiceTotal').textContent='READY';
+    return;
+  }
+  if(!diceCompleted.has(seq)){
+    if(pendingDiceSeq!==seq){
+      stopDiceClock();pendingDiceSeq=seq;
+      diceTimer=setTimeout(()=>diceDone(seq),7000);
+    }
+    $('padDieA').textContent='🎲';$('padDieB').textContent='🎲';
+    $('padDiceTotal').textContent='ROLLING ON SCREEN…';
+    return;
+  }
+  stopDiceClock();pendingDiceSeq=null;
+  $('padDieA').textContent=dice[a-1];$('padDieB').textContent=dice[b-1];
+  $('padDiceTotal').textContent='TOTAL '+(a+b);
+}
 function toast(message){
   const el=$('padToast');el.textContent=message;el.classList.add('show');
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3600);
