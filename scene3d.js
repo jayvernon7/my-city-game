@@ -111,6 +111,17 @@ function longTileTexture(space,index){
   return texture;
 }
 
+// Per-side lettering orientation, in the original 40-space order.
+// Devon Park → Casino: clockwise 90°
+// St. Marys → Go To Jail: upside-down 180°
+// Pembroke Ave → Coyle: counterclockwise 90°
+function labelAngle(index){
+  if(index>=11 && index<=20)return -Math.PI/2;
+  if(index>=21 && index<=30)return Math.PI;
+  if(index>=31 && index<=39)return Math.PI/2;
+  return 0;
+}
+
 function bannerTexture(){
   const c=document.createElement('canvas');c.width=1024;c.height=512;const g=c.getContext('2d');
   g.fillStyle='#f0e7c8';g.fillRect(0,0,1024,512);
@@ -181,6 +192,10 @@ export class MyCityScene {
       const tile=box(w-.055,.18,d-.055,CREAM,.89);
       tile.position.set(loc.x,.53,loc.z);tile.receiveShadow=true;tile.castShadow=true;tile.userData.index=i;this.scene.add(tile);this.clickMeshes.push(tile);
       const texture=[0,10,20,30].includes(i)?textTexture(space):longTileTexture(space,i);
+      // Rotate the printed text on this space without changing its tile or color band.
+      texture.center.set(.5,.5);
+      texture.rotation=labelAngle(i);
+      texture.needsUpdate=true;
       let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.075,d-.075),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
       label.rotation.x=-Math.PI/2;label.position.set(loc.x,.633,loc.z);label.userData.index=i;
       this.scene.add(label);this.clickMeshes.push(label);
