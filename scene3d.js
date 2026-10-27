@@ -171,29 +171,9 @@ export class MyCityScene {
     }
     const banner=new THREE.Mesh(new THREE.PlaneGeometry(10.35,5.8),new THREE.MeshBasicMaterial({map:bannerTexture()}));
     banner.rotation.x=-Math.PI/2;banner.position.set(-.1,.61,.55);this.scene.add(banner);
-    const rng=seededRng(82108);
-    const coords=[[-6.4,-6.1],[-4.1,-6],[-1.85,-6.1],[1.8,-6.3],[4.05,-6.2],[6.4,-6],
-                  [-6.5,6],[-4.05,6.1],[-1.8,6.15],[1.8,6.2],[4.05,6.1],[6.35,6.1],
-                  [-6.5,-3.4],[6.5,-3.5],[-6.3,3.5],[6.3,3.5]];
-    const houseColors=[0xcbe4ce,0xf3c18b,0x8ab4ad,0xd5cec1,0xc7d8ce,0xd9b4a4];
+    // Buildings intentionally hidden for now; the open central plaza,
+    // MY CITY banner, trees, streets and animated car remain.
     this.cityMeshes=[];
-    for(let j=0;j<coords.length;j++){
-      const [x,z]=coords[j],height=1.25+rng()*2.55;
-      const w=1.05+rng()*.48,d=1.15+rng()*.52;
-      const b=box(w,height,d,houseColors[j%houseColors.length],.9);
-      b.position.set(x,.55+height/2,z);b.castShadow=true;b.receiveShadow=true;this.scene.add(b);
-      const roof=box(w+.14,.15,d+.14,0x345a55);roof.position.set(x,.61+height,z);roof.castShadow=true;this.scene.add(roof);
-      // Windows are actual tiny meshes, not a baked image.
-      const rows=Math.max(2,Math.floor(height/.52));
-      for(let k=0;k<rows;k++)for(const side of [-1,1]){
-        for(const s of [-.26,.26]){
-          const windowMesh=box(.14,.15,.02,0xf5d68e);
-          windowMesh.position.set(x+s,1.01+k*.47,z+side*(d/2+.014));
-          this.scene.add(windowMesh);
-        }
-      }
-      this.cityMeshes.push(b);
-    }
     // Green trees and streetlights make the central board a real 3D diorama.
     for(let j=0;j<18;j++){
       let x=j<9?-9.15:9.15,z=-8.65+(j%9)*2.05;
