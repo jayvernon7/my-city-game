@@ -334,6 +334,62 @@ body.game-screen{height:100dvh;overflow:hidden}
   .game-screen #activeBalanceAmount{font-size:clamp(20px,3.4vw,30px)}
 }
 </style>
+<style>
+.game-screen .active-balance{flex-direction:row;align-items:center;gap:12px}
+.game-screen .active-balance-copy{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.game-screen .owned-properties-btn{
+  pointer-events:auto;display:grid;place-items:center;flex:none;
+  width:49px;height:49px;padding:0;cursor:pointer;color:#ecfff0;
+  background:#10343bc9;border:1px solid #7ca89a;border-radius:11px;
+  box-shadow:0 4px 14px #07151999;
+}
+.game-screen .owned-properties-btn:hover,.game-screen .owned-properties-btn[aria-expanded="true"]{
+  background:#22645a;border-color:#b4ead0
+}
+.game-screen .owned-properties-panel[hidden]{display:none!important}
+.game-screen .owned-properties-panel{
+  position:absolute;z-index:35;right:20px;bottom:calc(max(22px,env(safe-area-inset-bottom)) + 68px);
+  width:min(365px,calc(100vw - 32px));max-height:min(57dvh,470px);
+  overflow-y:auto;overscroll-behavior:contain;
+  padding:16px;border:1px solid #7ba99f;border-radius:14px;
+  background:#102d37f5;color:#f4fffa;box-shadow:0 14px 40px #000b;
+}
+.game-screen .owned-properties-head{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.game-screen .owned-properties-eyebrow{font-size:10px;letter-spacing:1.5px;color:#b5dcd0;font-weight:900}
+.game-screen .owned-properties-head h2{font-size:21px;margin:4px 0 2px}
+.game-screen .owned-properties-count{color:#b8d9cd;font-size:12px;margin:5px 0 12px}
+.game-screen .owned-properties-close{
+  color:#fff;background:#23515a;border:1px solid #628f8e;border-radius:9px;
+  width:35px;height:35px;flex:none;font-size:24px;cursor:pointer
+}
+.game-screen .owned-properties-list{display:grid;gap:7px}
+.game-screen .owned-property{
+  display:flex;align-items:center;gap:11px;min-width:0;padding:10px 11px;
+  background:#1c4249;border:1px solid #466871;border-radius:9px;
+}
+.game-screen .owned-property-swatch{
+  flex:none;width:8px;align-self:stretch;min-height:34px;border-radius:4px
+}
+.game-screen .owned-property-name{font-size:14px;font-weight:900;overflow-wrap:anywhere}
+.game-screen .owned-property-sub{font-size:11px;color:#b8d9cd;margin-top:3px}
+.game-screen .owned-property-price{margin-left:auto;flex:none;color:#d9ffdd;font-weight:850;font-size:13px}
+.game-screen .owned-properties-empty{
+  padding:22px 12px;text-align:center;color:#d9e8e5;
+  border:1px dashed #648b89;border-radius:9px;font-size:13px
+}
+@media(max-width:720px){
+ .game-screen .active-balance{gap:8px}
+ .game-screen .owned-properties-btn{width:39px;height:39px;border-radius:9px}
+ .game-screen .owned-properties-btn svg{width:23px;height:23px}
+ .game-screen .owned-properties-panel{
+   right:8px;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 54px);
+   width:min(335px,calc(100vw - 16px));max-height:50dvh;padding:12px
+ }
+}
+@media(orientation:landscape) and (max-height:600px) and (max-width:1100px){
+ .game-screen .owned-properties-panel{bottom:calc(max(11px,env(safe-area-inset-bottom)) + 54px);max-height:75dvh}
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -361,10 +417,25 @@ body.game-screen{height:100dvh;overflow:hidden}
       <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
-    <div id="activeBalance" class="active-balance" aria-live="polite" aria-label="Current player's balance">
-      <span class="active-balance-label">BALANCE</span>
-      <strong id="activeBalanceAmount">$1,500</strong>
+    <div id="activeBalance" class="active-balance" aria-label="Current player's balance and properties">
+      <button id="ownedPropertiesBtn" type="button" class="owned-properties-btn" aria-label="View current player's owned properties" aria-expanded="false" aria-controls="ownedPropertiesPanel" title="My properties">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V21h13V9.5"></path><path d="M10 21v-7h4v7"></path>
+        </svg>
+      </button>
+      <div class="active-balance-copy">
+        <span class="active-balance-label">BALANCE</span>
+        <strong id="activeBalanceAmount" aria-live="polite">$1,500</strong>
+      </div>
     </div>
+    <section id="ownedPropertiesPanel" class="owned-properties-panel" hidden role="region" aria-label="Current player's owned properties">
+      <div class="owned-properties-head">
+        <div><span class="owned-properties-eyebrow">MY CITY · PORTFOLIO</span><h2 id="ownedPropertiesTitle">My Properties</h2></div>
+        <button id="closeOwnedProperties" type="button" class="owned-properties-close" aria-label="Close properties">×</button>
+      </div>
+      <p id="ownedPropertiesCount" class="owned-properties-count">0 properties</p>
+      <div id="ownedPropertiesList" class="owned-properties-list"></div>
+    </section>
     <div class="roll-dock" aria-label="Dice controls">
       <div class="dice-display" id="diceDisplay" aria-label="Dice results">
         <span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span>
