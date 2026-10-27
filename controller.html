@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071e28">
 <title>My City — Phone Controller</title>
-<link rel="stylesheet" href="./controller.css?v=landscape-pad-v1">
+<link rel="stylesheet" href="./controller.css?v=minimal-gamepad-v2">
 <script type="importmap">{"imports":{"@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
 </head>
 <body>
@@ -32,15 +32,9 @@
     <p id="waitingHint">Waiting for the host to start the game on the TV…</p>
   </section>
   <div id="activePad" hidden>
-    <div class="padStats">
-      <div class="turnBlock"><small>WHO'S PLAYING</small><h2 id="padTurn">—</h2><p id="padPhase"></p></div>
-      <div class="moneyBlock"><div><small>YOUR BALANCE</small><strong id="padBalance">$0</strong></div><div class="positionBlock"><small>YOUR LOCATION</small><strong id="padPosition">GO</strong></div></div>
-      <p id="padJailNotice" class="jailNotice" hidden>🔒 Your character is in Jail.</p>
-    </div>
     <div class="padCenter">
       <div class="diceBlock"><span id="padDieA">⚀</span><span id="padDieB">⚀</span><strong id="padDiceTotal">READY</strong></div>
-      <section class="myProperties"><button id="padPropertiesToggle" class="propertiesToggle" type="button" aria-expanded="false">⌂ MY PROPERTIES <span id="padPropertyCount">0</span> ▾</button><div id="padProperties" hidden></div></section>
-      <p class="secondaryNote">Private balance & properties</p>
+      <p id="padJailNotice" class="jailNotice" hidden>🔒 Your character is in Jail.</p>
     </div>
     <div class="actionPad" role="group" aria-label="Game controller face buttons">
       <button id="padRoll" class="faceButton faceYellow" aria-label="Roll dice" title="Roll dice" type="button" disabled></button>
@@ -58,5 +52,5 @@
 </section>
 <div id="padToast" class="toast" role="status" aria-live="polite"></div>
 </main>
-<script type="module" src="./controller.js?v=landscape-pad-v1"></script>
+<script type="module" src="./controller.js?v=minimal-gamepad-v2"></script>
 </body></html>
