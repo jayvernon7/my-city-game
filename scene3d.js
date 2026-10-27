@@ -102,7 +102,6 @@ export class MyCityScene {
     this.clock=new THREE.Clock();this.elapsed=0;
     this.mode='follow';this.zoom=1;this.azimuth=.48;this.elevation=1.01;
     this.focusIndex=0;this.selected=0;this.cinematicDice=false;
-    this.panOffset=new THREE.Vector3();
     this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
@@ -296,7 +295,6 @@ export class MyCityScene {
     });
   }
   beginDiceView(){
-    this.panOffset.set(0,0,0);
     this.mode='follow';
     this.cinematicDice=true;
   }
@@ -316,97 +314,41 @@ export class MyCityScene {
       die.rotation.set(0,0,0);die.position.y=1.15;
     });
   }
-  setMode(mode){this.mode=mode;this.panOffset.set(0,0,0)}
+  setMode(mode){this.mode=mode}
   focus(playerIndex){this.focusIndex=playerIndex}
   resize(){
     const w=Math.max(100,this.container.clientWidth),h=Math.max(100,this.container.clientHeight);
     this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
   }
   installInteraction(){
-    const c=this.renderer.domElement;
-    const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
-    const active=new Map();
-    let drag=null,gesture=null,suppressTap=false;
-
-    const positions=()=>Array.from(active.values());
-    const getPair=()=>{
-      const [a,b]=positions();
-      return {distance:Math.hypot(a.x-b.x,a.y-b.y),
-              midX:(a.x+b.x)/2,midY:(a.y+b.y)/2};
-    };
+    const c=this.renderer.domElement;const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
+    let down=null;
     c.addEventListener('pointerdown',e=>{
-      if(e.pointerType==='mouse' && e.button!==0)return;
-      active.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      down={x:e.clientX,y:e.clientY,yaw:this.azimuth,elevation:this.elevation,moved:false};
       try{c.setPointerCapture(e.pointerId)}catch{}
-      if(active.size===1){
-        drag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:this.azimuth,elevation:this.elevation,moved:false};
-        gesture=null;suppressTap=false;
-      }else if(active.size>=2){
-        const pair=getPair();
-        gesture={distance:Math.max(1,pair.distance),zoom:this.zoom,
-          midX:pair.midX,midY:pair.midY,pan:this.panOffset.clone()};
-        drag=null;suppressTap=true;
-      }
     });
     c.addEventListener('pointermove',e=>{
-      if(!active.has(e.pointerId))return;
-      active.set(e.pointerId,{x:e.clientX,y:e.clientY});
-      if(active.size>=2 && gesture){
-        const pair=getPair();
-        // Pinching fingers together zooms out; spreading them zooms in.
-        this.zoom=clamp(gesture.zoom*gesture.distance/Math.max(1,pair.distance),.35,2.5);
-        // Two-finger translation pans over the board without orbiting.
-        const pixelScale=(this.mode==='overview'?32:12)*this.zoom/Math.max(250,c.clientHeight);
-        const dx=(pair.midX-gesture.midX)*pixelScale;
-        const dy=(pair.midY-gesture.midY)*pixelScale;
-        const cos=Math.cos(this.azimuth),sin=Math.sin(this.azimuth);
-        this.panOffset.set(
-          clamp(gesture.pan.x-dx*cos+dy*sin,-20,20),0,
-          clamp(gesture.pan.z+dx*sin+dy*cos,-20,20)
-        );
-      }else if(active.size===1 && drag && e.pointerId===drag.id){
-        const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
-        if(Math.abs(dx)+Math.abs(dy)>7)drag.moved=true;
-        if(drag.moved){
-          this.azimuth=drag.yaw-dx*.008;
-          this.elevation=clamp(drag.elevation+dy*.006,.40,1.50);
-        }
-      }
+      if(!down)return;
+      const dx=e.clientX-down.x,dy=e.clientY-down.y;
+      if(Math.abs(dx)+Math.abs(dy)>5)down.moved=true;
+      if(down.moved){this.azimuth=down.yaw-dx*.008;this.elevation=clamp(down.elevation+dy*.006,.54,1.5)}
     });
-    const endPointer=e=>{
-      if(!active.has(e.pointerId))return;
-      const wasTap=active.size===1 && drag && drag.id===e.pointerId && !drag.moved && !suppressTap;
-      active.delete(e.pointerId);
-      if(wasTap && e.type==='pointerup'){
-        const rect=c.getBoundingClientRect();
-        pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+    const release=e=>{
+      if(!down)return;
+      if(!down.moved){
+        const rect=c.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
         ray.setFromCamera(pointer,this.camera);
         const hits=ray.intersectObjects(this.clickMeshes,false);
-        if(hits.length && Number.isInteger(hits[0].object.userData.index)){
+        if(hits.length&&Number.isInteger(hits[0].object.userData.index)){
           const selected=hits[0].object.userData.index;
           this.makeSelection(selected);this.onSelect(selected);
         }
       }
-      if(active.size>=2){
-        const pair=getPair();
-        gesture={distance:Math.max(1,pair.distance),zoom:this.zoom,
-          midX:pair.midX,midY:pair.midY,pan:this.panOffset.clone()};
-      }else{
-        gesture=null;drag=null;
-        if(active.size===0)suppressTap=false;
-      }
-      try{if(c.hasPointerCapture(e.pointerId))c.releasePointerCapture(e.pointerId)}catch{}
+      down=null;
     };
-    c.addEventListener('pointerup',endPointer);
-    c.addEventListener('pointercancel',endPointer);
-    c.addEventListener('lostpointercapture',e=>{
-      active.delete(e.pointerId);drag=null;gesture=null;suppressTap=true;
-      if(active.size===0)suppressTap=false;
-    });
-    c.addEventListener('wheel',e=>{
-      e.preventDefault();
-      this.zoom=clamp(this.zoom*Math.exp(e.deltaY*.001),.35,2.5);
-    },{passive:false});
+    c.addEventListener('pointerup',release);
+    c.addEventListener('pointercancel',()=>{down=null});
+    c.addEventListener('wheel',e=>{e.preventDefault();this.zoom=clamp(this.zoom+(e.deltaY>0?.11:-.11),.6,1.6)},{passive:false});
   }
   animate(){
     const dt=Math.min(this.clock.getDelta(),.05);this.elapsed+=dt;
@@ -439,7 +381,6 @@ export class MyCityScene {
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
       :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
     if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
-    if(!this.cinematicDice)target.add(this.panOffset);
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
     const distance=(this.cinematicDice?8.5:(this.mode==='overview'?45.5:15))*this.zoom*
