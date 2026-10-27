@@ -134,14 +134,24 @@ async function doRoll(){
   const a=Math.floor(Math.random()*6)+1,b=Math.floor(Math.random()*6)+1,steps=a+b;
   const from=p.at;game.dice=[a,b];game.rollTotal=steps;
   scene.focus(actor);
-  game.phase='moving';log(p.name+' rolled '+a+' + '+b+'. Watch the piece move!');
+  game.phase='moving';log(p.name+' rolled '+a+' + '+b+'. Watch the dice, then follow the piece!');
   $('dieA').textContent=SYMBOLS[a-1];$('dieB').textContent=SYMBOLS[b-1];
   $('diceDisplay').classList.add('rolling');
   save();render();
   try{
+    // First sweep the camera to the physical dice, then animate them.
+    scene.beginDiceView();
+    await sleep(650);
+    if(thisEpoch!==epoch)return;
     await scene.rollDice(a,b);
     if(thisEpoch!==epoch)return;
     $('diceDisplay').classList.remove('rolling');
+    // Hold the result briefly before the camera follows the player's pawn.
+    await sleep(360);
+    if(thisEpoch!==epoch)return;
+    scene.endDiceView();
+    await sleep(410);
+    if(thisEpoch!==epoch)return;
     for(let step=1;step<=steps;step++){
       const target=(from+step)%40;
       await scene.movePawn(actor,target,340);
@@ -155,7 +165,11 @@ async function doRoll(){
     game.pending=-1;
     await landed(p.at,steps,thisEpoch);
   }catch(e){console.error(e);game.phase='end';log('Animation interrupted; you can end the turn.');render()}
-  finally{$('diceDisplay').classList.remove('rolling')}
+  finally{
+    $('diceDisplay').classList.remove('rolling');
+    // Clear cinematic mode if an animation was cancelled or a new game started.
+    if(thisEpoch===epoch)scene.endDiceView();
+  }
 }
 function buy(){
   if(game.phase!=='decision'||current().bot)return;
@@ -209,6 +223,8 @@ function render(){
   $('dieB').textContent=game.dice[1]?SYMBOLS[game.dice[1]-1]:'—';
   $('rollTotal').textContent=game.rollTotal?'TOTAL '+game.rollTotal:'READY TO ROLL';
   $('rollBtn').disabled=game.phase!=='roll'||!human;
+  $('rollBtn').textContent=game.phase==='moving'?'🎲 ROLLING…':
+    game.phase==='roll'?(human?'🎲 ROLL DICE':'COMPUTER TURN'):'ROLL USED';
   $('buyBtn').disabled=game.phase!=='decision'||!human;
   $('passBtn').disabled=game.phase!=='decision'||!human;
   $('endBtn').disabled=game.phase!=='end'||!human;
