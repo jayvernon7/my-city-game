@@ -607,7 +607,12 @@ export class MyCityScene {
       };
     };
     const free=()=>{
-      if(this.mode!=='explore'){
+      // Keep roulette navigation anchored at the roulette table rather than
+      // jumping back to the main board as soon as the user drags/pinches.
+      if(this.mode==='roulette'){
+        this.exploreTarget.set(ROULETTE_ORIGIN.x,.8,ROULETTE_ORIGIN.z);
+        this.mode='rouletteExplore';
+      }else if(this.mode!=='explore' && this.mode!=='rouletteExplore'){
         this.exploreTarget.copy(this.currentCamTarget);
         this.exploreTarget.y=.6;
         this.mode='explore';
@@ -618,11 +623,16 @@ export class MyCityScene {
     // Vertical screen direction points away from the viewer on the board.
     const pan=(dx,dy)=>{
       free();
-      const amount=(this.zoom*27/Math.max(260,c.clientHeight))*
+      const roulette=this.mode==='rouletteExplore';
+      const amount=(this.zoom*(roulette?18:27)/Math.max(260,c.clientHeight))*
         Math.max(.6,Math.min(2,this.camera.aspect));
       const sn=Math.sin(this.azimuth),cs=Math.cos(this.azimuth);
-      this.exploreTarget.x=clamp(this.exploreTarget.x+(-dx*cs-dy*sn)*amount,-18,18);
-      this.exploreTarget.z=clamp(this.exploreTarget.z+(dx*sn-dy*cs)*amount,-18,18);
+      const xMin=roulette?ROULETTE_ORIGIN.x-13:-18;
+      const xMax=roulette?ROULETTE_ORIGIN.x+13:18;
+      this.exploreTarget.x=clamp(this.exploreTarget.x+(-dx*cs-dy*sn)*amount,xMin,xMax);
+      this.exploreTarget.z=clamp(this.exploreTarget.z+(dx*sn-dy*cs)*amount,
+        roulette?ROULETTE_ORIGIN.z-13:-18,
+        roulette?ROULETTE_ORIGIN.z+13:18);
     };
     c.style.touchAction='none';
     c.addEventListener('contextmenu',e=>e.preventDefault());
@@ -713,7 +723,7 @@ export class MyCityScene {
       ray.setFromCamera(pointer,this.camera);
       const hits=ray.intersectObjects(this.clickMeshes,false);
       free();
-      if(hits.length){
+      if(hits.length && this.mode!=='rouletteExplore'){
         this.exploreTarget.set(hits[0].point.x,.6,hits[0].point.z);
       }
       this.zoom=clamp(this.zoom*.7,.3,3);
@@ -762,12 +772,12 @@ export class MyCityScene {
       ?new THREE.Vector3((this.dice[0].position.x+this.dice[1].position.x)/2,.8,(this.dice[0].position.z+this.dice[1].position.z)/2)
       :this.mode==='roulette'?new THREE.Vector3(ROULETTE_ORIGIN.x,.8,ROULETTE_ORIGIN.z)
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
-      :this.mode==='explore'?this.exploreTarget.clone()
+      :['explore','rouletteExplore'].includes(this.mode)?this.exploreTarget.clone()
       :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
     if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.cinematicDice?13.2:(this.mode==='roulette'?45:this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
+    const distance=(this.cinematicDice?13.2:(this.mode==='roulette'?45:this.mode==='overview'?54:this.mode==='rouletteExplore'?19:this.mode==='explore'?27:17))*this.zoom*
       (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='roulette'?Math.max(1,narrow*.79):this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
