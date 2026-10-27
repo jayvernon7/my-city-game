@@ -258,15 +258,6 @@ function renderDetails(){
       casino:'Prototype Casino: win $125 or lose $75.',chance:'Draw a random Chance card.',chest:'Draw a random Community Chest card.'})[s.type]||'';
   }
   $('detailBody').textContent=detail;
-  // Distance is measured clockwise, matching pawn movement from GO.
-  const steps=(selected-current().at+BOARD.length)%BOARD.length;
-  const distanceEl=$('spaceDistance');
-  if(distanceEl){
-    distanceEl.textContent=steps===0
-      ?current().name+' is here'
-      :steps+' '+(steps===1?'space':'spaces')+' ahead of '+current().name;
-    distanceEl.setAttribute('aria-label',steps===0?'Your current space':steps+' spaces clockwise from the active player');
-  }
 }
 
 $('rollBtn').addEventListener('click',roll);
