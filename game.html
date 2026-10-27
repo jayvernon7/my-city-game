@@ -218,6 +218,19 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .roll-side-actions{left:calc(50% + 62px);width:77px}
  .game-screen .roll-side-actions .alt-btn{font-size:7px}
 }
+
+/* Distance indicator for the selected board space. */
+.game-screen .sidebar>.selected-card .space-distance{
+  display:block;margin:9px 0 0;padding:8px 10px;
+  border-radius:8px;border:1px solid #6c9b89;
+  background:#174a42d9;color:#dcffe8;
+  font-size:12px;font-weight:900;line-height:1.3;
+}
+@media(max-width:720px){
+  .game-screen .sidebar>.selected-card .space-distance{
+    font-size:11px;padding:6px 7px;margin-top:5px;
+  }
+}
 </style>
 <link rel="stylesheet" href="./mobile-game.css?v=1">
 </head>
@@ -243,7 +256,7 @@ body.game-screen{height:100dvh;overflow:hidden}
     <aside class="sidebar" aria-label="Game controls">
       <section class="control-card players-card"><div class="card-heading"><span>💰 BANK ACCOUNTS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
       <section class="control-card turn-card"><div class="card-heading"><span>03 / YOUR TURN</span><span class="turn-label" id="phaseLabel">READY</span></div><h2 id="turnTitle">Your turn</h2><p id="message" class="turn-message" aria-live="polite">Roll the dice to begin.</p><div class="dice-display" id="diceDisplay"><span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span></div></section>
-      <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
+      <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p><p id="spaceDistance" class="space-distance" aria-live="polite">You are here</p></section>
       <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
