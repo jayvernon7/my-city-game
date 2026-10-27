@@ -132,10 +132,9 @@ async function doRoll(){
     log(p.name+' misses this turn in Jail.');setPhase('end');scheduleBot();return;
   }
   const a=Math.floor(Math.random()*6)+1,b=Math.floor(Math.random()*6)+1,steps=a+b;
-  const from=p.at;game.dice=[a,b];game.rollTotal=steps;
+  const from=p.at;game.dice=[a,b];game.rollTotal=0;
   scene.focus(actor);
   game.phase='moving';log(p.name+' rolled '+a+' + '+b+'. Watch the dice, then follow the piece!');
-  $('dieA').textContent=SYMBOLS[a-1];$('dieB').textContent=SYMBOLS[b-1];
   $('diceDisplay').classList.add('rolling');
   save();render();
   try{
@@ -145,7 +144,9 @@ async function doRoll(){
     if(thisEpoch!==epoch)return;
     await scene.rollDice(a,b);
     if(thisEpoch!==epoch)return;
+    game.rollTotal=steps;
     $('diceDisplay').classList.remove('rolling');
+    render();save();
     // Hold the result briefly before the camera follows the player's pawn.
     await sleep(360);
     if(thisEpoch!==epoch)return;
@@ -219,9 +220,11 @@ function render(){
   $('phaseLabel').textContent=label[game.phase]||'READY';
   $('turnTitle').textContent=game.phase==='over'?'Game over':actor.name+'’s turn';
   $('message').textContent=game.message;
-  $('dieA').textContent=game.dice[0]?SYMBOLS[game.dice[0]-1]:'—';
-  $('dieB').textContent=game.dice[1]?SYMBOLS[game.dice[1]-1]:'—';
-  $('rollTotal').textContent=game.rollTotal?'TOTAL '+game.rollTotal:'READY TO ROLL';
+  const showingResult=game.rollTotal>0;
+  $('dieA').textContent=showingResult?SYMBOLS[game.dice[0]-1]:'⚀';
+  $('dieB').textContent=showingResult?SYMBOLS[game.dice[1]-1]:'⚀';
+  $('rollTotal').textContent=showingResult?'TOTAL '+game.rollTotal:
+    game.phase==='moving'?'ROLLING…':'READY TO ROLL';
   $('rollBtn').disabled=game.phase!=='roll'||!human;
   $('rollBtn').textContent=game.phase==='moving'?'🎲 ROLLING…':
     game.phase==='roll'?(human?'🎲 ROLL DICE':'COMPUTER TURN'):'ROLL USED';
