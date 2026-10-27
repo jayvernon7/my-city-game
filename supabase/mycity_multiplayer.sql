@@ -148,9 +148,10 @@ begin
   if exists(select 1 from public.mc_members where room_id=v_room.id
             and pg_catalog.lower(display_name)=pg_catalog.lower(v_name))
     then raise exception 'This player name is already in use'; end if;
-  select pg_catalog.min(seat) into v_seat from pg_catalog.generate_series(0,v_room.max_players-1) as seat
+  select pg_catalog.min(available.seat) into v_seat
+    from pg_catalog.generate_series(0,v_room.max_players-1) as available(seat)
     where not exists (select 1 from public.mc_members as m
-                      where m.room_id=v_room.id and m.seat=seat);
+                      where m.room_id=v_room.id and m.seat=available.seat);
   if v_seat is null then raise exception 'Room is full'; end if;
   insert into public.mc_members(room_id,user_id,display_name,seat)
     values(v_room.id,v_uid,v_name,v_seat);
@@ -401,7 +402,7 @@ begin
     if v_next is null then raise exception 'No active players'; end if;
     update public.mc_rooms set turn_seat=v_next,
       round_number=round_number+(case when v_next<=v_room.turn_seat then 1 else 0 end),
-      phase='roll',pending_space=null,dice_a=null,dice_b=null,updated_at=now()
+      phase='roll',pending_space=null,updated_at=now()
       where id=v_room.id;
   end if;
 
