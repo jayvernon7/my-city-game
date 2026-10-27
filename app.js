@@ -245,6 +245,8 @@ function scheduleBot(){
 function render(){
   const actor=current(),human=!actor.bot;
   $('roundBadge').textContent='ROUND '+game.round;
+  // Display only the balance of the player whose turn it is.
+  $('activeBalanceAmount').textContent=MONEY(actor.cash);
   const label={roll:'ROLL',moving:'MOVING',decision:'BUY OR PASS',end:'TURN COMPLETE',over:'GAME OVER'};
   $('phaseLabel').textContent=label[game.phase]||'READY';
   $('turnTitle').textContent=game.phase==='over'?'Game over':actor.name+'’s turn';
