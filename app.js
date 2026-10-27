@@ -1,5 +1,5 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js?v=roulette-navigation-v4';
+import {MyCityScene} from './scene3d.js?v=police-escort-v1';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -160,7 +160,7 @@ async function landed(i,roll,moveEpoch){
   else if(s.type==='jail'){log(p.name+' is just visiting Jail.');}
   else if(s.type==='gojail'){
     log('🚨 '+p.name+' was sent directly to Jail!');save();render();
-    await scene.movePawn(game.turn,10,820);
+    await scene.escortToJail(game.turn);
     if(moveEpoch!==epoch)return;
     p.at=10;p.jailed=1;selected=10;scene.makeSelection(10);
   }
