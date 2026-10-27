@@ -46,6 +46,20 @@ No bundler, Node, paid hosting, database, or API key is required for this initia
 - Prices, rent and Casino/Chance events are **placeholder rules** that can be changed.
 - No online multiplayer, 3D character assets or smartphone/TV pairing yet. Those are later development stages.
 
+## Roulette side table (visual preview only)
+
+The new `roulette3d.js` module renders a physical American **double-zero**
+roulette table beside the My City board. It has a green felt betting layout
+with 0 and 00, all 36 numbers in their standard arrangement, three 2-to-1
+column bets, 1st/2nd/3rd 12, red/black, even/odd, and high/low. The decorative
+38-pocket wheel uses the standard American wheel number sequence and colors.
+
+After each completed dice roll, the camera moves to the adjacent roulette
+table and shows a noninteractive preview panel. Players can choose
+**Back to Board** to return to My City. The future **Play** action is visibly
+marked coming soon. No bets, wagers, spins, chips, or roulette results change
+the game yet; that logic will be implemented after its rules are decided.
+
 ## Development pieces — names reserved for future rules
 
 These names are explicitly defined in `board-data.js` and should be used
