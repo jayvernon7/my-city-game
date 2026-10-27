@@ -194,7 +194,7 @@ export class MyCityScene {
     this.mode='follow';this.zoom=1;this.azimuth=.48;this.elevation=1.01;
     this.focusIndex=0;this.selected=0;this.cinematicDice=false;
     this.exploreTarget=new THREE.Vector3(0,.6,0);
-    this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;
+    this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;this.escort=null;
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];this.developmentMeshes=[];
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
     this.makeLights();this.makeBoard();this.makeDevelopments(DEMO_DEVELOPMENTS);this.makeCity();this.makeDice();this.makeRouletteTable();this.makeAtmosphere();
@@ -423,6 +423,77 @@ export class MyCityScene {
     person.add(ring);
     return person;
   }
+  makePoliceOfficer(){
+    // Animated low-poly officer, matching the existing Three.js avatars.
+    const officer=new THREE.Group();
+    const navy=new THREE.MeshStandardMaterial({color:0x182f4f,roughness:.67});
+    const pants=new THREE.MeshStandardMaterial({color:0x172639,roughness:.8});
+    const black=new THREE.MeshStandardMaterial({color:0x111922,roughness:.75});
+    const skin=new THREE.MeshStandardMaterial({color:0xa66c4b,roughness:.86});
+    const badge=new THREE.MeshStandardMaterial({color:0xffd068,metalness:.64,roughness:.28});
+    const white=new THREE.MeshStandardMaterial({color:0xe4f3f7,roughness:.75});
+    const add=(parent,geometry,material,x,y,z)=>{
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.position.set(x,y,z);
+      mesh.castShadow=true;mesh.receiveShadow=true;
+      parent.add(mesh);return mesh;
+    };
+    const legs=[];
+    for(const side of [-1,1]){
+      const leg=new THREE.Group();
+      leg.position.set(side*.15,.66,0);
+      add(leg,new THREE.BoxGeometry(.23,.49,.24),pants,0,-.24,0);
+      add(leg,new THREE.BoxGeometry(.25,.14,.39),black,0,-.55,.12);
+      officer.add(leg);legs.push(leg);
+      add(officer,new THREE.BoxGeometry(.15,.45,.2),navy,side*.33,1.05,0);
+      add(officer,new THREE.SphereGeometry(.087,9,9),skin,side*.33,.81,.01);
+    }
+    add(officer,new THREE.BoxGeometry(.58,.63,.32),navy,0,1.03,0);
+    add(officer,new THREE.BoxGeometry(.58,.07,.34),black,0,.73,0);
+    add(officer,new THREE.BoxGeometry(.16,.23,.042),white,-.14,1.12,.18);
+    add(officer,new THREE.OctahedronGeometry(.085,0),badge,.16,1.16,.20);
+    add(officer,new THREE.CylinderGeometry(.12,.13,.12,12),skin,0,1.39,0);
+    add(officer,new THREE.SphereGeometry(.23,16,12),skin,0,1.64,0);
+    add(officer,new THREE.CylinderGeometry(.265,.245,.15,16),navy,0,1.83,0);
+    add(officer,new THREE.BoxGeometry(.51,.055,.31),black,0,1.78,.20);
+    add(officer,new THREE.BoxGeometry(.18,.08,.034),badge,0,1.85,.27);
+    officer.userData.legs=legs;
+    return officer;
+  }
+  finishPoliceEscort(){
+    if(!this.escort)return;
+    const escort=this.escort;
+    this.escort=null;
+    this.scene.remove(escort.officer);
+    escort.resolve();
+  }
+  // The officer appears at Go To Jail, escorts the real pawn diagonally
+  // across the city to Jail, then leaves the scene entirely.
+  escortToJail(playerId){
+    const pawn=this.pawns[playerId];
+    if(!pawn)return Promise.resolve();
+    this.finishPoliceEscort();
+    if(this.motion){this.motion.resolve();this.motion=null;}
+    const from=this.tokenPosition(30,playerId);
+    const to=this.tokenPosition(10,playerId);
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      pawn.position.copy(to);return Promise.resolve();
+    }
+    pawn.position.copy(from);
+    const officer=this.makePoliceOfficer();
+    officer.position.copy(from);
+    const direction=to.clone().sub(from);
+    const side=new THREE.Vector3(-direction.z,0,direction.x).normalize().multiplyScalar(.75);
+    officer.position.add(side);
+    officer.rotation.y=Math.atan2(direction.x,direction.z);
+    this.scene.add(officer);
+    this.mode='escort';
+    this.focusIndex=playerId;
+    return new Promise(resolve=>{
+      this.escort={playerId,pawn,officer,from,to,side,
+        start:this.elapsed,duration:3.7,resolve};
+    });
+  }
   makeFemalePlayer(){
     // Player 2: Black woman, long black hair, white short-sleeve
     // shirt, black pants and white shoes. Same scale as Player 1.
@@ -476,6 +547,7 @@ export class MyCityScene {
   }
   setPlayers(players){
     this.cinematicDice=false;
+    this.finishPoliceEscort();
     if(this.motion){this.motion.resolve();this.motion=null}
     if(this.diceMotion){this.diceMotion.resolve();this.diceMotion=null}
     for(const p of this.pawns){this.scene.remove(p);}
@@ -511,7 +583,7 @@ export class MyCityScene {
   updatePositions(players,activeIndex){
     this.focusIndex=activeIndex;
     for(let i=0;i<players.length;i++){
-      if(this.motion?.playerId===i)continue;
+      if(this.motion?.playerId===i || this.escort?.playerId===i)continue;
       this.pawns[i]?.position.copy(this.tokenPosition(players[i].at,i));
       if(this.pawns[i])this.pawns[i].visible=!players[i].bankrupt;
     }
@@ -531,6 +603,7 @@ export class MyCityScene {
   }
   async movePawn(playerId,to,duration=390){
     if(!this.pawns[playerId])return;
+    if(this.escort)this.finishPoliceEscort();
     const pawn=this.pawns[playerId];
     const dest=this.tokenPosition(to,playerId);
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){pawn.position.copy(dest);return}
@@ -812,6 +885,18 @@ export class MyCityScene {
       pawn.position.lerpVectors(m.from,m.to,s);pawn.position.y+=Math.sin(t*Math.PI)*.66;
       if(t>=1){pawn.position.copy(m.to);this.motion=null;m.resolve()}
     }
+    if(this.escort){
+      const m=this.escort;
+      const t=clamp((this.elapsed-m.start)/m.duration,0,1);
+      // Officer and pawn walk shoulder-to-shoulder across the board.
+      m.pawn.position.lerpVectors(m.from,m.to,t);
+      m.officer.position.copy(m.pawn.position).add(m.side);
+      const gait=Math.sin(t*Math.PI*23)*.39*(1-Math.min(1,t*5))*
+        (1-Math.min(1,(1-t)*6));
+      m.officer.userData.legs[0].rotation.x=gait;
+      m.officer.userData.legs[1].rotation.x=-gait;
+      if(t>=1){m.pawn.position.copy(m.to);this.finishPoliceEscort();}
+    }
     if(this.diceMotion){
       const m=this.diceMotion,t=clamp((this.elapsed-m.start)/m.duration,0,1);
       const eased=1-Math.pow(1-t,2.4);
@@ -846,6 +931,7 @@ export class MyCityScene {
     }
     const target=this.cinematicDice
       ?new THREE.Vector3((this.dice[0].position.x+this.dice[1].position.x)/2,.8,(this.dice[0].position.z+this.dice[1].position.z)/2)
+      :this.escort?this.escort.pawn.position.clone()
       :this.mode==='roulette'?new THREE.Vector3(ROULETTE_ORIGIN.x,.8,ROULETTE_ORIGIN.z)
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
       :['explore','rouletteExplore'].includes(this.mode)?this.exploreTarget.clone()
@@ -866,5 +952,5 @@ export class MyCityScene {
     this.cursor.scale.setScalar(1+.007*Math.sin(this.elapsed*4));
     this.renderer.render(this.scene,this.camera);
   }
-  dispose(){this.disposed=true;this.renderer.setAnimationLoop(null);this.resizeObserver?.disconnect();this.renderer.dispose();}
+  dispose(){this.disposed=true;this.finishPoliceEscort();this.renderer.setAnimationLoop(null);this.resizeObserver?.disconnect();this.renderer.dispose();}
 }
