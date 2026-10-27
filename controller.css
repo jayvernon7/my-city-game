@@ -193,3 +193,29 @@
   #activePad .propertyShortcut{grid-column:1/-1}
   #activePad .propertyShortcutButton{min-height:70px}
 }
+
+/* Single compact controller player card, with property pop-up trigger. */
+#activePad .propertyShortcut{
+  display:flex;flex-direction:column;gap:6px;align-self:center;
+  padding:12px;background:linear-gradient(145deg,#164b4e,#10343b);
+  border:1px solid #86bdaa;border-radius:14px;min-width:0;
+  box-shadow:0 6px 17px #001f2499;
+}
+.playerSummaryName{font-weight:950;font-size:clamp(15px,2.8vw,22px);color:#f8fff7;overflow-wrap:anywhere;line-height:1.15}
+.playerSummaryBalance{display:flex;flex-direction:column;gap:1px;padding:6px 0;border-block:1px solid #5c8178}
+.playerSummaryBalance span{color:#b7d6cb;font-size:9px;letter-spacing:1px;font-weight:900}
+.playerSummaryBalance strong{color:#d9ffe4;font-size:clamp(18px,3vw,26px);line-height:1.2}
+#activePad .propertyShortcutButton{
+  min-height:52px;padding:7px 9px;border:1px solid #9ed0bd;border-radius:9px;
+  box-shadow:none;background:#215850;flex-direction:row;justify-content:space-between;gap:8px;
+}
+#activePad .propertyShortcutButton span{font-size:10px;text-align:left}
+#activePad .propertyShortcutButton strong{font-size:23px}
+@media(orientation:landscape) and (max-height:650px){
+  #activePad .propertyShortcut{padding:7px 10px;gap:3px}
+  .playerSummaryName{font-size:clamp(13px,3.3vh,19px)}
+  .playerSummaryBalance{padding:3px 0}
+  .playerSummaryBalance strong{font-size:clamp(15px,4vh,22px)}
+  #activePad .propertyShortcutButton{min-height:37px;padding:3px 8px}
+  #activePad .propertyShortcutButton strong{font-size:19px}
+}
