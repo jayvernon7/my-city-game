@@ -177,8 +177,8 @@ function dieSideTexture(n){
 }
 
 export class MyCityScene {
-  constructor(container,{onSelect=()=>{}}={}){
-    this.container=container;this.onSelect=onSelect;this.disposed=false;
+  constructor(container,{onSelect=()=>{},onRoulette=()=>{}}={}){
+    this.container=container;this.onSelect=onSelect;this.onRoulette=onRoulette;this.disposed=false;
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#173844');
     this.scene.fog=new THREE.Fog('#173844',54,112);
     this.camera=new THREE.PerspectiveCamera(44,1,.1,170);
@@ -615,6 +615,15 @@ export class MyCityScene {
       clamp(z,ROULETTE_ORIGIN.z-16.8,ROULETTE_ORIGIN.z+16.8)
     );
   }
+  openRouletteAt(point){
+    // Clicking a physical part of the table switches to the SAME free
+    // drag/zoom/rotate controls used by the city board.
+    this.focusRouletteAt(point.x,point.z);
+    this.mode='rouletteExplore';
+    this.zoom=Math.min(this.zoom,.40);
+    this.cinematicDice=false;
+    this.onRoulette();
+  }
   zoomRoulette(factor,clientX,clientY){
     if(!['roulette','rouletteExplore'].includes(this.mode))return;
     const point=Number.isFinite(clientX)&&Number.isFinite(clientY)
@@ -735,21 +744,27 @@ export class MyCityScene {
       const tap=fingers.size===1 && down && !down.moved &&
         !wasMulti && down.button===0 && e.type==='pointerup';
       fingers.delete(e.pointerId);
-      if(tap && ['roulette','rouletteExplore'].includes(this.mode)){
-        // A tap on the table moves the camera target to that numbered area;
-        // the next pinch/scroll zooms close enough to read the betting field.
-        const target=this.roulettePoint(e.clientX,e.clientY);
-        if(target)this.focusRouletteAt(target.x,target.z);
-      }else if(tap){
+      if(tap){
         const rect=c.getBoundingClientRect();
         pointer.set((e.clientX-rect.left)/rect.width*2-1,
           -(e.clientY-rect.top)/rect.height*2+1);
         ray.setFromCamera(pointer,this.camera);
-        const hits=ray.intersectObjects(this.clickMeshes,false);
-        if(hits.length && Number.isInteger(hits[0].object.userData.index)){
-          const selected=hits[0].object.userData.index;
-          this.makeSelection(selected);this.inspectSpace(selected);
-          this.onSelect(selected);
+        // Roulette is a 3D model, not a member of the board's clickMeshes.
+        // Its table / felt / wheel must be tested independently.
+        const rouletteHits=ray.intersectObject(this.rouletteTable,true);
+        if(rouletteHits.length){
+          this.openRouletteAt(rouletteHits[0].point);
+        }else if(['roulette','rouletteExplore'].includes(this.mode)){
+          // Clicking the nearby ground while exploring keeps roulette mode.
+          const target=this.roulettePoint(e.clientX,e.clientY);
+          if(target)this.focusRouletteAt(target.x,target.z);
+        }else{
+          const hits=ray.intersectObjects(this.clickMeshes,false);
+          if(hits.length && Number.isInteger(hits[0].object.userData.index)){
+            const selected=hits[0].object.userData.index;
+            this.makeSelection(selected);this.inspectSpace(selected);
+            this.onSelect(selected);
+          }
         }
       }
       if(fingers.size===2)pinch=pair();
