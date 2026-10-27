@@ -277,6 +277,55 @@ export class MyCityScene {
     const dz=[-.29,-.29,.30,.30][playerId]||0;
     return new THREE.Vector3(loc.x+dx,.75,loc.z+dz);
   }
+  makeHumanPlayer(){
+    // Low-poly, readable first-player character: Black man in a
+    // white short-sleeve shirt, black pants and black shoes.
+    const person=new THREE.Group();
+    const skin=new THREE.MeshStandardMaterial({color:0x75432c,roughness:.87});
+    const skinShade=new THREE.MeshStandardMaterial({color:0x653822,roughness:.88});
+    const shirt=new THREE.MeshStandardMaterial({color:0xf8f8f5,roughness:.76});
+    const pants=new THREE.MeshStandardMaterial({color:0x18191d,roughness:.88});
+    const shoes=new THREE.MeshStandardMaterial({color:0x0c0d10,roughness:.58});
+    const hair=new THREE.MeshStandardMaterial({color:0x131212,roughness:1});
+    const face=new THREE.MeshStandardMaterial({color:0x1d1614,roughness:1});
+    const add=(geometry,material,x,y,z,rx=0,ry=0,rz=0)=>{
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.position.set(x,y,z);
+      mesh.rotation.set(rx,ry,rz);
+      mesh.castShadow=true;
+      mesh.receiveShadow=true;
+      person.add(mesh);
+      return mesh;
+    };
+    // Forward is +Z, so the shoes project toward the front.
+    for(const side of [-1,1]){
+      const x=side*.14;
+      add(new THREE.BoxGeometry(.21,.38,.22),pants,x,.34,0);
+      add(new THREE.BoxGeometry(.23,.15,.37),shoes,x,.085,.10);
+      // Short sleeves end above the exposed forearms.
+      add(new THREE.CylinderGeometry(.115,.13,.28,10),shirt,side*.30,1.06,0,0,0,side*.22);
+      add(new THREE.CylinderGeometry(.090,.085,.31,10),skin,side*.345,.77,0,0,0,side*.10);
+      add(new THREE.SphereGeometry(.088,10,8),skinShade,side*.36,.61,.015);
+    }
+    // Torso / white crewneck.
+    add(new THREE.BoxGeometry(.48,.53,.29),shirt,0,1.07,0);
+    add(new THREE.CylinderGeometry(.11,.12,.09,12),skin,0,1.40,0);
+    add(new THREE.SphereGeometry(.235,18,12),skin,0,1.64,0);
+    // Close-cropped black hair, with a clear face visible underneath.
+    add(new THREE.SphereGeometry(.235,18,10,0,Math.PI*2,0,Math.PI*.42),hair,0,1.685,0);
+    for(const side of [-1,1]){
+      add(new THREE.SphereGeometry(.021,8,6),face,side*.085,1.67,.212);
+    }
+    add(new THREE.SphereGeometry(.030,8,6),skinShade,0,1.59,.228);
+    // A small ring keeps the avatar visible among the board spaces.
+    const ring=new THREE.Mesh(
+      new THREE.TorusGeometry(.34,.045,7,32),
+      new THREE.MeshBasicMaterial({color:0xffcb79,transparent:true,opacity:.82})
+    );
+    ring.rotation.x=-Math.PI/2;ring.position.y=.015;
+    person.add(ring);
+    return person;
+  }
   setPlayers(players){
     this.cinematicDice=false;
     if(this.motion){this.motion.resolve();this.motion=null}
@@ -284,6 +333,13 @@ export class MyCityScene {
     for(const p of this.pawns){this.scene.remove(p);}
     this.pawns=[];
     players.forEach((p,i)=>{
+      if(i===0){
+        const character=this.makeHumanPlayer();
+        character.position.copy(this.tokenPosition(p.at,i));
+        this.scene.add(character);
+        this.pawns.push(character);
+        return;
+      }
       const color=new THREE.Color(PLAYER_COLORS[i]);
       const group=new THREE.Group();
       const mat=new THREE.MeshStandardMaterial({color,roughness:.32,metalness:.25});
