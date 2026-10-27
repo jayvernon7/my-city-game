@@ -49,6 +49,23 @@ export const COLORS = {
 export const PLAYER_COLORS = ['#fb715e','#55a9ff','#64dd9b','#d59aff'];
 export const PLAYER_NAMES = ['You','Player 2','Player 3','Player 4'];
 
+// Stable development names for future gameplay rules:
+// "houses" = small silver building blocks
+// "hotels" = larger gold building blocks
+// Developments are allowed ONLY on a property's colored strip.
+export const DEVELOPMENTS = Object.freeze({
+  houses: Object.freeze({name:'houses',color:'#c0c0c0'}),
+  hotels: Object.freeze({name:'hotels',color:'#e5b12e'})
+});
+
+// Visual previews only: these do not grant ownership, affect rent, or
+// establish gameplay rules until the development rules are implemented.
+export const DEMO_DEVELOPMENTS = Object.freeze([
+  Object.freeze({index:37,kind:'houses',count:1}), // Marlowe (#38)
+  Object.freeze({index:39,kind:'hotels',count:1})  // Coyle (#40)
+]);
+
+
 // A ring of exactly 40 cells in a logical 11-by-11 grid, following the
 // board image: GO bottom-right, then LEFT, UP, RIGHT, DOWN.
 export function gridPosition(i) {
