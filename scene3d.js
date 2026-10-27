@@ -486,7 +486,7 @@ export class MyCityScene {
       this.tinyCar.position.set(x,.54,z);this.tinyCar.rotation.y=theta;
     }
     const target=this.cinematicDice
-      ?(this.diceMotion ? new THREE.Vector3((this.dice[0].position.x+this.dice[1].position.x)/2,.8,6.6) : new THREE.Vector3(6,.8,6.6))
+      ?new THREE.Vector3((this.dice[0].position.x+this.dice[1].position.x)/2,.8,(this.dice[0].position.z+this.dice[1].position.z)/2)
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
       :this.mode==='explore'?this.exploreTarget.clone()
       :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
