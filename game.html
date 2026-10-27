@@ -218,6 +218,40 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .roll-side-actions{left:calc(50% + 62px);width:77px}
  .game-screen .roll-side-actions .alt-btn{font-size:7px}
 }
+
+/* No turn-status panel: compact dice results float right above Roll Dice. */
+.game-screen .turn-state{display:none!important}
+.game-screen .roll-dock>.dice-display{
+  position:absolute;z-index:1;left:50%;bottom:calc(100% + 12px);
+  transform:translateX(-50%);pointer-events:none;
+  display:flex;justify-content:center;align-items:center;gap:11px;
+  width:max-content;min-width:170px;max-width:240px;
+  margin:0;padding:8px 13px;
+  border:1px solid #658e89;border-radius:12px;
+  background:linear-gradient(145deg,#153a46ef,#092934f5);
+  box-shadow:0 9px 25px #0009;
+}
+.game-screen .roll-dock>.dice-display span:not(.roll-total){
+  color:#fff;font-size:35px;line-height:1.1;
+}
+.game-screen .roll-dock>.dice-display .roll-total{
+  color:#ffde9c;font-weight:950;font-size:11px;
+  letter-spacing:.6px;line-height:1.25;max-width:76px;
+}
+@media(max-width:720px){
+  .game-screen .roll-dock>.dice-display{
+    bottom:calc(100% + 9px);min-width:128px;
+    padding:6px 9px;gap:7px;border-radius:9px;
+  }
+  .game-screen .roll-dock>.dice-display span:not(.roll-total){font-size:26px}
+  .game-screen .roll-dock>.dice-display .roll-total{font-size:9px;max-width:55px}
+}
+@media (orientation:landscape) and (max-height:600px) and (max-width:1100px){
+  .game-screen .roll-dock>.dice-display{
+    bottom:calc(100% + 6px);padding:4px 8px;min-width:120px;
+  }
+  .game-screen .roll-dock>.dice-display span:not(.roll-total){font-size:22px}
+}
 </style>
 <link rel="stylesheet" href="./mobile-game.css?v=1">
 </head>
@@ -242,12 +276,15 @@ body.game-screen{height:100dvh;overflow:hidden}
     </section>
     <aside class="sidebar" aria-label="Game controls">
       <section class="control-card players-card"><div class="card-heading"><span>💰 BANK ACCOUNTS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
-      <section class="control-card turn-card"><div class="card-heading"><span>03 / YOUR TURN</span><span class="turn-label" id="phaseLabel">READY</span></div><h2 id="turnTitle">Your turn</h2><p id="message" class="turn-message" aria-live="polite">Roll the dice to begin.</p><div class="dice-display" id="diceDisplay"><span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span></div></section>
+      <div class="turn-state" hidden aria-hidden="true"><span id="phaseLabel">READY</span><span id="turnTitle">Your turn</span><span id="message">Roll the dice to begin.</span></div>
       <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
       <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
     <div class="roll-dock" aria-label="Dice controls">
+      <div class="dice-display" id="diceDisplay" aria-label="Dice results">
+        <span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span>
+      </div>
       <button class="primary-btn roll-main" type="button" id="rollBtn">🎲 ROLL DICE</button>
       <div class="roll-side-actions" aria-label="Turn actions">
         <button type="button" id="buyBtn" class="alt-btn positive" disabled>BUY PROPERTY</button>
