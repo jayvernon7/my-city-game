@@ -47,6 +47,51 @@ function notify(message){
   const el=$('toast');el.textContent=message;el.classList.add('shown');
   clearTimeout(toastHandle);toastHandle=setTimeout(()=>el.classList.remove('shown'),3400);
 }
+let qrCodeRenderedFor='';
+function phoneJoinLink(){
+  return location.origin+location.pathname.replace(/online\.html$/,'controller.html')+
+    '?room='+encodeURIComponent(roomCode);
+}
+function drawPhoneQr(nodeId,size){
+  const holder=$(nodeId);
+  holder.replaceChildren();
+  if(!window.qrcode){
+    const fallback=document.createElement('span');
+    fallback.textContent='QR unavailable — copy the link below';
+    fallback.style.cssText='font-size:10px;color:#243';
+    holder.append(fallback);return;
+  }
+  try{
+    const qr=window.qrcode(0,'M');
+    qr.addData(phoneJoinLink());
+    qr.make();
+    const img=document.createElement('img');
+    img.src=qr.createDataURL(size,4);
+    img.alt='Scan to join room '+roomCode+' as a phone controller';
+    holder.append(img);
+  }catch(error){
+    console.error('Phone QR failed:',error);
+    holder.textContent='Copy the phone join link instead';
+  }
+}
+function updatePhoneInvites(){
+  if(!roomCode||qrCodeRenderedFor===roomCode)return;
+  qrCodeRenderedFor=roomCode;
+  drawPhoneQr('lobbyPhoneQR',4);
+  drawPhoneQr('phoneQRCode',6);
+  $('phoneQRCodeText').textContent=roomCode;
+  $('openPhoneController').href='./controller.html?room='+encodeURIComponent(roomCode);
+}
+function showPhoneJoinQr(){
+  closeGameMenu();
+  updatePhoneInvites();
+  $('phoneQRPanel').hidden=false;
+}
+async function copyPhoneJoinLink(){
+  if(!roomCode)return;
+  try{await navigator.clipboard.writeText(phoneJoinLink());notify('Phone controller link copied');}
+  catch{notify('Phone controller link: '+phoneJoinLink());}
+}
 let activityUnavailableWarned=false;
 async function refreshActivity(){
   if(!roomCode||!supabase||!state)return;
@@ -87,7 +132,7 @@ function toggleGameMenu(){
   const nextOpen=$('gameMenuDropdown').hidden;
   $('gameMenuDropdown').hidden=!nextOpen;
   $('gameMenuToggle').setAttribute('aria-expanded',String(nextOpen));
-  if(nextOpen)$('onlineSettingsPanel').hidden=true;
+  if(nextOpen){$('onlineSettingsPanel').hidden=true;$('phoneQRPanel').hidden=true;}
 }
 function showGameSettings(){
   closeGameMenu();
@@ -162,6 +207,7 @@ function renderRoom(){
   $('hostEndGame').hidden=!me.host || room.status!=='playing';
   $('endedGameNotice').hidden=room.status!=='finished';
   $('roomCodeText').textContent=room.code;
+  updatePhoneInvites();
   $('lobbyCode').textContent=room.code;
   $('playerName').value=me.name;
   $('privateBalance').hidden=false;
@@ -347,6 +393,8 @@ function clearRoomLocally(){
   if(pollHandle){clearInterval(pollHandle);pollHandle=null;}
   $('activityFeed').hidden=true;
   $('activityEntries').replaceChildren();
+  $('phoneQRPanel').hidden=true;
+  qrCodeRenderedFor='';
   closeGameMenu();
   $('onlineSettingsPanel').hidden=true;
   $('gameMenu').hidden=true;
@@ -442,6 +490,10 @@ async function createOrJoin(type){
 }
 
 $('gameMenuToggle').addEventListener('click',toggleGameMenu);
+$('showPhoneQR').addEventListener('click',showPhoneJoinQr);
+$('closePhoneQR').addEventListener('click',()=>{$('phoneQRPanel').hidden=true;});
+$('copyPhoneLink').addEventListener('click',copyPhoneJoinLink);
+$('copyLobbyPhoneLink').addEventListener('click',copyPhoneJoinLink);
 $('copyMenuRoomCode').addEventListener('click',async()=>{
   if(!roomCode)return;
   try{
@@ -466,6 +518,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     closeGameMenu();
     $('onlineSettingsPanel').hidden=true;
+    $('phoneQRPanel').hidden=true;
   }
 });
 $('createRoom').addEventListener('click',()=>createOrJoin('create'));
