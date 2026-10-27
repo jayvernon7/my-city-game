@@ -194,7 +194,7 @@ export class MyCityScene {
     this.mode='follow';this.zoom=1;this.azimuth=.48;this.elevation=1.01;
     this.focusIndex=0;this.selected=0;this.cinematicDice=false;
     this.exploreTarget=new THREE.Vector3(0,.6,0);
-    this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;this.escort=null;
+    this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;this.escort=null;this.jailCages=new Map();
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];this.developmentMeshes=[];
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
     this.makeLights();this.makeBoard();this.makeDevelopments(DEMO_DEVELOPMENTS);this.makeCity();this.makeDice();this.makeRouletteTable();this.makeAtmosphere();
@@ -460,11 +460,64 @@ export class MyCityScene {
     officer.userData.legs=legs;
     return officer;
   }
+  makeJailCage(){
+    // Each imprisoned character gets a separate, visible iron-bar enclosure.
+    // The character remains fully rendered and visible inside it.
+    const cage=new THREE.Group();
+    const iron=new THREE.MeshStandardMaterial({color:0x465660,metalness:.8,roughness:.28});
+    const dark=new THREE.MeshStandardMaterial({color:0x1d2e39,metalness:.62,roughness:.4});
+    const add=(geometry,material,x,y,z)=>{
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.position.set(x,y,z);
+      mesh.castShadow=true;
+      cage.add(mesh);
+      return mesh;
+    };
+    const span=.56,height=2.22;
+    for(const x of [-span,span])for(const z of [-span,span]){
+      add(new THREE.CylinderGeometry(.065,.065,height,8),iron,x,height/2,z);
+    }
+    for(let i=-2;i<=2;i++){
+      const n=i*.215;
+      for(const z of [-span,span]){
+        add(new THREE.CylinderGeometry(.035,.035,height,8),iron,n,height/2,z);
+      }
+      for(const x of [-span,span]){
+        add(new THREE.CylinderGeometry(.035,.035,height,8),iron,x,height/2,n);
+      }
+    }
+    for(const y of [.12,1.02,2.19]){
+      for(const z of [-span,span])
+        add(new THREE.BoxGeometry(1.35,.095,.09),dark,0,y,z);
+      for(const x of [-span,span])
+        add(new THREE.BoxGeometry(.09,.095,1.35),dark,x,y,0);
+    }
+    return cage;
+  }
+  setJailCage(playerId,jailed){
+    const current=this.jailCages.get(playerId);
+    if(!jailed){
+      if(current){this.scene.remove(current);this.jailCages.delete(playerId);}
+      return;
+    }
+    const pawn=this.pawns[playerId];
+    if(!pawn || this.escort?.playerId===playerId)return;
+    const cage=current||this.makeJailCage();
+    if(!current){this.scene.add(cage);this.jailCages.set(playerId,cage);}
+    cage.position.copy(pawn.position);
+    cage.position.y=.75;
+  }
+  clearJailCages(){
+    for(const cage of this.jailCages.values())this.scene.remove(cage);
+    this.jailCages.clear();
+  }
   finishPoliceEscort(){
     if(!this.escort)return;
     const escort=this.escort;
     this.escort=null;
     this.scene.remove(escort.officer);
+    escort.pawn.position.copy(escort.to);
+    this.setJailCage(escort.playerId,true);
     escort.resolve();
   }
   // The officer appears at Go To Jail, escorts the real pawn diagonally
@@ -473,11 +526,12 @@ export class MyCityScene {
     const pawn=this.pawns[playerId];
     if(!pawn)return Promise.resolve();
     this.finishPoliceEscort();
+    this.setJailCage(playerId,false);
     if(this.motion){this.motion.resolve();this.motion=null;}
     const from=this.tokenPosition(30,playerId);
     const to=this.tokenPosition(10,playerId);
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      pawn.position.copy(to);return Promise.resolve();
+      pawn.position.copy(to);this.setJailCage(playerId,true);return Promise.resolve();
     }
     pawn.position.copy(from);
     const officer=this.makePoliceOfficer();
@@ -548,6 +602,7 @@ export class MyCityScene {
   setPlayers(players){
     this.cinematicDice=false;
     this.finishPoliceEscort();
+    this.clearJailCages();
     if(this.motion){this.motion.resolve();this.motion=null}
     if(this.diceMotion){this.diceMotion.resolve();this.diceMotion=null}
     for(const p of this.pawns){this.scene.remove(p);}
@@ -579,6 +634,7 @@ export class MyCityScene {
       group.position.copy(this.tokenPosition(p.at,i));
       this.scene.add(group);this.pawns.push(group);
     });
+    players.forEach((p,i)=>this.setJailCage(i,!!p.jailed && p.at===10 && !p.bankrupt));
   }
   updatePositions(players,activeIndex){
     this.focusIndex=activeIndex;
@@ -586,6 +642,7 @@ export class MyCityScene {
       if(this.motion?.playerId===i || this.escort?.playerId===i)continue;
       this.pawns[i]?.position.copy(this.tokenPosition(players[i].at,i));
       if(this.pawns[i])this.pawns[i].visible=!players[i].bankrupt;
+      this.setJailCage(i,!!players[i].jailed && players[i].at===10 && !players[i].bankrupt);
     }
   }
   updateOwners(owners){
@@ -604,6 +661,7 @@ export class MyCityScene {
   async movePawn(playerId,to,duration=390){
     if(!this.pawns[playerId])return;
     if(this.escort)this.finishPoliceEscort();
+    if(to!==10)this.setJailCage(playerId,false);
     const pawn=this.pawns[playerId];
     const dest=this.tokenPosition(to,playerId);
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){pawn.position.copy(dest);return}
@@ -952,5 +1010,5 @@ export class MyCityScene {
     this.cursor.scale.setScalar(1+.007*Math.sin(this.elapsed*4));
     this.renderer.render(this.scene,this.camera);
   }
-  dispose(){this.disposed=true;this.finishPoliceEscort();this.renderer.setAnimationLoop(null);this.resizeObserver?.disconnect();this.renderer.dispose();}
+  dispose(){this.disposed=true;this.finishPoliceEscort();this.clearJailCages();this.renderer.setAnimationLoop(null);this.resizeObserver?.disconnect();this.renderer.dispose();}
 }
