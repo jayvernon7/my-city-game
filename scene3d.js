@@ -71,6 +71,36 @@ function textTexture(space){
 
 /* All labels read left-to-right across the board, including the
    top and bottom rows. Fit complete names on each space by wrapping. */
+// GO TO JAIL points diagonally from the top-right corner toward JAIL
+// in the bottom-left corner of the physical board.
+function goToJailTexture(){
+  const canvas=document.createElement('canvas');
+  canvas.width=640;canvas.height=640;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#f8f4e8';ctx.fillRect(0,0,640,640);
+  ctx.strokeStyle='#000000';ctx.lineWidth=13;ctx.strokeRect(12,12,616,616);
+  ctx.save();
+  ctx.translate(320,320);
+  // +135° makes a right-facing arrow point down-left, toward Jail.
+  // Words rotate together with the directional arrow.
+  ctx.rotate(3*Math.PI/4);
+  ctx.fillStyle='#20383b';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='900 67px Arial,system-ui,sans-serif';
+  ctx.fillText('GO TO',0,-110,325);
+  ctx.font='900 87px Arial,system-ui,sans-serif';
+  ctx.fillText('JAIL',0,-25,280);
+  ctx.strokeStyle='#20383b';ctx.fillStyle='#20383b';
+  ctx.lineWidth=24;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();ctx.moveTo(-132,89);ctx.lineTo(100,89);ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(172,89);ctx.lineTo(75,32);ctx.lineTo(75,146);
+  ctx.closePath();ctx.fill();
+  ctx.restore();
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
+  return texture;
+}
+
 function longTileTexture(space,index){
   const {w:tileW,d:tileD}=tileSize(index);
   // Higher resolution with one to three intentional lines, centered with
@@ -118,15 +148,12 @@ function longTileTexture(space,index){
   return texture;
 }
 
-// Per-side lettering orientation, in the original 40-space order.
-// Devon Park → Casino: clockwise 90°
-// St. Marys → Go To Jail: upside-down 180°
-// Pembroke Ave → Coyle: counterclockwise 90°
+// Per-side text orientation in canonical 40-space order.
+// The top row's St. Marys → University (21–29) is flipped 180°.
+// Go To Jail (30) has a separately drawn diagonal arrow toward Jail.
 function labelAngle(index){
-  // Keep GO through Jail (indices 0–10) as they are.
-  // Flip the existing orientation of every other space by 180 degrees.
   if(index>=11 && index<=20)return Math.PI/2;
-  if(index>=21 && index<=30)return 0;
+  if(index>=21 && index<=29)return Math.PI;
   if(index>=31 && index<=39)return -Math.PI/2;
   return 0;
 }
@@ -201,7 +228,7 @@ export class MyCityScene {
       const i=space.index,loc=tileLocation(i),{w,d}=tileSize(i);
       const tile=box(w-.14,.18,d-.14,CREAM,.89);
       tile.position.set(loc.x,.53,loc.z);tile.receiveShadow=true;tile.castShadow=true;tile.userData.index=i;this.scene.add(tile);this.clickMeshes.push(tile);
-      const texture=[0,10,20,30].includes(i)?textTexture(space):longTileTexture(space,i);
+      const texture=i===30?goToJailTexture():[0,10,20].includes(i)?textTexture(space):longTileTexture(space,i);
       // Rotate the printed text on this space without changing its tile or color band.
       texture.center.set(.5,.5);
       // Corner cards use the old square texture, so rotate those textures.
