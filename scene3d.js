@@ -618,8 +618,8 @@ export class MyCityScene {
   openRouletteAt(point){
     // Clicking a physical part of the table switches to the SAME free
     // drag/zoom/rotate controls used by the city board.
-    this.focusRouletteAt(point.x,point.z);
     this.mode='rouletteExplore';
+    this.focusRouletteAt(point.x,point.z);
     this.zoom=Math.min(this.zoom,.40);
     this.cinematicDice=false;
     this.onRoulette();
