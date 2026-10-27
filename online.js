@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { MY_CITY_SUPABASE_URL, MY_CITY_SUPABASE_PUBLISHABLE_KEY } from './online-config.js';
 import { BOARD, COLORS, MONEY } from './board-data.js';
-import { MyCityScene } from './scene3d.js';
+import { MyCityScene } from './scene3d.js?v=roulette-navigation-v2';
 
 const $=id=>document.getElementById(id);
 const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
