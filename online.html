@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081b25">
+<title>My City — Play with Friends</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.75.1"}}</script>
+<link rel="stylesheet" href="./online.css">
+</head>
+<body>
+<div id="onlineGame">
+  <div id="viewport" aria-label="My City 3D multiplayer board"></div>
+  <div id="onlineLoading">LOADING 3D CITY…</div>
+
+  <header class="onlineTop">
+    <a class="topBtn" href="./index.html" aria-label="Home">← HOME</a>
+    <div class="cameraButtons">
+      <button type="button" id="followView">◉ FOLLOW</button>
+      <button type="button" id="overviewView">▦ BOARD</button>
+    </div>
+    <div class="roomCode" id="roomCodeDisplay" hidden>ROOM <strong id="roomCodeText"></strong></div>
+  </header>
+
+  <div id="turnStatus" class="turnStatus" hidden aria-live="polite">
+    <strong id="turnPlayerName">Waiting</strong>
+    <span id="turnPhase">ROLL</span>
+  </div>
+
+  <section class="onlineControls" id="onlineControls" hidden aria-label="Game controls">
+    <div class="diceDisplay">
+      <span id="dieA">⚀</span><span id="dieB">⚀</span>
+      <strong id="diceTotal">READY</strong>
+    </div>
+    <button id="rollBtn" class="rollBtn" type="button" disabled>🎲 ROLL DICE</button>
+    <div class="secondaryActions">
+      <button id="buyBtn" type="button" disabled>BUY PROPERTY</button>
+      <button id="passBtn" type="button" disabled>PASS</button>
+      <button id="endBtn" type="button" disabled>END TURN →</button>
+    </div>
+  </section>
+
+  <div id="privateBalance" class="privateBalance" hidden>
+    <button type="button" id="ownedPropertiesBtn" class="homeIcon" aria-label="Your properties" aria-controls="ownedPropertiesPanel" aria-expanded="false" title="Your properties">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+        <path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V21h13V9.5"></path><path d="M10 21v-7h4v7"></path>
+      </svg>
+    </button>
+    <div class="balanceText"><small>MY BALANCE</small><strong id="myBalanceAmount">$1,500</strong></div>
+  </div>
+
+  <section id="ownedPropertiesPanel" class="propertiesPanel" hidden aria-label="My owned properties">
+    <div class="panelHead"><h2>MY PROPERTIES</h2><button id="closeProperties" aria-label="Close" type="button">×</button></div>
+    <p id="myPropertyCount">0 properties</p>
+    <div id="myPropertyList"></div>
+  </section>
+
+  <section id="spaceCard" class="spaceCard" hidden aria-label="Property information">
+    <div id="spaceCardStripe"></div>
+    <button id="closeSpaceCard" aria-label="Close property" type="button">×</button>
+    <small>MY CITY · PROPERTY</small>
+    <h2 id="spaceCardName"></h2>
+    <div id="spaceCardInfo"></div>
+  </section>
+
+  <section id="roulettePreview" class="roulettePreview" hidden aria-label="Roulette table preview">
+    <h2>🎰 ROULETTE</h2>
+    <p>A roulette table is beside the board. Gameplay is coming soon.</p>
+    <button id="backFromRoulette" type="button">BACK TO BOARD</button>
+  </section>
+
+  <section class="modalShade" id="lobby" aria-labelledby="lobbyTitle">
+    <div class="lobbyCard">
+      <small>MY CITY · MULTIPLAYER</small>
+      <h1 id="lobbyTitle">PLAY WITH FRIENDS</h1>
+      <p id="lobbyHelp">Create a room or enter a friend's invite code. Each person joins on their own device.</p>
+      <p id="errorText" class="errorText" role="alert" hidden></p>
+      <div id="lobbyEntry">
+        <label for="playerName">YOUR DISPLAY NAME</label>
+        <input id="playerName" maxlength="24" autocomplete="nickname" placeholder="Your name">
+        <div class="entryGrid">
+          <div><label for="roomSize">ROOM SIZE</label><select id="roomSize"><option value="2">2 players</option><option value="3">3 players</option><option value="4" selected>4 players</option></select></div>
+          <button class="mainAction" id="createRoom" type="button">CREATE ROOM</button>
+        </div>
+        <div class="orLine">OR JOIN A FRIEND</div>
+        <label for="joinCode">INVITE CODE</label>
+        <input id="joinCode" maxlength="8" autocapitalize="characters" spellcheck="false" placeholder="8-character code">
+        <button class="secondaryAction" id="joinRoom" type="button">JOIN ROOM</button>
+      </div>
+      <div id="roomLobby" hidden>
+        <div class="inviteBox">INVITE CODE <strong id="lobbyCode"></strong>
+          <button id="copyInvite" type="button">COPY LINK</button></div>
+        <div id="membersList" class="membersList"></div>
+        <p id="lobbyCount"></p>
+        <button id="startRoom" class="mainAction" type="button" hidden>START GAME</button>
+        <p id="waitingForHost" class="waitingText">Waiting for the host to start…</p>
+      </div>
+      <p class="smallNote">Game rooms use Supabase. Balances and owned-property lists are private to each player. Turns are verified by the server.</p>
+    </div>
+  </section>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+<script type="module" src="./online.js"></script>
+</body>
+</html>
