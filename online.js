@@ -55,6 +55,43 @@ async function refreshActivity(){
     list.append(row);
   }
 }
+let showActivityFeed=true;
+function closeGameMenu(){
+  $('gameMenuDropdown').hidden=true;
+  $('gameMenuToggle').setAttribute('aria-expanded','false');
+}
+function toggleGameMenu(){
+  const nextOpen=$('gameMenuDropdown').hidden;
+  $('gameMenuDropdown').hidden=!nextOpen;
+  $('gameMenuToggle').setAttribute('aria-expanded',String(nextOpen));
+  if(nextOpen)$('onlineSettingsPanel').hidden=true;
+}
+function showGameSettings(){
+  closeGameMenu();
+  $('onlineSettingsPanel').hidden=false;
+}
+async function endGameAsHost(){
+  closeGameMenu();
+  if(!roomCode||!state?.me.host||state.room.status!=='playing'||inFlight)return;
+  if(!window.confirm('End this game for every player? No one will be able to take more turns. This cannot be undone.'))return;
+  inFlight=true;
+  $('hostEndGame').disabled=true;
+  renderRoom();
+  try{
+    await rpc('mc_end_game',{p_code:roomCode});
+    const next=await rpc('mc_room_state',{p_code:roomCode});
+    await updateState(next);
+    await refreshActivity();
+    hideRoulette();
+    notify('The game has ended for everyone.');
+  }catch(error){
+    notify('Could not end game: '+(error.message||error));
+  }finally{
+    inFlight=false;
+    $('hostEndGame').disabled=false;
+    renderRoom();
+  }
+}
 function myTurn(){
   return !!state && state.room.status==='playing' &&
     state.room.turn_seat===state.me.seat && !state.me.bankrupt;
@@ -95,8 +132,10 @@ function showSpace(index){
 function renderRoom(){
   if(!state)return;
   const {room,players,me}=state;
-  $('activityFeed').hidden=room.status==='lobby';
-  $('roomCodeDisplay').hidden=false;
+  $('activityFeed').hidden=room.status==='lobby' || !showActivityFeed;
+  $('gameMenu').hidden=false;
+  $('hostEndGame').hidden=!me.host || room.status!=='playing';
+  $('endedGameNotice').hidden=room.status!=='finished';
   $('roomCodeText').textContent=room.code;
   $('lobbyCode').textContent=room.code;
   $('playerName').value=me.name;
@@ -255,7 +294,10 @@ function clearRoomLocally(){
   if(pollHandle){clearInterval(pollHandle);pollHandle=null;}
   $('activityFeed').hidden=true;
   $('activityEntries').replaceChildren();
-  $('roomCodeDisplay').hidden=true;
+  closeGameMenu();
+  $('onlineSettingsPanel').hidden=true;
+  $('gameMenu').hidden=true;
+  $('endedGameNotice').hidden=true;
   $('privateBalance').hidden=true;
   $('onlineControls').hidden=true;
   $('turnStatus').hidden=true;
@@ -342,6 +384,32 @@ async function createOrJoin(type){
   finally{setBusy(false);}
 }
 
+$('gameMenuToggle').addEventListener('click',toggleGameMenu);
+$('copyMenuRoomCode').addEventListener('click',async()=>{
+  if(!roomCode)return;
+  try{
+    await navigator.clipboard.writeText(roomCode);
+    notify('Room ID copied: '+roomCode);
+  }catch{notify('Room ID: '+roomCode);}
+});
+$('openGameSettings').addEventListener('click',showGameSettings);
+$('closeGameSettings').addEventListener('click',()=>{$('onlineSettingsPanel').hidden=true;});
+$('settingFollowView').addEventListener('click',()=>{restoreView();});
+$('settingBoardView').addEventListener('click',()=>{hideRoulette();scene.setMode('overview');});
+$('settingActivityToggle').addEventListener('change',e=>{
+  showActivityFeed=e.target.checked;
+  if(state)renderRoom();
+});
+$('hostEndGame').addEventListener('click',endGameAsHost);
+document.addEventListener('pointerdown',e=>{
+  if(!$('gameMenu').contains(e.target))closeGameMenu();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeGameMenu();
+    $('onlineSettingsPanel').hidden=true;
+  }
+});
 $('createRoom').addEventListener('click',()=>createOrJoin('create'));
 $('joinRoom').addEventListener('click',()=>createOrJoin('join'));
 $('leaveRoomBtn').addEventListener('click',()=>leaveRoom());
