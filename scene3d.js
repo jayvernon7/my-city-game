@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { BOARD, COLORS, PLAYER_COLORS, gridPosition } from './board-data.js';
 
-const SIDE = 27;
-const CORNER = 3;
+const SIDE = 33;
+const CORNER = 4.6;
 const TILE = (SIDE-2*CORNER)/9;
 const HALF = SIDE/2;
 const CREAM = 0xf7f3e6;
@@ -67,6 +67,46 @@ function textTexture(space){
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
   return texture;
 }
+
+/* Long, legible edge labels. Text follows the length of each property
+   (radially into the board), matching a traditional property board. */
+function longTileTexture(space,index){
+  const vertical = (index>=1 && index<=9)||(index>=21 && index<=29);
+  const w=vertical?760:1280,h=vertical?1280:760;
+  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const c=canvas.getContext('2d');
+  c.fillStyle='#f8f4e8';c.fillRect(0,0,w,h);
+  c.strokeStyle='#d2d5be';c.lineWidth=8;c.strokeRect(9,9,w-18,h-18);
+  // Use the full length of the enlarged cell, avoiding its colored strip.
+  c.save();
+  c.translate(w/2,h/2);
+  if(vertical)c.rotate(-Math.PI/2);
+  const longSize=vertical?h:w, shortSize=vertical?w:h;
+  const name=space.name;
+  const maxWidth=longSize*.86;
+  let font=space.type==='property'?112:105,lines=[];
+  for(;font>=44;font-=3){
+    c.font=`900 ${font}px system-ui,Arial,sans-serif`;
+    lines=wrap(c,name,maxWidth);
+    if(lines.length<=2 && lines.every(line=>c.measureText(line).width<=maxWidth))break;
+  }
+  const lineHeight=font*1.2;
+  const startY=-((lines.length-1)*lineHeight)/2;
+  c.textAlign='center';c.textBaseline='middle';c.fillStyle=INK;
+  // Slightly outward from the inner color strip, giving long names room.
+  lines.forEach((line,i)=>c.fillText(line,0,startY+i*lineHeight,maxWidth));
+  if(space.type==='property'){
+    c.font='750 42px system-ui,Arial,sans-serif';
+    c.fillStyle='#607c73';
+    c.fillText('PROPERTY',0,shortSize*.34,maxWidth);
+  }
+  c.restore();
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=8;
+  return texture;
+}
+
 function bannerTexture(){
   const c=document.createElement('canvas');c.width=1024;c.height=512;const g=c.getContext('2d');
   g.fillStyle='#f0e7c8';g.fillRect(0,0,1024,512);
@@ -123,20 +163,20 @@ export class MyCityScene {
     const fill=new THREE.DirectionalLight('#a0ecde',1.2);fill.position.set(15,13,-12);this.scene.add(fill);
   }
   makeBoard(){
-    let outside=box(28.2,.65,28.2,0x0b3034);outside.position.y=-.16;outside.receiveShadow=true;this.scene.add(outside);
-    let trim=box(27.72,.33,27.72,0xe7bd77);trim.position.y=.15;trim.receiveShadow=true;this.scene.add(trim);
-    let base=box(27.25,.16,27.25,0x284f48);base.position.y=.365;base.receiveShadow=true;this.scene.add(base);
-    let inner=box(21.05,.055,21.05,0xa8d2bd);inner.position.y=.47;inner.receiveShadow=true;this.scene.add(inner);
+    let outside=box(SIDE+1.2,.65,SIDE+1.2,0x0b3034);outside.position.y=-.16;outside.receiveShadow=true;this.scene.add(outside);
+    let trim=box(SIDE+.72,.33,SIDE+.72,0xe7bd77);trim.position.y=.15;trim.receiveShadow=true;this.scene.add(trim);
+    let base=box(SIDE+.25,.16,SIDE+.25,0x284f48);base.position.y=.365;base.receiveShadow=true;this.scene.add(base);
+    let inner=box(SIDE-2*CORNER+.05,.055,SIDE-2*CORNER+.05,0xa8d2bd);inner.position.y=.47;inner.receiveShadow=true;this.scene.add(inner);
     // Tiny inner glow-frame: physical geometry rather than a flat board screenshot.
-    for(const coord of [-10.52,10.52]){
-      let a=box(.045,.03,21.08,0xffefc2);a.position.set(coord,.51,0);this.scene.add(a);
-      let b=box(21.08,.03,.045,0xffefc2);b.position.set(0,.51,coord);this.scene.add(b);
+    for(const coord of [-(SIDE-2*CORNER)/2-.02,(SIDE-2*CORNER)/2+.02]){
+      let a=box(.045,.03,SIDE-2*CORNER+.08,0xffefc2);a.position.set(coord,.51,0);this.scene.add(a);
+      let b=box(SIDE-2*CORNER+.08,.03,.045,0xffefc2);b.position.set(0,.51,coord);this.scene.add(b);
     }
     for(const space of BOARD){
       const i=space.index,loc=tileLocation(i),{w,d}=tileSize(i);
       const tile=box(w-.055,.18,d-.055,CREAM,.89);
       tile.position.set(loc.x,.53,loc.z);tile.receiveShadow=true;tile.castShadow=true;tile.userData.index=i;this.scene.add(tile);this.clickMeshes.push(tile);
-      const texture=textTexture(space);
+      const texture=[0,10,20,30].includes(i)?textTexture(space):longTileTexture(space,i);
       let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.075,d-.075),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
       label.rotation.x=-Math.PI/2;label.position.set(loc.x,.633,loc.z);label.userData.index=i;
       this.scene.add(label);this.clickMeshes.push(label);
@@ -363,7 +403,7 @@ export class MyCityScene {
     if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.cinematicDice?8.5:(this.mode==='overview'?45.5:15))*this.zoom*
+    const distance=(this.cinematicDice?8.5:(this.mode==='overview'?54:17))*this.zoom*
       (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
