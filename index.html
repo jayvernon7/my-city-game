@@ -15,6 +15,9 @@ h1 span{color:#f6bd72}
 p{color:#c3dcda;font-size:clamp(14px,2vw,19px);line-height:1.6;max-width:550px;margin:20px auto 30px}
 a{display:inline-block;text-decoration:none;color:#122f30;background:#ffc47b;border:2px solid #ffe4b3;padding:18px 50px;border-radius:13px;font-weight:1000;font-size:19px;box-shadow:0 7px 0 #b26d3d,0 15px 40px #0008}
 a:hover{filter:brightness(1.07);transform:translateY(-2px)}
+.modeActions{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:18px}
+.modeActions a{padding:17px 22px;font-size:15px;white-space:nowrap}
+.modeActions a.friendsAction{background:#b5e2d2;color:#123c37;border-color:#e4fff2;box-shadow:0 7px 0 #4a8175,0 15px 40px #0008}
 .sub{margin-top:30px;font-size:11px;letter-spacing:2px;color:#9ebbb8}
 </style>
 </head>
@@ -23,7 +26,10 @@ a:hover{filter:brightness(1.07);transform:translateY(-2px)}
 <div class="eyebrow">YOUR WORLD · YOUR BOARD · YOUR RULES</div>
 <h1>MY <span>CITY</span></h1>
 <p>Step onto your own 3D board. Roll the dice, follow your piece, and build your city.</p>
-<a href="./game.html">▶ PLAY GAME</a>
+<div class="modeActions">
+  <a href="./game.html">▶ PLAY SOLO</a>
+  <a href="./online.html" class="friendsAction">♟ PLAY WITH FRIENDS</a>
+</div>
 <div class="sub">3D BOARD GAME · EARLY PROTOTYPE</div>
 </main>
 </body>
