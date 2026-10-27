@@ -1,5 +1,5 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js?v=roulette-navigation-v3';
+import {MyCityScene} from './scene3d.js?v=roulette-navigation-v4';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -16,6 +16,11 @@ try {
     // A space can be inspected at any time, regardless of whose turn it is.
     hideLandingCard();
     showLandingCard(i);
+  },onRoulette:()=>{
+    // Show navigation controls without resetting the clicked camera target.
+    const prompt=$('roulettePreview');
+    if(prompt)prompt.hidden=false;
+    hideLandingCard();
   }});
   $('sceneLoading').hidden=true;
 } catch(err) {
