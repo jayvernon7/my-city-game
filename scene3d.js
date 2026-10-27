@@ -391,6 +391,57 @@ export class MyCityScene {
     person.add(ring);
     return person;
   }
+  makeFemalePlayer(){
+    // Player 2: Black woman, long black hair, white short-sleeve
+    // shirt, black pants and white shoes. Same scale as Player 1.
+    const person=new THREE.Group();
+    const skin=new THREE.MeshStandardMaterial({color:0x75432c,roughness:.86});
+    const shirt=new THREE.MeshStandardMaterial({color:0xf8f8f5,roughness:.77});
+    const pants=new THREE.MeshStandardMaterial({color:0x17191d,roughness:.88});
+    const shoes=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.53});
+    const hair=new THREE.MeshStandardMaterial({color:0x101014,roughness:.94});
+    const face=new THREE.MeshStandardMaterial({color:0x211715,roughness:.92});
+    const make=(geometry,material,x,y,z,rx=0,ry=0,rz=0)=>{
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.position.set(x,y,z);
+      mesh.rotation.set(rx,ry,rz);
+      mesh.castShadow=true;
+      mesh.receiveShadow=true;
+      person.add(mesh);
+      return mesh;
+    };
+    for(const side of [-1,1]){
+      const x=side*.14;
+      // Separate pant legs and bright white sneakers.
+      make(new THREE.BoxGeometry(.20,.38,.21),pants,x,.34,0);
+      make(new THREE.BoxGeometry(.23,.15,.35),shoes,x,.085,.095);
+      // White sleeves with visible brown forearms and hands.
+      make(new THREE.CylinderGeometry(.11,.12,.27,10),shirt,side*.295,1.06,0,0,0,side*.23);
+      make(new THREE.CylinderGeometry(.079,.075,.31,10),skin,side*.34,.78,0,0,0,side*.11);
+      make(new THREE.SphereGeometry(.082,10,8),skin,side*.35,.61,.015);
+      // Long hair falls past the shoulders, behind the arms.
+      make(new THREE.CapsuleGeometry(.125,.52,6,10),hair,side*.205,1.235,-.145,0,0,side*-.08);
+    }
+    make(new THREE.BoxGeometry(.46,.52,.29),shirt,0,1.07,0);
+    make(new THREE.CylinderGeometry(.108,.118,.09,12),skin,0,1.40,0);
+    // Hair on the back of the head, extending down behind the shoulders.
+    make(new THREE.CapsuleGeometry(.215,.43,6,12),hair,0,1.52,-.15);
+    make(new THREE.SphereGeometry(.235,18,14),skin,0,1.64,.045);
+    // Crown of black hair, with the face exposed.
+    make(new THREE.SphereGeometry(.242,18,12,0,Math.PI*2,0,Math.PI*.45),hair,0,1.715,.005);
+    for(const side of [-1,1]){
+      make(new THREE.SphereGeometry(.021,8,6),face,side*.085,1.66,.265);
+    }
+    make(new THREE.SphereGeometry(.026,8,6),skin,0,1.59,.278);
+    const ring=new THREE.Mesh(
+      new THREE.TorusGeometry(.34,.045,7,32),
+      new THREE.MeshBasicMaterial({color:PLAYER_COLORS[1],transparent:true,opacity:.82})
+    );
+    ring.rotation.x=-Math.PI/2;
+    ring.position.y=.015;
+    person.add(ring);
+    return person;
+  }
   setPlayers(players){
     this.cinematicDice=false;
     if(this.motion){this.motion.resolve();this.motion=null}
@@ -400,6 +451,13 @@ export class MyCityScene {
     players.forEach((p,i)=>{
       if(i===0){
         const character=this.makeHumanPlayer();
+        character.position.copy(this.tokenPosition(p.at,i));
+        this.scene.add(character);
+        this.pawns.push(character);
+        return;
+      }
+      if(i===1){
+        const character=this.makeFemalePlayer();
         character.position.copy(this.tokenPosition(p.at,i));
         this.scene.add(character);
         this.pawns.push(character);
