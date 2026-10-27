@@ -126,7 +126,11 @@ function render(next){
   $('padPass').disabled=busy||!myTurn||room.phase!=='decision';
   $('padEnd').disabled=busy||!myTurn||room.phase!=='end';
   const pending=BOARD[room.pending_space];
-  $('padBuy').textContent=pending?'BUY '+MONEY(pending.price):'BUY PROPERTY';
+  // Keep the four face buttons visually blank; action names are available
+  // to assistive tech and on long-press, never printed inside the circles.
+  const buyLabel=pending?'Buy '+(pending.name||'property')+' for '+MONEY(pending.price):'Buy property';
+  $('padBuy').setAttribute('aria-label',buyLabel);
+  $('padBuy').title=buyLabel;
   const props=(me.properties||[]).map(i=>BOARD[i]).filter(Boolean);
   $('padPropertyCount').textContent=String(props.length);
   const key=(me.properties||[]).join(',');
