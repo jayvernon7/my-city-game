@@ -85,7 +85,11 @@ async function endGameAsHost(){
     hideRoulette();
     notify('The game has ended for everyone.');
   }catch(error){
-    notify('Could not end game: '+(error.message||error));
+    const missing=error.code==='PGRST202'||/could not find the function/i.test(error.message||'');
+    notify(missing
+      ? 'End Game needs the Supabase room-controls SQL setup.'
+      : 'Could not end game: '+(error.message||String(error)));
+    console.error('End Game failed:',error);
   }finally{
     inFlight=false;
     $('hostEndGame').disabled=false;
@@ -340,7 +344,11 @@ async function leaveRoom(cancel=false){
     clearRoomLocally();
     notify(isHost?'Room cancelled.':'You left the room.');
   }catch(error){
-    alertError(error.message||'Could not leave room');
+    const missing=error.code==='PGRST202'||/could not find the function/i.test(error.message||'');
+    alertError(missing
+      ? 'Room cancellation is not installed in Supabase yet. Run supabase/mycity_room_controls_repair.sql in your My City project.'
+      : 'Could not cancel or leave room: '+(error.message||String(error)));
+    console.error('Room exit failed:',error);
   }finally{
     inFlight=false;
     $('leaveRoomBtn').disabled=false;
