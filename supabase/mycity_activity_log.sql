@@ -83,7 +83,7 @@ begin
   if v_room_id is null then
     raise exception 'Not a member of this room';
   end if;
-  select pg_catalog.coalesce(
+  select coalesce(
     pg_catalog.jsonb_agg(
       pg_catalog.jsonb_build_object(
         'id',a.id,'name',a.player_name,'activity',a.activity
