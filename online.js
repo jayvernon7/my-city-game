@@ -243,8 +243,15 @@ async function leaveRoom(cancel=false){
     return;
   }
   const isHost=!!state?.me.host;
+  if(isHost && !cancel){
+    // Host can return to the menu without deleting a room.
+    const code=roomCode;
+    clearRoomLocally();
+    notify('Room '+code+' is still open; use its invite code to return.');
+    return;
+  }
   const prompt=isHost?
-    'Cancel this room for everyone? You can create a new one afterward.':
+    'Cancel this waiting room for everyone? This cannot be undone.':
     'Leave this room? The host and remaining players can continue waiting.';
   if(!window.confirm(prompt))return;
   inFlight=true;
