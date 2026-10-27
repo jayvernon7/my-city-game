@@ -262,6 +262,47 @@ body.game-screen{height:100dvh;overflow:hidden}
   display:none !important;
 }
 </style>
+<style>
+/* Landing-only space card. The game remains playable behind it. */
+.landing-card[hidden]{display:none!important}
+.landing-card{
+  position:absolute;z-index:32;right:18px;top:50%;
+  transform:translateY(-50%);width:min(315px,calc(100vw - 34px));
+  background:#f5efdf;color:#16383b;border:2px solid #d5b675;
+  border-radius:16px;overflow:hidden;
+  box-shadow:0 22px 65px #000b;
+  padding:25px 20px 20px;text-align:center;
+  animation:landingCardIn .24s ease-out;
+}
+@keyframes landingCardIn{
+ from{opacity:0;transform:translateY(calc(-50% + 14px)) scale(.96)}
+ to{opacity:1;transform:translateY(-50%) scale(1)}
+}
+.landing-card-stripe{position:absolute;left:0;right:0;top:0;height:15px;background:#35ac78}
+.landing-card-close{position:absolute;right:7px;top:18px;z-index:2;
+ border:0;background:#e9dec8;color:#26454a;
+ border-radius:9px;font-size:24px;width:37px;height:37px;line-height:1}
+.landing-card-kicker{font-size:10px;letter-spacing:2px;font-weight:950;color:#5a7776;margin:12px 0 10px}
+.landing-card h2{font-size:clamp(21px,3vw,30px);line-height:1.2;margin:0 15px 7px;font-weight:1000;overflow-wrap:anywhere}
+.landing-card-type{margin:0 0 17px;color:#537678;font-size:11px;font-weight:950;letter-spacing:1.4px}
+.landing-card-numbers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.landing-card-numbers>div{background:#e8e3d7;border-radius:9px;padding:12px 5px}
+.landing-card-numbers span{font-size:10px;display:block;font-weight:900;letter-spacing:1px;color:#677d74}
+.landing-card-numbers strong{font-size:23px;display:block;margin-top:4px;color:#17433f}
+.landing-card-owner{font-size:11px;font-weight:950;background:#d8e9d9;border-radius:9px;margin:12px 0 0;padding:10px}
+@media(max-width:720px){
+ .landing-card{top:39%;right:50%;transform:translate(50%,-50%);
+   width:min(275px,75vw);padding:20px 15px 15px;max-height:48dvh;overflow-y:auto}
+ @keyframes landingCardIn{
+  from{opacity:0;transform:translate(50%,calc(-50% + 10px)) scale(.96)}
+  to{opacity:1;transform:translate(50%,-50%) scale(1)}
+ }
+ .landing-card h2{font-size:22px}
+ .landing-card-numbers strong{font-size:19px}
+ .landing-card-kicker{margin:10px 0 6px}
+ .landing-card-type{margin-bottom:10px}
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -303,6 +344,15 @@ body.game-screen{height:100dvh;overflow:hidden}
   </main>
   <footer class="footer">MY CITY • INDEPENDENT PROTOTYPE <span>Custom board &amp; gameplay — not affiliated with Monopoly or MONOPOLY GO!</span></footer>
 </div>
+<aside id="landingCard" class="landing-card" hidden aria-label="Landed property card" aria-live="polite">
+  <div id="landingCardStripe" class="landing-card-stripe"></div>
+  <button id="closeLandingCard" type="button" class="landing-card-close" aria-label="Close card">×</button>
+  <div class="landing-card-kicker">MY CITY · SPACE CARD</div>
+  <h2 id="landingCardName">PROPERTY</h2>
+  <p id="landingCardType" class="landing-card-type">PROPERTY</p>
+  <div class="landing-card-numbers"><div><span>PRICE</span><strong id="landingCardPrice">$0</strong></div><div><span>RENT</span><strong id="landingCardRent">$0</strong></div></div>
+  <p id="landingCardOwner" class="landing-card-owner">AVAILABLE TO BUY</p>
+</aside>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
 <script type="module" src="./app.js"></script>
 <script>
