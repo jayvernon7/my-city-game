@@ -72,39 +72,46 @@ function textTexture(space){
    top and bottom rows. Fit complete names on each space by wrapping. */
 function longTileTexture(space,index){
   const {w:tileW,d:tileD}=tileSize(index);
+  // Higher resolution with one to three intentional lines, centered with
+  // generous spacing. Side rotations are applied separately by labelAngle.
+  const scale=260;
   const canvas=document.createElement('canvas');
-  const scale=300;
   canvas.width=Math.round(tileW*scale);
   canvas.height=Math.round(tileD*scale);
-  const c=canvas.getContext('2d');
+  const ctx=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height;
-  c.fillStyle='#f8f4e8';c.fillRect(0,0,w,h);
-  c.strokeStyle='#d2d5be';c.lineWidth=8;c.strokeRect(10,10,w-20,h-20);
-  // Horizontal baseline on every tile. Text never rotates.
-  const name=space.name;
-  const maxWidth=w*.88;
-  const maxHeight=h*.75;
-  let font=Math.min(125,Math.floor(w*.23)),lines=[];
-  for(;font>=27;font-=2){
-    c.font=`900 ${font}px system-ui,Arial,sans-serif`;
-    lines=wrap(c,name,maxWidth);
-    if(lines.length<=4 &&
-       lines.every(line=>c.measureText(line).width<=maxWidth) &&
-       lines.length*font*1.15<=maxHeight)break;
+  ctx.fillStyle='#faf7ed';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#cdd5c6';ctx.lineWidth=6;ctx.strokeRect(10,10,w-20,h-20);
+  const padding=Math.max(28,Math.min(w,h)*.13);
+  const usableWidth=w-2*padding;
+  const usableHeight=h-2*padding;
+  // Before rotation, use the long dimension of the space for labels.
+  const angle=labelAngle(index);
+  const rotated=Math.abs(Math.sin(angle))>.5;
+  const textWidth=rotated?usableHeight:usableWidth;
+  const textHeight=rotated?usableWidth:usableHeight;
+  let font=Math.min(110,Math.round(Math.min(textWidth*.16,textHeight*.44)));
+  let lines=[];
+  while(font>=24){
+    ctx.font=`800 ${font}px Arial,system-ui,sans-serif`;
+    lines=wrap(ctx,space.name,textWidth);
+    const lineHeight=font*1.27;
+    if(lines.length<=3 && lines.every(line=>ctx.measureText(line).width<=textWidth)
+      && lines.length*lineHeight<=textHeight*.82)break;
+    font-=2;
   }
-  const lineHeight=font*1.15;
-  const startY=h*.47-((lines.length-1)*lineHeight)/2;
-  c.textAlign='center';c.textBaseline='middle';c.fillStyle=INK;
-  lines.forEach((line,i)=>c.fillText(line,w/2,startY+i*lineHeight,maxWidth));
-  if(space.type==='property'){
-    c.font=`750 ${Math.min(30,Math.floor(w*.075))}px system-ui,Arial,sans-serif`;
-    c.fillStyle='#607c73';
-    c.fillText('PROPERTY',w/2,h*.87,maxWidth);
-  }else if(space.type==='transport'){
-    c.font=`750 ${Math.min(30,Math.floor(w*.075))}px system-ui,Arial,sans-serif`;
-    c.fillStyle='#607c73';
-    c.fillText('CAR SHOP',w/2,h*.87,maxWidth);
-  }
+  const lineHeight=font*1.27;
+  ctx.save();ctx.translate(w/2,h/2);
+  // Counter-rotate text in the source texture, because labelAngle rotates
+  // the entire texture later. This preserves the requested final direction
+  // and makes the font fit the rotated cell.
+  if(rotated)ctx.rotate(-angle);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#213b40';
+  ctx.font=`800 ${font}px Arial,system-ui,sans-serif`;
+  const offset=(lines.length-1)*lineHeight/2;
+  lines.forEach((line,i)=>ctx.fillText(line,0,i*lineHeight-offset,textWidth));
+  ctx.restore();
   const texture=new THREE.CanvasTexture(canvas);
   texture.colorSpace=THREE.SRGBColorSpace;
   texture.anisotropy=8;
@@ -133,10 +140,10 @@ function bannerTexture(){
 }
 function dieSideTexture(n){
   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
-  const c=canvas.getContext('2d');c.fillStyle='#fffdf2';c.fillRect(0,0,256,256);
-  c.strokeStyle='#b5b9b1';c.lineWidth=6;c.strokeRect(8,8,240,240);
+  const c=canvas.getContext('2d');c.fillStyle='#101316';c.fillRect(0,0,256,256);
+  c.strokeStyle='#4f565f';c.lineWidth=6;c.strokeRect(8,8,240,240);
   const pts={1:[[0,0]],2:[[-1,-1],[1,1]],3:[[-1,-1],[0,0],[1,1]],4:[[-1,-1],[-1,1],[1,-1],[1,1]],5:[[-1,-1],[-1,1],[0,0],[1,-1],[1,1]],6:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1]]};
-  c.fillStyle='#1a3d45';for(const [x,y] of pts[n]){c.beginPath();c.arc(128+x*68,128+y*68,16,0,Math.PI*2);c.fill()}
+  c.fillStyle='#ffffff';for(const [x,y] of pts[n]){c.beginPath();c.arc(128+x*68,128+y*68,16,0,Math.PI*2);c.fill()}
   const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;return t;
 }
 
@@ -221,35 +228,19 @@ export class MyCityScene {
     }
   }
   makeCity(){
-    const centerPlaza=box(11,.1,6.7,0xe7ddba);centerPlaza.position.set(-.1,.55,.55);centerPlaza.receiveShadow=true;this.scene.add(centerPlaza);
-    // Two narrow streets with true 3D sidewalks between the little districts.
-    for(const x of [-7.8,7.8]){
-      const road=box(.7,.025,18.8,0x527977);road.position.set(x,.53,0);this.scene.add(road);
-    }
-    for(const z of [-7.8,7.8]){
-      const road=box(17.6,.025,.7,0x527977);road.position.set(0,.53,z);this.scene.add(road);
-    }
-    const banner=new THREE.Mesh(new THREE.PlaneGeometry(10.35,5.8),new THREE.MeshBasicMaterial({map:bannerTexture()}));
-    banner.rotation.x=-Math.PI/2;banner.position.set(-.1,.61,.55);this.scene.add(banner);
-    // Buildings intentionally hidden for now; the open central plaza,
-    // MY CITY banner, trees, streets and animated car remain.
-    this.cityMeshes=[];
-    // Green trees and streetlights make the central board a real 3D diorama.
-    for(let j=0;j<18;j++){
-      let x=j<9?-9.15:9.15,z=-8.65+(j%9)*2.05;
-      const trunk=box(.13,.58,.13,0x7c5946);trunk.position.set(x,.84,z);this.scene.add(trunk);
-      const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.46,0),new THREE.MeshStandardMaterial({color:j%2?0x4b9473:0x76b288,roughness:.88}));
-      crown.position.set(x,1.39,z);crown.castShadow=true;this.scene.add(crown);
-    }
-    // Small moving car in the center; cosmetic only.
-    this.tinyCar=new THREE.Group();
-    const body=box(.9,.32,.43,0xe87755);body.position.y=.27;this.tinyCar.add(body);
-    const cab=box(.39,.25,.38,0xf5d1a2);cab.position.set(.06,.53,0);this.tinyCar.add(cab);
-    const wheelMat=new THREE.MeshStandardMaterial({color:0x25333b});
-    for(const x of [-.29,.3])for(const z of [-.29,.29]){
-      const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.09,12),wheelMat);wheel.rotation.x=Math.PI/2;wheel.position.set(x,.16,z);this.tinyCar.add(wheel);
-    }
-    this.tinyCar.position.set(-7.8,.54,-7.8);this.scene.add(this.tinyCar);
+    // Keep only the MY CITY central plaque. Roads, trees, mini car,
+    // plaza decorations and buildings are intentionally removed.
+    const plaque=box(11.2,.10,6.8,0xe7ddba);
+    plaque.position.set(-.1,.55,.55);
+    plaque.receiveShadow=true;
+    this.scene.add(plaque);
+    const banner=new THREE.Mesh(
+      new THREE.PlaneGeometry(10.35,5.8),
+      new THREE.MeshBasicMaterial({map:bannerTexture()})
+    );
+    banner.rotation.x=-Math.PI/2;
+    banner.position.set(-.1,.61,.55);
+    this.scene.add(banner);
   }
   makeDice(){
     const all=Array.from({length:6},(_,i)=>dieSideTexture(i+1));
@@ -258,7 +249,7 @@ export class MyCityScene {
     for(let i=0;i<2;i++){
       const mats=[0,1,2,3,4,5].map(j=>new THREE.MeshStandardMaterial({map:all[j],roughness:.36,metalness:0}));
       const die=new THREE.Mesh(new THREE.BoxGeometry(.88,.88,.88),mats);
-      die.position.set(2.6+i*1.55,1.15,3.15);die.rotation.set(.1,.15,.1);
+      die.position.set(-6.5+i*1.45,1.12,6.45);die.rotation.set(0,0,0);
       die.castShadow=true;this.scene.add(die);this.dice.push(die);
     }
   }
@@ -343,15 +334,25 @@ export class MyCityScene {
     this.mode='follow';
   }
   rollDice(a,b){
-    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){this.setDice(a,b);return Promise.resolve()}
     if(this.diceMotion){this.diceMotion.resolve();this.diceMotion=null}
-    return new Promise(resolve=>{this.diceMotion={start:this.elapsed,duration:.92,a,b,resolve};});
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      this.setDice(a,b);return Promise.resolve();
+    }
+    // Roll on the clear central floor, above the MY CITY plaque.
+    this.dice.forEach((die,i)=>{
+      die.position.set(-7.3+i*1.4,1.10,6.35+i*.5);
+      die.rotation.set(.08,.08,0);
+    });
+    return new Promise(resolve=>{
+      this.diceMotion={start:this.elapsed,duration:2.0,a,b,resolve};
+    });
   }
   setDice(a,b){
     [a,b].forEach((num,i)=>{
       const die=this.dice[i];
       die.material[2].map=this.faceTextures[num-1];die.material[2].needsUpdate=true;
-      die.rotation.set(0,0,0);die.position.y=1.15;
+      die.rotation.set(0,0,0);
+      die.position.set(5.3+i*1.45,1.10,6.35+i*.5);
     });
   }
   setMode(mode){this.mode=mode}
@@ -458,9 +459,17 @@ export class MyCityScene {
     }
     if(this.diceMotion){
       const m=this.diceMotion,t=clamp((this.elapsed-m.start)/m.duration,0,1);
+      const eased=1-Math.pow(1-t,2.3);
       this.dice.forEach((die,i)=>{
-        die.rotation.set(t*25+(i+1)*3,t*31+(i+1)*5,t*19);
-        die.position.y=1.15+Math.sin(t*Math.PI)*1.55;
+        const startX=-7.3+i*1.4,endX=5.3+i*1.45;
+        const z=6.35+i*.5;
+        die.position.x=lerp(startX,endX,eased);
+        die.position.z=z+.25*Math.sin(t*Math.PI*3+i);
+        const bounce=Math.abs(Math.sin(t*Math.PI*5+i*.35))*(1-t)*1.55;
+        die.position.y=1.10+bounce;
+        // Rolling rotations gradually slow before settling on the result.
+        const spin=3.8*Math.PI*2*eased;
+        die.rotation.set(spin*(1+i*.12),spin*(.8+i*.10),spin*.55);
       });
       if(t>=1){this.setDice(m.a,m.b);this.diceMotion=null;m.resolve()}
     }
@@ -476,14 +485,14 @@ export class MyCityScene {
       this.tinyCar.position.set(x,.54,z);this.tinyCar.rotation.y=theta;
     }
     const target=this.cinematicDice
-      ?new THREE.Vector3(3.35,.9,3.15)
+      ?(this.diceMotion ? new THREE.Vector3((this.dice[0].position.x+this.dice[1].position.x)/2,.8,6.6) : new THREE.Vector3(6,.8,6.6))
       :this.mode==='overview'?new THREE.Vector3(0,.25,0)
       :this.mode==='explore'?this.exploreTarget.clone()
       :(this.pawns[this.focusIndex]?.position.clone()||new THREE.Vector3());
     if(!this.cinematicDice)target.y=this.mode==='overview'?0:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.cinematicDice?8.5:(this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
+    const distance=(this.cinematicDice?11:(this.mode==='overview'?54:this.mode==='explore'?27:17))*this.zoom*
       (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
