@@ -58,9 +58,7 @@ consistently when we add the building and upgrade rules:
 colored strip of a property**. They must not overlap the property's printed
 name, appear on a blank non-property space, or sit in the central board.
 
-The prototype currently places **one house on Marlowe (index 37, space #38)**
-and **one hotel on Coyle (index 39, space #40)** as *visual samples*.
-They do not affect ownership, rent, purchase prices, or rules yet.
+**No houses or hotels are currently displayed.** Their definitions and placement rules remain in the code for later gameplay development. Any future placements will follow the property color-strip rule.
 
 ## Board validation
 
