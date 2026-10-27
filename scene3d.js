@@ -102,10 +102,9 @@ function longTileTexture(space,index){
   }
   const lineHeight=font*1.27;
   ctx.save();ctx.translate(w/2,h/2);
-  // Counter-rotate text in the source texture, because labelAngle rotates
-  // the entire texture later. This preserves the requested final direction
-  // and makes the font fit the rotated cell.
-  if(rotated)ctx.rotate(-angle);
+  // Rotate the lettering within each cell to read along the long side.
+  // The texture itself must stay unrotated so the rectangle is not distorted.
+  ctx.rotate(angle);
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillStyle='#213b40';
   ctx.font=`800 ${font}px Arial,system-ui,sans-serif`;
@@ -202,7 +201,9 @@ export class MyCityScene {
       const texture=[0,10,20,30].includes(i)?textTexture(space):longTileTexture(space,i);
       // Rotate the printed text on this space without changing its tile or color band.
       texture.center.set(.5,.5);
-      texture.rotation=labelAngle(i);
+      // Corner cards use the old square texture, so rotate those textures.
+      // All other space lettering is rotated when drawn into its own canvas.
+      texture.rotation=[0,10,20,30].includes(i)?labelAngle(i):0;
       texture.needsUpdate=true;
       let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.075,d-.075),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
       label.rotation.x=-Math.PI/2;label.position.set(loc.x,.633,loc.z);label.userData.index=i;
