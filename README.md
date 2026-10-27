@@ -60,6 +60,51 @@ table and shows a noninteractive preview panel. Players can choose
 marked coming soon. No bets, wagers, spins, chips, or roulette results change
 the game yet; that logic will be implemented after its rules are decided.
 
+## Online multiplayer (new — setup required)
+
+**The online frontend and the Supabase backend schema have been committed but
+cannot function until the Supabase project is connected and the SQL is run.**
+
+1. In Supabase **SQL Editor**, run the contents of
+   [supabase/mycity_multiplayer.sql](./supabase/mycity_multiplayer.sql)
+   **in your intended My City Supabase project**. The script creates only
+   `mc_*` tables and functions (it does not edit The NBA League tables).
+2. In Supabase **Authentication → Providers**, enable **Anonymous sign-ins**.
+   These are persistent, anonymous Supabase Auth user accounts per browser,
+   not just arbitrary player names, so membership can be verified.
+3. In Supabase's project API settings, copy the **Project URL** and
+   **publishable key** (or legacy **anon** public key). Paste them inside
+   [online-config.js](./online-config.js) as strings. **Never paste a
+   service_role or secret key into this frontend.** The publishable key is
+   intended to be publicly distributed; the server validates every action.
+4. Once GitHub Pages deploys, open
+   `https://jayvernon7.github.io/my-city-game/online.html` or choose
+   **Play With Friends** on the home page.
+5. Create a room (2–4 players), share the invite link or 8-character code,
+   and have friends open it on their own devices. The host starts the match
+   once at least two players join. A connected browser retains its player
+   identity in Supabase Auth storage.
+6. Only the active player may Roll Dice, Buy, Pass or End Turn. The SQL checks
+   membership and turn order and performs purchases, rent, cash transfers,
+   dice rolls and turn changes transactionally. Other players see their
+   **own balance and private owned-property list**, never another player's
+   balance or holdings. Names, positions, active turn and dice rolls sync
+   via near-real-time polling (approximately 1.3 seconds).
+7. The existing **Play Solo** stays separate and continues working locally.
+   Roulette remains a non-playing 3D visual preview.
+
+**Testing:** use two different browsers/devices (or one normal window and
+one private window) to join the same room. Make sure each is a separate
+anonymous account. Do not expect a second tab of the *same* browser profile
+to count as an additional player because it shares the same auth identity.
+
+**Security:** room tables have RLS enabled with no direct data access for
+anon/authenticated clients. Only authenticated, membership-checked,
+`security definer` RPC functions are granted to the clients. Cash and
+property ownership are calculated and stored on the server. This is an early
+multiplayer prototype; fuller account recovery, presence, turn timers, and
+disconnect handling can be added later.
+
 ## Development pieces — names reserved for future rules
 
 These names are explicitly defined in `board-data.js` and should be used
