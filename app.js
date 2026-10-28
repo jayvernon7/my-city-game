@@ -1,8 +1,10 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js?v=square-board-restored-v1';
+import {MyCityScene} from './scene3d.js?v=piece-choice-v1';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
+const PIECE_KEY='my-city-solo-piece';
+const selectedPiece=()=>localStorage.getItem(PIECE_KEY)==='female'?'female':'male';
 const SYMBOLS=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,7 +35,7 @@ function makeNewGame(mode='solo'){
   const count=mode==='solo'?2:Number(mode);
   const names=mode==='solo'?['You','Computer']:Array.from({length:count},(_,i)=>'Player '+(i+1));
   return {version:1,mode,round:1,turn:0,phase:'roll',pending:-1,dice:[1,1],rollTotal:0,
-    players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1})),
+    players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,piece:i===0?selectedPiece():i===1?'female':'male'})),
     owners:Array(40).fill(-1),logs:['Welcome to My City! Each player starts with $1,500.'],
     message:'Roll the dice to begin your journey.',winner:null};
 }
@@ -55,6 +57,7 @@ function reset(mode){
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.focus(0);scene.updatePositions(game.players,0);
   selected=0;scene.makeSelection(selected);
   $('mode').value=mode;
+  $('soloPiece').value=game.players[0].piece||'male';
   log('New '+(mode==='solo'?'solo':'local multiplayer')+' game started.');
   save();render();scheduleBot();
 }
@@ -374,6 +377,15 @@ function changeView(mode){
 }
 $('followView').addEventListener('click',()=>changeView('follow'));
 $('overviewView').addEventListener('click',()=>changeView('overview'));
+$('soloPiece').addEventListener('change',()=>{
+  const piece=$('soloPiece').value;
+  if(!['male','female'].includes(piece))return;
+  localStorage.setItem(PIECE_KEY,piece);
+  game.players[0].piece=piece;
+  scene.setPlayers(game.players);
+  scene.updatePositions(game.players,game.turn);
+  save();render();
+});
 $('restartBtn').addEventListener('click',()=>{$('dialog').hidden=false});
 $('cancelDialog').addEventListener('click',()=>{$('dialog').hidden=true});
 $('confirmDialog').addEventListener('click',()=>{$('dialog').hidden=true;reset($('mode').value)});
@@ -387,6 +399,8 @@ window.addEventListener('keydown',e=>{
 
 game=load();
 if(game){
+  if(!['male','female'].includes(game.players[0].piece))game.players[0].piece=selectedPiece();
+  $('soloPiece').value=game.players[0].piece;
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.updatePositions(game.players,game.turn);scene.focus(game.turn);
   selected=game.players[game.turn].at;scene.makeSelection(selected);render();scheduleBot();
 }else reset('solo');
