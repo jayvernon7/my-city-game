@@ -18,37 +18,8 @@ function axis(c){
   if(c===10)return HALF-CORNER/2;
   return -HALF+CORNER+(c-.5)*TILE;
 }
-// 40 equally spaced positions around a circular board, preserving game order.
-const BOARD_RADIUS=15.1;
-const BOARD_INNER=12.45;
-const BOARD_OUTER=17.75;
-const BOARD_STEP=2*Math.PI/40;
-const BOARD_TEXT_W=1.67;
-const BOARD_TEXT_D=4.40;
-function boardAngle(index){return -index*BOARD_STEP}
-function tileLocation(index){
-  const theta=boardAngle(index);
-  return new THREE.Vector3(BOARD_RADIUS*Math.sin(theta),.34,BOARD_RADIUS*Math.cos(theta));
-}
-function tileSize(index){return {w:BOARD_TEXT_W,d:BOARD_TEXT_D}}
-function annularSector(innerRadius,outerRadius,start,end,height=.18){
-  // Curved 3D tile, narrow symmetrical dividers, no square corners.
-  const n=9,vertices=[],indices=[];
-  for(let j=0;j<=n;j++){
-    const theta=start+(end-start)*j/n;
-    const sn=Math.sin(theta),cs=Math.cos(theta);
-    vertices.push(innerRadius*sn,.53,innerRadius*cs,outerRadius*sn,.53,outerRadius*cs);
-    if(j<n){
-      const k=j*2;
-      indices.push(k,k+1,k+2,k+1,k+3,k+2);
-    }
-  }
-  const geometry=new THREE.BufferGeometry();
-  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
+function tileLocation(index){const {row,col}=gridPosition(index);return new THREE.Vector3(axis(col),.34,axis(row))}
+function tileSize(index){const {row,col}=gridPosition(index);return {w:(col===0||col===10)?CORNER:TILE,d:(row===0||row===10)?CORNER:TILE}}
 function box(w,h,d,color,roughness=.76){
   return new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness,metalness:.035}));
 }
@@ -181,9 +152,10 @@ function longTileTexture(space,index){
 // The top row's St. Marys → University (21–29) is flipped 180°.
 // Go To Jail (30) has a separately drawn diagonal arrow toward Jail.
 function labelAngle(index){
-  // Long property lettering follows each radial tile, toward board center.
-  return Math.PI/2;
-
+  if(index>=11 && index<=20)return Math.PI/2;
+  if(index>=21 && index<=29)return Math.PI;
+  if(index>=31 && index<=39)return -Math.PI/2;
+  return 0;
 }
 
 function bannerTexture(){
@@ -243,64 +215,49 @@ export class MyCityScene {
     const fill=new THREE.DirectionalLight('#a0ecde',1.2);fill.position.set(15,13,-12);this.scene.add(fill);
   }
   makeBoard(){
-    // Circular layers, with 40 identical, evenly sized curved sectors.
-    for(const [radius,y,height,color] of [
-      [18.55,-.16,.64,0x0b3034],[18.18,.15,.33,0xe7bd77],
-      [17.95,.365,.16,0x080f11],[12.43,.46,.075,0xa8d2bd]
-    ]){
-      const disc=new THREE.Mesh(
-        new THREE.CylinderGeometry(radius,radius,height,128),
-        new THREE.MeshStandardMaterial({color,roughness:.8}));
-      disc.position.y=y;disc.receiveShadow=true;disc.castShadow=true;
-      this.scene.add(disc);
+    let outside=box(SIDE+1.2,.65,SIDE+1.2,0x0b3034);outside.position.y=-.16;outside.receiveShadow=true;this.scene.add(outside);
+    let trim=box(SIDE+.72,.33,SIDE+.72,0xe7bd77);trim.position.y=.15;trim.receiveShadow=true;this.scene.add(trim);
+    let base=box(SIDE+.25,.16,SIDE+.25,0x000000);base.position.y=.365;base.receiveShadow=true;this.scene.add(base);
+    let inner=box(SIDE-2*CORNER+.05,.055,SIDE-2*CORNER+.05,0xa8d2bd);inner.position.y=.47;inner.receiveShadow=true;this.scene.add(inner);
+    // Tiny inner glow-frame: physical geometry rather than a flat board screenshot.
+    for(const coord of [-(SIDE-2*CORNER)/2-.02,(SIDE-2*CORNER)/2+.02]){
+      let a=box(.045,.03,SIDE-2*CORNER+.08,0x000000);a.position.set(coord,.51,0);this.scene.add(a);
+      let b=box(SIDE-2*CORNER+.08,.03,.045,0x000000);b.position.set(0,.51,coord);this.scene.add(b);
     }
-    const border=new THREE.Mesh(
-      new THREE.TorusGeometry(12.48,.085,8,128),
-      new THREE.MeshStandardMaterial({color:0x132f33,metalness:.18}));
-    border.rotation.x=Math.PI/2;border.position.y=.525;this.scene.add(border);
     for(const space of BOARD){
-      const i=space.index,theta=boardAngle(i),loc=tileLocation(i),{w,d}=tileSize(i);
-      const gap=.016;
-      const tile=new THREE.Mesh(
-        annularSector(BOARD_INNER,BOARD_OUTER,
-          theta-BOARD_STEP/2+gap,theta+BOARD_STEP/2-gap),
-        new THREE.MeshStandardMaterial({color:CREAM,side:THREE.DoubleSide,roughness:.86}));
-      tile.userData.index=i;tile.receiveShadow=true;tile.castShadow=true;
-      this.scene.add(tile);this.clickMeshes.push(tile);
-      // Text runs radially, rotated with its curved space. Compact fonts
-      // ensure all 40 names fit without colliding with neighboring cells.
-      const texture=longTileTexture(space,i);
-      const label=new THREE.Mesh(
-        new THREE.PlaneGeometry(w,d),
-        new THREE.MeshBasicMaterial({map:texture,transparent:false,side:THREE.DoubleSide}));
-      label.rotation.set(-Math.PI/2,0,0);
-      const pivot=new THREE.Group();
-      pivot.position.set(loc.x,.65,loc.z);
-      pivot.rotation.y=theta;
-      label.position.set(0,0,0);
-      pivot.add(label);this.scene.add(pivot);
-      label.userData.index=i;this.clickMeshes.push(label);
+      const i=space.index,loc=tileLocation(i),{w,d}=tileSize(i);
+      const tile=box(w-.14,.18,d-.14,CREAM,.89);
+      tile.position.set(loc.x,.53,loc.z);tile.receiveShadow=true;tile.castShadow=true;tile.userData.index=i;this.scene.add(tile);this.clickMeshes.push(tile);
+      const texture=i===30?goToJailTexture():[0,10,20].includes(i)?textTexture(space):longTileTexture(space,i);
+      // Rotate the printed text on this space without changing its tile or color band.
+      texture.center.set(.5,.5);
+      // Corner cards use the old square texture, so rotate those textures.
+      // All other space lettering is rotated when drawn into its own canvas.
+      texture.rotation=[0,10,20,30].includes(i)?labelAngle(i):0;
+      texture.needsUpdate=true;
+      let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.17,d-.17),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
+      label.rotation.x=-Math.PI/2;label.position.set(loc.x,.633,loc.z);label.userData.index=i;
+      this.scene.add(label);this.clickMeshes.push(label);
       if(space.color){
-        const band=new THREE.Mesh(
-          annularSector(BOARD_INNER+.08,BOARD_INNER+.62,
-            theta-BOARD_STEP/2+gap,theta+BOARD_STEP/2-gap),
-          new THREE.MeshStandardMaterial({color:COLORS[space.color],side:THREE.DoubleSide}));
-        band.position.y=.19;this.scene.add(band);
+        // The colored strips face the INSIDE of the ring, like a real board.
+        let band;
+        if (i>=1&&i<=9){band=box(w-.10,.06,.54,COLORS[space.color]);band.position.set(loc.x,.676,loc.z-d/2+.32)}
+        else if(i>=11&&i<=19){band=box(.54,.06,d-.10,COLORS[space.color]);band.position.set(loc.x+w/2-.32,.676,loc.z)}
+        else if(i>=21&&i<=29){band=box(w-.10,.06,.54,COLORS[space.color]);band.position.set(loc.x,.676,loc.z+d/2-.32)}
+        else {band=box(.54,.06,d-.10,COLORS[space.color]);band.position.set(loc.x-w/2+.32,.676,loc.z)}
+        band.castShadow=true;this.scene.add(band);
       }
       if([0,10,20,30].includes(i)){
-        // Four landmarks are emphasized without changing their footprint.
-        const marker=new THREE.Mesh(
-          annularSector(BOARD_OUTER-.33,BOARD_OUTER-.08,
-            theta-BOARD_STEP/2+gap,theta+BOARD_STEP/2-gap),
-          new THREE.MeshBasicMaterial({
-            color:i===20?0xd2a363:i===30?0xf7ad86:i===10?0x78a5ba:0x8ad0b0,
-            side:THREE.DoubleSide}));
-        marker.position.y=.18;this.scene.add(marker);
+        const corner=box(w-.30,.04,d-.30,i===20?0xd2a363:i===30?0xf7ad86:i===10?0x78a5ba:0x8ad0b0);
+        corner.position.set(loc.x,.645,loc.z);this.scene.add(corner);
+        // Repeat legible text on corner on top of the light color plaque.
+        let cornerLabel=new THREE.Mesh(new THREE.PlaneGeometry(w-.47,d-.47),new THREE.MeshBasicMaterial({map:texture}));
+        cornerLabel.rotation.x=-Math.PI/2;cornerLabel.position.set(loc.x,.676,loc.z);
+        cornerLabel.userData.index=i;this.scene.add(cornerLabel);this.clickMeshes.push(cornerLabel);
       }
-      this.spaces.push({index:i,loc,w,d,tile,theta});
+      this.spaces.push({index:i,loc,w,d,tile});
     }
   }
-
   makeDevelopments(placements){
     // Only draw on colored property strips; never on corners, card spaces,
     // transports, taxes, or the name area of a space.
@@ -405,28 +362,17 @@ export class MyCityScene {
   }
   makeSelection(index){
     this.selected=index;this.cursor.clear();
-    const theta=boardAngle(index),gap=.027;
-    const path=[];
-    for(let j=0;j<=10;j++){
-      const t=theta-BOARD_STEP/2+gap+(BOARD_STEP-2*gap)*j/10;
-      path.push(new THREE.Vector3(BOARD_OUTER*Math.sin(t),.77,BOARD_OUTER*Math.cos(t)));
-    }
-    for(let j=10;j>=0;j--){
-      const t=theta-BOARD_STEP/2+gap+(BOARD_STEP-2*gap)*j/10;
-      path.push(new THREE.Vector3(BOARD_INNER*Math.sin(t),.77,BOARD_INNER*Math.cos(t)));
-    }
-    const geometry=new THREE.BufferGeometry().setFromPoints(path);
-    this.cursor.add(new THREE.LineLoop(geometry,new THREE.LineBasicMaterial({color:0xffe69a})));
+    const item=this.spaces[index],{w,d}=item,edge=.13;
+    const x=item.loc.x,z=item.loc.z;
+    const points=[new THREE.Vector3(-w/2+edge,0,-d/2+edge),new THREE.Vector3(w/2-edge,0,-d/2+edge),new THREE.Vector3(w/2-edge,0,d/2-edge),new THREE.Vector3(-w/2+edge,0,d/2-edge)].map(p=>p.add(new THREE.Vector3(x,.74,z)));
+    const geom=new THREE.BufferGeometry().setFromPoints(points);
+    const line=new THREE.LineLoop(geom,new THREE.LineBasicMaterial({color:0xffe69a,linewidth:3}));this.cursor.add(line);
   }
   tokenPosition(index,playerId){
-    const loc=this.spaces[index].loc,theta=boardAngle(index);
-    const lateral=[-.36,.36,-.32,.32][playerId]||0;
-    const radial=[-.34,-.34,.35,.35][playerId]||0;
-    return new THREE.Vector3(
-      loc.x+Math.cos(theta)*lateral+Math.sin(theta)*radial,
-      .75,
-      loc.z-Math.sin(theta)*lateral+Math.cos(theta)*radial
-    );
+    const loc=this.spaces[index].loc;
+    const dx=[-.35,.34,-.33,.33][playerId]||0;
+    const dz=[-.29,-.29,.30,.30][playerId]||0;
+    return new THREE.Vector3(loc.x+dx,.75,loc.z+dz);
   }
   makeHumanPlayer(){
     // Low-poly, readable first-player character: Black man in a
