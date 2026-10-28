@@ -16,6 +16,10 @@
   <p>Scan the QR code on the host's screen, or enter a room code. Your phone controls your character while the TV shows the board.</p>
   <label for="controllerName">YOUR NAME</label>
   <input id="controllerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Player name">
+<label for="controllerPiece">CHOOSE YOUR PIECE</label>
+        <select id="controllerPiece" aria-label="Choose your character">
+          <option value="male">Male character</option><option value="female">Woman character</option>
+        </select>
   <label for="controllerCode">ROOM CODE</label>
   <input id="controllerCode" type="text" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="8-character room code">
   <button type="button" id="controllerJoin" class="primaryButton">JOIN GAME →</button>
@@ -68,5 +72,5 @@
 </section>
 <div id="padToast" class="toast" role="status" aria-live="polite"></div>
 </main>
-<script type="module" src="./controller.js?v=player-summary-v2"></script>
+<script type="module" src="./controller.js?v=piece-choice-v1"></script>
 </body></html>
