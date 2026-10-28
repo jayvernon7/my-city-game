@@ -1,5 +1,5 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js?v=jail-cage-v1';
+import {MyCityScene} from './scene3d.js?v=circle-board-v1';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
