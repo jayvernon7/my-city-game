@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { MY_CITY_SUPABASE_URL, MY_CITY_SUPABASE_PUBLISHABLE_KEY } from './online-config.js';
 import { BOARD, COLORS, MONEY } from './board-data.js';
-import { MyCityScene } from './scene3d.js?v=square-board-restored-v1';
+import { MyCityScene } from './scene3d.js?v=piece-choice-v1';
 
 const $=id=>document.getElementById(id);
 const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
@@ -12,7 +12,7 @@ const storageKey='my-city-online-room';
 const nameKey='my-city-online-name';
 
 let supabase,scene,state=null,roomCode='',lastSeenRoll=null;
-let inFlight=false,busyAnimation=false,lastCount=-1,pollHandle=null,toastHandle=null;
+let inFlight=false,busyAnimation=false,lastCount=-1,lastPieceSignature='',pollHandle=null,toastHandle=null;
 let pendingRefresh=null,unloading=false;
 let diceSyncChannel=null;
 let finishRedirectTimer=null;
@@ -230,6 +230,7 @@ function renderRoom(){
   updatePhoneInvites();
   $('lobbyCode').textContent=room.code;
   $('playerName').value=me.name;
+  if(room.status==='lobby'&&me.piece)$('playerPiece').value=me.piece;
   $('privateBalance').hidden=false;
   $('myBalanceAmount').textContent=MONEY(me.cash);
   if(!$('ownedPropertiesPanel').hidden)viewOwned();
@@ -273,11 +274,13 @@ function renderRoom(){
   $('dieB').textContent=known?faces[dice[1]-1]:'⚀';
   $('diceTotal').textContent=known?'TOTAL '+(dice[0]+dice[1]):'READY';
 
-  const scenePlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt,jailed:p.jailed}));
+  const scenePlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt,jailed:p.jailed,piece:p.piece}));
   if(!busyAnimation){
-    if(lastCount!==scenePlayers.length){
+    const signature=scenePlayers.map(p=>p.piece||'').join(',');
+    if(lastCount!==scenePlayers.length||lastPieceSignature!==signature){
       scene.setPlayers(scenePlayers);
       lastCount=scenePlayers.length;
+      lastPieceSignature=signature;
     }
     scene.updatePositions(scenePlayers,room.turn_seat);
     const owners=new Array(40).fill(-1);
@@ -324,15 +327,17 @@ async function replayRoll(move,players){
   $('spaceCard').hidden=true;
   renderRoom();
   const seat=move.seat;
-  const startPlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt,jailed:p.jailed}));
+  const startPlayers=players.map(p=>({at:p.at,bankrupt:p.bankrupt,jailed:p.jailed,piece:p.piece}));
   if(startPlayers[seat]){
     startPlayers[seat].at=move.from;
     // Do not display the bars until the officer reaches Jail.
     startPlayers[seat].jailed=false;
   }
-  if(lastCount!==startPlayers.length){
+  const signature=startPlayers.map(p=>p.piece||'').join(',');
+  if(lastCount!==startPlayers.length||lastPieceSignature!==signature){
     scene.setPlayers(startPlayers);
     lastCount=startPlayers.length;
+    lastPieceSignature=signature;
   }
   scene.updatePositions(startPlayers,seat);
   try{
@@ -411,6 +416,7 @@ function clearRoomLocally(){
   state=null;
   lastSeenRoll=null;
   lastCount=-1;
+  lastPieceSignature='';
   localStorage.removeItem(storageKey);
   history.replaceState({},'',location.pathname);
   if(pollHandle){clearInterval(pollHandle);pollHandle=null;}
@@ -497,15 +503,18 @@ async function createOrJoin(type){
   const name=$('playerName').value.trim();
   if(!name||name.length>24){alertError('Enter a name between 1 and 24 characters.');return;}
   localStorage.setItem(nameKey,name);
+  const piece=$('playerPiece').value;
   setBusy(true);
   try{
     if(type==='create'){
       const code=await rpc('mc_create_room',{p_name:name,p_max_players:Number($('roomSize').value)});
+      await rpc('mc_set_piece',{p_code:code,p_piece:piece});
       await connectRoom(code);
     }else{
       const code=$('joinCode').value.trim().toUpperCase();
       if(!/^[A-F0-9]{8}$/.test(code))throw Error('Use the 8-character invite code.');
       await rpc('mc_join_room',{p_code:code,p_name:name});
+      await rpc('mc_set_piece',{p_code:code,p_piece:piece});
       await connectRoom(code);
     }
   }catch(error){alertError(error.message||'Could not join room');}
