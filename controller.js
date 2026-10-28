@@ -215,6 +215,7 @@ async function join(){
   busy=true;$('joinError').hidden=true;$('controllerJoin').disabled=true;
   try{
     await rpc('mc_join_room',{p_code:requested,p_name:name});
+    await rpc('mc_set_piece',{p_code:requested,p_piece:$('controllerPiece').value});
     localStorage.setItem(nameKey,name);
     setJoined(requested);
     await refreshAfterAction();
