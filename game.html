@@ -460,7 +460,7 @@ body.game-screen{height:100dvh;overflow:hidden}
       <section class="control-card players-card"><div class="card-heading"><span>💰 BANK ACCOUNTS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
       <div class="turn-state" hidden aria-hidden="true"><span id="phaseLabel">READY</span><span id="turnTitle">Your turn</span><span id="message">Roll the dice to begin.</span></div>
       <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
-      <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
+      <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><div class="settings-line"><label for="soloPiece">Change piece</label><select id="soloPiece"><option value="male">Male character</option><option value="female">Woman character</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
     <div id="activeBalance" class="active-balance" aria-label="Current player's balance and properties">
@@ -518,7 +518,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   <p id="landingCardOwner" class="landing-card-owner">AVAILABLE TO BUY</p>
 </aside>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=square-board-restored-v1"></script>
+<script type="module" src="./app.js?v=piece-choice-v1"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
