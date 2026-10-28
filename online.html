@@ -126,6 +126,10 @@
       <div id="lobbyEntry">
         <label for="playerName">YOUR DISPLAY NAME</label>
         <input id="playerName" maxlength="24" autocomplete="nickname" placeholder="Your name">
+        <label for="playerPiece">CHOOSE YOUR PIECE</label>
+        <select id="playerPiece" aria-label="Choose your character">
+          <option value="male">Male character</option><option value="female">Woman character</option>
+        </select>
         <div class="entryGrid">
           <div><label for="roomSize">ROOM SIZE</label><select id="roomSize"><option value="2">2 players</option><option value="3">3 players</option><option value="4" selected>4 players</option></select></div>
           <button class="mainAction" id="createRoom" type="button">CREATE ROOM</button>
@@ -153,6 +157,6 @@
   </section>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./online.js?v=square-board-restored-v1"></script>
+<script type="module" src="./online.js?v=piece-choice-v1"></script>
 </body>
 </html>
