@@ -608,15 +608,9 @@ export class MyCityScene {
     for(const p of this.pawns){this.scene.remove(p);}
     this.pawns=[];
     players.forEach((p,i)=>{
-      if(i===0){
-        const character=this.makeHumanPlayer();
-        character.position.copy(this.tokenPosition(p.at,i));
-        this.scene.add(character);
-        this.pawns.push(character);
-        return;
-      }
-      if(i===1){
-        const character=this.makeFemalePlayer();
+      if(i===0 || i===1 || p.piece==='male' || p.piece==='female'){
+        const character=(p.piece==='female'||(!p.piece&&i===1))
+          ?this.makeFemalePlayer():this.makeHumanPlayer();
         character.position.copy(this.tokenPosition(p.at,i));
         this.scene.add(character);
         this.pawns.push(character);
