@@ -1,5 +1,5 @@
-import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js';
-import {MyCityScene} from './scene3d.js?v=piece-choice-v1';
+import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=free-parking-20261028-2';
+import {MyCityScene} from './scene3d.js?v=free-parking-20261028-2';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
