@@ -5,7 +5,7 @@ export const BOARD = [
   ['Bowling Avenue','property','brown',60],
   ['Community Chest','chest'],
   ['Green Street','property','brown',60],
-  ['Income Tax','tax'],
+  ['Free Parking','freeparking'],
   ['Car Shop #1','transport',null,200],
   ['Campbell Rd','property','light',100],
   ['Chance','chance'],
@@ -39,7 +39,7 @@ export const BOARD = [
   ['Car Shop #4','transport',null,200],
   ['Chance','chance'],
   ['Marlowe','property','blue',350],
-  ['Luxury Tax','tax'],
+  ['Free Parking','freeparking'],
   ['Coyle','property','blue',400]
 ].map(([name,type,color=null,price=0],index)=>({index,name,type,color,price}));
 export const COLORS = {
