@@ -168,8 +168,8 @@ async function landed(i,roll,moveEpoch){
     p.at=10;p.jailed=1;selected=10;scene.makeSelection(10);
     scene.updatePositions(game.players,game.turn);
   }
-  else if(s.type==='tax'){
-    const amount=i===4?200:100;changeCash(p,-amount);log(p.name+' paid '+MONEY(amount)+' in '+s.name+'.');
+  else if(s.type==='freeparking'){
+    log(p.name+' landed on Free Parking. No payment or action.');
   }
   else if(s.type==='casino'){
     const amount=Math.random()<.5?125:-75;
@@ -337,7 +337,7 @@ function renderDetails(){
   const s=BOARD[selected];
   $('spaceNumber').textContent='#'+String(selected+1).padStart(2,'0');
   $('detailTitle').textContent=s.name;
-  const types={property:s.color+' property',transport:'transportation',utility:'utility',chance:'chance card',chest:'community chest',go:'start',jail:'jail / visiting',gojail:'go to jail',casino:'special event',tax:'tax'};
+  const types={property:s.color+' property',transport:'transportation',utility:'utility',chance:'chance card',chest:'community chest',go:'start',jail:'jail / visiting',gojail:'go to jail',casino:'special event',freeparking:'free parking'};
   $('detailType').textContent=types[s.type];
   $('detailColor').style.background=s.color?COLORS[s.color]:'#f4ca78';
   let detail='';
@@ -346,7 +346,7 @@ function renderDetails(){
     if(owner!==-1)detail+=` · Estimated rent: ${MONEY(rentFor(selected,game.rollTotal||7))}`;
   }else{
     detail=({go:'Collect $200 when you pass GO.',jail:'Just visiting, unless sent here by Go To Jail.',
-      gojail:'Go directly to Jail and miss your next turn.',tax:'Pay '+MONEY(selected===4?200:100)+' when you land here.',
+      gojail:'Go directly to Jail and miss your next turn.',freeparking:'Free Parking: no payment or action.',
       casino:'Prototype Casino: win $125 or lose $75.',chance:'Draw a random Chance card.',chest:'Draw a random Community Chest card.'})[s.type]||'';
   }
   $('detailBody').textContent=detail;
