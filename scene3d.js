@@ -8,7 +8,7 @@ const TILE = (SIDE-2*CORNER)/9;
 const HALF = SIDE/2;
 const CREAM = 0xf7f3e6;
 const INK = '#20383b';
-const ICONS = {go:'↶',chest:'✦',chance:'?',jail:'▥',gojail:'➜',casino:'◆',freeparking:'Ⓟ',tax:'$',transport:'◆',utility:'⚡'};
+const ICONS = {go:'↶',bullish:'↑',bearish:'↓',expense:'!',jail:'▥',gojail:'➜',casino:'◆',freeparking:'Ⓟ',transport:'◆'};
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const smooth=t=>t*t*(3-2*t);
