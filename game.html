@@ -436,6 +436,56 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .roulette-preview-buttons button{font-size:9px;padding:8px}
 }
 </style>
+
+<style>
+.game-screen .roulette-game[hidden],.game-screen .roulette-game [hidden]{display:none!important}
+.game-screen .roulette-game{position:fixed;z-index:88;top:5.5rem;right:clamp(10px,2.3vw,32px);width:min(505px,calc(100vw - 20px));max-height:calc(100dvh - 6.5rem);overflow-y:auto;overscroll-behavior:contain;pointer-events:auto}
+.game-screen .roulette-shell{color:#f7f5e8;background:#0c2e33f7;border:2px solid #c9ad74;border-radius:16px;padding:15px 18px 16px;box-shadow:0 20px 60px #000c}
+.game-screen .roulette-game-head,.game-screen .r-player-line,.game-screen .r-result-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.game-screen .roulette-game-head h2{font-size:26px;line-height:1;margin:4px 0 11px;color:#f6e0a5;letter-spacing:2px}
+.game-screen .r-eyebrow{font-size:10px;font-weight:900;letter-spacing:1.6px;color:#c4d6bd}
+.game-screen .r-cap{font-size:10px;font-weight:900;color:#102c2e;background:#edd49b;padding:8px;border-radius:6px}
+.game-screen .r-player-line{border-top:1px solid #456a65;border-bottom:1px solid #456a65;padding:10px 0;margin-bottom:10px}
+.game-screen .r-player-line strong{font-size:15px;color:#fff}
+.game-screen .r-player-line span{font-size:12px;color:#eddaac}
+.game-screen .r-label{font-size:10px;font-weight:950;letter-spacing:1.4px;color:#b7d8d0;margin:11px 0 6px}
+.game-screen .r-label small{letter-spacing:0;font-size:10px;color:#e8dba8;margin-left:5px}
+.game-screen .roulette-chips{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.game-screen .r-chip{width:52px;height:52px;border-radius:50%;background:var(--chip);border:5px dashed #fff9;box-shadow:0 2px 0 #15201d,0 0 0 2px #c7ad6b;color:#fff;font-size:12px;font-weight:950;cursor:pointer}
+.game-screen .r-chip.chosen{outline:3px solid #fff;outline-offset:3px;transform:translateY(-2px)}
+.game-screen .r-chip:disabled{opacity:.28;cursor:not-allowed;transform:none}
+.game-screen .roulette-numbers{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+.game-screen .r-number{min-width:0;min-height:37px;padding:5px 0;border:1px solid #c3ae7d;border-radius:4px;color:#fff;font-weight:900;font-size:13px;cursor:pointer}
+.game-screen .r-number.red,.game-screen .r-outside.red,.game-screen .r-result.red{background:#aa2737}
+.game-screen .r-number.black,.game-screen .r-outside.black,.game-screen .r-result.black{background:#171a1b}
+.game-screen .r-number.green,.game-screen .r-result.green{background:#087444}
+.game-screen .roulette-outside{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.game-screen .r-outside{border:1px solid #b8a87e;background:#194d40;color:#fff;border-radius:5px;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:900;cursor:pointer}
+.game-screen .r-outside small{font-size:9px;opacity:.8}
+.game-screen .r-number:hover,.game-screen .r-outside:hover{outline:2px solid #ffe7a4;outline-offset:-2px}
+.game-screen .roulette-bets{min-height:37px;border:1px dashed #587b71;border-radius:7px;padding:7px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.game-screen .r-wager{background:#1b6959;border:1px solid #79b8a4;padding:5px 7px;border-radius:6px;color:#fff;font-size:11px}
+.game-screen .r-muted,.game-screen .r-notice,.game-screen .r-odds{font-size:11px;color:#bdcbc2;line-height:1.4}
+.game-screen .r-notice{padding:9px 0}
+.game-screen .r-controls{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.game-screen .r-controls button{border-radius:8px;font-weight:950;font-size:12px;padding:11px 13px;min-height:43px;cursor:pointer}
+.game-screen .r-secondary{background:#254950;border:1px solid #668583;color:#fff}
+.game-screen .r-primary{background:#edcd87;border:1px solid #fff1bf;color:#18362e}
+.game-screen .r-spin-status{text-align:center;font-size:24px;color:#f1d58f;padding:25px}
+.game-screen .r-result-row{font-size:13px;font-weight:950;margin:12px 0}
+.game-screen .r-result{font-size:32px;padding:7px 17px;border:2px solid #c6b988;border-radius:8px}
+.game-screen .r-payout{display:grid;grid-template-columns:1fr auto auto;gap:9px;align-items:center;border-bottom:1px solid #3b5c59;padding:8px 0;font-size:12px}
+.game-screen .r-payout .plus{color:#91e9b5}.game-screen .r-payout .minus{color:#ff9d9d}
+.game-screen .r-odds{margin:12px 0 0;font-size:10px}
+@media(max-width:720px){
+ .game-screen .roulette-game{top:10px;right:5px;width:calc(100vw - 10px);max-height:calc(100dvh - 20px)}
+ .game-screen .roulette-shell{padding:10px 11px}
+ .game-screen .r-chip{width:44px;height:44px;font-size:11px}
+ .game-screen .roulette-numbers{grid-template-columns:repeat(8,minmax(0,1fr))}
+ .game-screen .r-number{font-size:12px;min-height:35px}
+ .game-screen .roulette-outside{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -483,11 +533,10 @@ body.game-screen{height:100dvh;overflow:hidden}
       <div id="ownedPropertiesList" class="owned-properties-list"></div>
     </section>
     <section id="roulettePreview" class="roulette-preview" hidden role="region" aria-labelledby="roulettePreviewTitle">
-      <span class="roulette-preview-eyebrow">AFTER THE ROLL</span>
-      <h2 id="roulettePreviewTitle">ROULETTE TABLE</h2>
-      <p>The American double-zero roulette table is next to your city board. Click any part of the roulette table or wheel to inspect it closely, then drag to explore. Scroll or pinch to zoom; right-drag or twist to rotate. Roulette play comes next.</p>
+      <span class="roulette-preview-eyebrow">ROULETTE TABLE</span>
+      <h2 id="roulettePreviewTitle">CASINO</h2>
+      <p>Roulette opens automatically after the last player's turn each round. All active players can bet, then spin the wheel.</p>
       <div class="roulette-preview-buttons">
-        <button id="roulettePlayComingSoon" type="button" disabled>PLAY · COMING SOON</button>
         <button id="rouletteZoomIn" type="button" aria-label="Zoom closer to roulette table">＋ ZOOM</button>
         <button id="rouletteZoomOut" type="button" aria-label="Zoom out from roulette table">− ZOOM</button>
         <button id="rouletteResetCamera" type="button">RESET VIEW</button>
@@ -506,6 +555,42 @@ body.game-screen{height:100dvh;overflow:hidden}
       </div>
     </div>
   </main>
+
+  <section id="rouletteGame" class="roulette-game" hidden role="region" aria-label="Roulette round" aria-live="off">
+    <div class="roulette-shell">
+      <header class="roulette-game-head">
+        <div><span id="rouletteRound" class="r-eyebrow">ROUND 1 · AMERICAN ROULETTE</span><h2>🎰 ROULETTE</h2></div>
+        <span class="r-cap">MAX $100 / PLAYER</span>
+      </header>
+      <div class="r-player-line">
+        <strong id="roulettePlayer">Players choose wagers</strong>
+        <span id="rouletteLimit">Up to $100 in chips</span>
+      </div>
+      <div id="rouletteBetUI">
+        <div class="r-label">CHOOSE A CHIP</div>
+        <div id="rouletteChips" class="roulette-chips" role="group" aria-label="Chip amounts"></div>
+        <div class="r-label">STRAIGHT NUMBERS <small>35:1 payout</small></div>
+        <div id="rouletteNumbers" class="roulette-numbers" role="group" aria-label="Roulette numbers"></div>
+        <div class="r-label">OUTSIDE BETS <small>1:1 or 2:1 payout</small></div>
+        <div id="rouletteOutside" class="roulette-outside" role="group" aria-label="Outside bets"></div>
+        <div class="r-label">YOUR BETS</div>
+        <div id="rouletteBets" class="roulette-bets" aria-live="polite"></div>
+      </div>
+      <div id="rouletteSpinStatus" class="r-spin-status" hidden>🎡 SPINNING THE WHEEL…</div>
+      <div id="rouletteOutcomePanel" class="r-outcome" hidden>
+        <div class="r-result-row">WINNING NUMBER <span id="rouletteResult" class="r-result">0</span></div>
+        <div id="roulettePayouts" class="r-payouts" aria-live="polite"></div>
+      </div>
+      <div id="rouletteNotice" class="r-notice" aria-live="polite"></div>
+      <div class="r-controls">
+        <button id="rouletteUndo" type="button" class="r-secondary">↶ UNDO BET</button>
+        <button id="rouletteNext" type="button" class="r-primary">LOCK BETS & NEXT →</button>
+        <button id="rouletteSpin" type="button" class="r-primary" hidden>🎡 SPIN WHEEL</button>
+        <button id="rouletteContinue" type="button" class="r-primary" hidden>CONTINUE GAME →</button>
+      </div>
+      <p class="r-odds">US double-zero wheel · 0 and 00 are green. Payouts follow standard roulette odds. All money is in-game only.</p>
+    </div>
+  </section>
   <footer class="footer">MY CITY • INDEPENDENT PROTOTYPE <span>Custom board &amp; gameplay — not affiliated with Monopoly or MONOPOLY GO!</span></footer>
 </div>
 <aside id="landingCard" class="landing-card" hidden aria-label="Landed property card" aria-live="polite">
@@ -518,7 +603,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   <p id="landingCardOwner" class="landing-card-owner">AVAILABLE TO BUY</p>
 </aside>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=block1-swap-20261103-4"></script>
+<script type="module" src="./app.js?v=roulette-round-20261103-5"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
