@@ -3,41 +3,41 @@
 export const BOARD = [
   ['GO','go'],
   ['Bowling Avenue','property','brown',60],
-  ['Community Chest','chest'],
+  ['Bullish','bullish'],
   ['Green Street','property','brown',60],
   ['Free Parking','freeparking'],
   ['Car Shop #1','transport',null,200],
   ['Campbell Rd','property','light',100],
-  ['Chance','chance'],
+  ['Bearish','bearish'],
   ['Robbins Dr','property','light',100],
   ['Packard Rd','property','light',120],
   ['Jail / Just Visiting','jail'],
   ['Devon Park','property','pink',140],
-  ['Utility Bill','utility',null,150],
+  ['Unexpected Expense','expense'],
   ['Westview Park','property','pink',140],
   ['Peninsular Place','property','pink',160],
   ['Car Shop #2','transport',null,200],
   ['East Medical Dr','property','orange',180],
-  ['Community Chest','chest'],
+  ['Bullish','bullish'],
   ['Fuller Rd','property','orange',180],
   ['West Medical Dr','property','orange',200],
   ['Casino','casino'],
   ['St. Marys','property','red',220],
-  ['Chance','chance'],
+  ['Bullish','bullish'],
   ['Basil Rd','property','red',220],
   ['Snowden','property','red',240],
   ['Car Shop #3','transport',null,200],
   ['Warren E Bow','property','yellow',260],
   ['Ludington Magnet','property','yellow',260],
-  ['Utility Bill','utility',null,150],
+  ['Unexpected Expense','expense'],
   ['University','property','yellow',280],
   ['Go To Jail','gojail'],
   ['Pembroke Ave','property','green',300],
   ['Greenfield Rd','property','green',300],
-  ['Community Chest','chest'],
+  ['Bearish','bearish'],
   ['7 Mile','property','green',320],
   ['Car Shop #4','transport',null,200],
-  ['Chance','chance'],
+  ['Bullish','bullish'],
   ['Marlowe','property','blue',350],
   ['Free Parking','freeparking'],
   ['Coyle','property','blue',400]
@@ -79,7 +79,7 @@ export const MONEY = n => '$'+Math.round(n).toLocaleString('en-US');
 if (BOARD.length !== 40 || new Set(BOARD.map(s=>JSON.stringify(gridPosition(s.index)))).size !== 40) {
   throw Error('Invalid board: requires 40 unique spaces');
 }
-if (BOARD[6].name !== 'Campbell Rd' || BOARD[7].name !== 'Chance' || BOARD[8].name !== 'Robbins Dr' ||
-    BOARD[32].name !== 'Greenfield Rd' || BOARD[33].name !== 'Community Chest' || BOARD[34].name !== '7 Mile') {
+if (BOARD[6].name !== 'Campbell Rd' || BOARD[7].name !== 'Bearish' || BOARD[8].name !== 'Robbins Dr' ||
+    BOARD[32].name !== 'Greenfield Rd' || BOARD[33].name !== 'Bearish' || BOARD[34].name !== '7 Mile') {
   throw Error('Key space positions are incorrect');
 }
