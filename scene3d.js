@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createRouletteTable, ROULETTE_ORIGIN } from './roulette3d.js';
-import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=free-parking-20261028-2';
+import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=board-layout-20261103-1';
 
 const SIDE = 33;
 const CORNER = 4.6;
@@ -101,7 +101,7 @@ function goToJailTexture(){
   return texture;
 }
 
-function longTileTexture(space,index){
+function longTileTexture(space,index,ownerColor=null){
   const {w:tileW,d:tileD}=tileSize(index);
   // Higher resolution with one to three intentional lines, centered with
   // generous spacing. Side rotations are applied separately by labelAngle.
@@ -111,7 +111,9 @@ function longTileTexture(space,index){
   canvas.height=Math.round(tileD*scale);
   const ctx=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height;
-  ctx.fillStyle='#faf7ed';ctx.fillRect(0,0,w,h);
+  // White when unowned; owner color after purchase. Dark lettering remains visible.
+  ctx.fillStyle=ownerColor || (['property','transport'].includes(space.type)?'#ffffff':'#faf7ed');
+  ctx.fillRect(0,0,w,h);
   ctx.strokeStyle='#000000';ctx.lineWidth=12;ctx.strokeRect(7,7,w-14,h-14);
   const padding=Math.max(28,Math.min(w,h)*.13);
   const usableWidth=w-2*padding;
@@ -224,6 +226,7 @@ export class MyCityScene {
       let a=box(.045,.03,SIDE-2*CORNER+.08,0x000000);a.position.set(coord,.51,0);this.scene.add(a);
       let b=box(SIDE-2*CORNER+.08,.03,.045,0x000000);b.position.set(0,.51,coord);this.scene.add(b);
     }
+    this.ownershipLabels=new Map();
     for(const space of BOARD){
       const i=space.index,loc=tileLocation(i),{w,d}=tileSize(i);
       const tile=box(w-.14,.18,d-.14,CREAM,.89);
@@ -238,13 +241,14 @@ export class MyCityScene {
       let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.17,d-.17),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
       label.rotation.x=-Math.PI/2;label.position.set(loc.x,.633,loc.z);label.userData.index=i;
       this.scene.add(label);this.clickMeshes.push(label);
+      if(['property','transport'].includes(space.type))this.ownershipLabels.set(i,label);
       if(space.color){
-        // The colored strips face the INSIDE of the ring, like a real board.
+        // Permanent black strips mark the top of each purchasable property.
         let band;
-        if (i>=1&&i<=9){band=box(w-.10,.06,.54,COLORS[space.color]);band.position.set(loc.x,.676,loc.z-d/2+.32)}
-        else if(i>=11&&i<=19){band=box(.54,.06,d-.10,COLORS[space.color]);band.position.set(loc.x+w/2-.32,.676,loc.z)}
-        else if(i>=21&&i<=29){band=box(w-.10,.06,.54,COLORS[space.color]);band.position.set(loc.x,.676,loc.z+d/2-.32)}
-        else {band=box(.54,.06,d-.10,COLORS[space.color]);band.position.set(loc.x-w/2+.32,.676,loc.z)}
+        if (i>=1&&i<=9){band=box(w-.10,.06,.54,0x000000);band.position.set(loc.x,.676,loc.z-d/2+.32)}
+        else if(i>=11&&i<=19){band=box(.54,.06,d-.10,0x000000);band.position.set(loc.x+w/2-.32,.676,loc.z)}
+        else if(i>=21&&i<=29){band=box(w-.10,.06,.54,0x000000);band.position.set(loc.x,.676,loc.z+d/2-.32)}
+        else {band=box(.54,.06,d-.10,0x000000);band.position.set(loc.x-w/2+.32,.676,loc.z)}
         band.castShadow=true;this.scene.add(band);
       }
       if([0,10,20,30].includes(i)){
@@ -640,17 +644,18 @@ export class MyCityScene {
     }
   }
   updateOwners(owners){
-    for(const o of this.ownerIndicators)this.scene.remove(o);
-    this.ownerIndicators=[];
-    owners.forEach((owner,index)=>{
-      if(owner<0||owner>=PLAYER_COLORS.length)return;
-      const item=this.spaces[index],tag=new THREE.Group();
-      const stand=box(.13,.45,.13,0x36545a);stand.position.y=.22;tag.add(stand);
-      const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.2,0),new THREE.MeshStandardMaterial({color:PLAYER_COLORS[owner],emissive:PLAYER_COLORS[owner],emissiveIntensity:.3,metalness:.2}));
-      gem.position.y=.58;tag.add(gem);
-      tag.position.set(item.loc.x+item.w*.36,.69,item.loc.z+item.d*.34);
-      this.scene.add(tag);this.ownerIndicators.push(tag);
-    });
+    // Purchased property and Car Shop surfaces use the owner's color.
+    // Regenerate the texture so dark lettering remains readable.
+    for(const [index,label] of this.ownershipLabels){
+      const owner=owners[index];
+      const color=owner>=0 && owner<PLAYER_COLORS.length?PLAYER_COLORS[owner]:null;
+      if(label.userData.ownerColor===color)continue;
+      const old=label.material.map;
+      label.material.map=longTileTexture(BOARD[index],index,color);
+      label.material.needsUpdate=true;
+      label.userData.ownerColor=color;
+      old?.dispose();
+    }
   }
   async movePawn(playerId,to,duration=390){
     if(!this.pawns[playerId])return;
