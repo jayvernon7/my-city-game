@@ -208,6 +208,9 @@ export function createRouletteTable(THREE){
   ball.position.set(4.48,.70,-.35);
   wheel.add(ball);
 
-  group.userData.roulettePreviewOnly=true;
+  // Expose the visible moving parts to the round-end spin animation.
+  group.userData.spinRotor=pockets;
+  group.userData.spinBall=ball;
+  group.userData.roulettePreviewOnly=false;
   return group;
 }
