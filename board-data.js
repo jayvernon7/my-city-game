@@ -3,9 +3,9 @@
 export const BOARD = [
   ['GO','go'],
   ['Bowling Avenue','property','brown',60],
-  ['Bullish','bullish'],
-  ['Green Street','property','brown',60],
   ['Free Parking','freeparking'],
+  ['Green Street','property','brown',60],
+  ['Bullish','bullish'],
   ['Car Shop #1','transport',null,200],
   ['Campbell Rd','property','light',100],
   ['Bearish','bearish'],
