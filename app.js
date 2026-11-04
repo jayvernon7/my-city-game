@@ -1,5 +1,6 @@
-import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=block1-swap-20261103-4';
-import {MyCityScene} from './scene3d.js?v=block1-swap-20261103-4';
+import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=roulette-round-20261103-5';
+import {MyCityScene} from './scene3d.js?v=roulette-round-20261103-5';
+import {createRouletteController} from './roulette-game.js?v=roulette-round-20261103-5';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -9,7 +10,7 @@ const SYMBOLS=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const buyable=i=>['property','transport'].includes(BOARD[i].type);
-let game,scene,epoch=0,botTimeout=null,selected=0;
+let game,scene,roulette,epoch=0,botTimeout=null,selected=0;
 
 try {
   scene=new MyCityScene($('viewport'),{onSelect:i=>{
@@ -34,7 +35,7 @@ try {
 function makeNewGame(mode='solo'){
   const count=mode==='solo'?2:Number(mode);
   const names=mode==='solo'?['You','Computer']:Array.from({length:count},(_,i)=>'Player '+(i+1));
-  return {version:1,mode,round:1,turn:0,phase:'roll',pending:-1,dice:[1,1],rollTotal:0,
+  return {version:1,mode,round:1,turn:0,phase:'roll',roulette:null,pending:-1,dice:[1,1],rollTotal:0,
     players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,piece:i===0?selectedPiece():i===1?'female':'male'})),
     owners:Array(40).fill(-1),logs:['Welcome to My City! Each player starts with $1,500.'],
     message:'Roll the dice to begin your journey.',winner:null};
@@ -46,12 +47,14 @@ function load(){
     if(!x||x.version!==1||x.owners?.length!==40||!Array.isArray(x.players)||!['solo','2','3','4'].includes(x.mode)||x.players.length!==(x.mode==='solo'?2:Number(x.mode)))return null;
     if(x.turn<0||x.turn>=x.players.length)return null;
     if(x.players.some(p=>!Number.isInteger(p.at)||p.at<0||p.at>39||typeof p.cash!=='number'))return null;
-    if(!['roll','end','decision','over'].includes(x.phase))x.phase='roll';
+    if(!['roll','end','decision','over','roulette'].includes(x.phase))x.phase='roll';
+    if(x.phase==='roulette'&&!x.roulette)x.phase='end';
     return x;
   }catch{return null}
 }
 function reset(mode){
   hideRoulettePreview();hideLandingCard();
+  $('rouletteGame').hidden=true;
   epoch++;clearTimeout(botTimeout);
   game=makeNewGame(mode);
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.focus(0);scene.updatePositions(game.players,0);
@@ -173,8 +176,7 @@ async function landed(i,roll,moveEpoch){
     log(p.name+' landed on Free Parking. No payment or action.');
   }
   else if(s.type==='casino'){
-    const amount=Math.random()<.5?125:-75;
-    changeCash(p,amount);log('🎰 Casino! '+p.name+(amount>0?' won '+MONEY(amount):' lost '+MONEY(-amount))+'.');
+    log('🎰 '+p.name+' landed on Casino. All active players can play roulette after this round!');
   }
   else if(s.type==='bullish'||s.type==='bearish'){
     const cards=s.type==='bullish'?BULLISH:BEARISH;
@@ -251,9 +253,7 @@ async function doRoll(){
     game.pending=-1;
     await landed(p.at,steps,thisEpoch);
     if(thisEpoch!==epoch)return;
-    // Show the adjacent roulette table after every completed dice roll.
-    // No roulette wagers, chips, spins, or payouts yet.
-    showRoulettePreview();
+    // Roulette is only offered after the last active player ends their turn.
   }catch(e){console.error(e);game.phase='end';log('Animation interrupted; you can end the turn.');render()}
   finally{
     $('diceDisplay').classList.remove('rolling');
@@ -278,6 +278,13 @@ function doBuy(){
 function pass(){if(game.phase!=='decision'||current().bot)return;doPass()}
 function doPass(){if(game.phase!=='decision')return;log(current().name+' skipped buying '+BOARD[game.pending].name+'.');game.pending=-1;setPhase('end');scheduleBot()}
 function endTurn(){if(game.phase!=='end'||current().bot)return;doEndTurn()}
+function advanceAfterRoulette(next){
+  game.round++;
+  game.turn=next;game.phase='roll';game.pending=-1;game.rollTotal=0;game.dice=[1,1];
+  scene.focus(game.turn);
+  log('🎲 Roulette finished. Round '+game.round+' begins with '+current().name+'.');
+  save();render();scheduleBot();
+}
 function doEndTurn(){
   if(game.phase!=='end')return;
   hideRoulettePreview();hideLandingCard();
@@ -287,7 +294,10 @@ function doEndTurn(){
     next=(next+1)%game.players.length;
     if(!game.players[next].bankrupt)break;
   }
-  if(next<=game.turn)game.round++;
+  if(next<=game.turn){
+    roulette.start(next);
+    return;
+  }
   game.turn=next;game.phase='roll';game.pending=-1;game.rollTotal=0;game.dice=[1,1];
   scene.focus(game.turn);
   log('It’s '+current().name+'’s turn.');save();render();scheduleBot();
@@ -310,7 +320,7 @@ function render(){
   // Display only the balance of the player whose turn it is.
   $('activeBalanceAmount').textContent=MONEY(actor.cash);
   renderOwnedProperties();
-  const label={roll:'ROLL',moving:'MOVING',decision:'BUY OR PASS',end:'TURN COMPLETE',over:'GAME OVER'};
+  const label={roll:'ROLL',moving:'MOVING',decision:'BUY OR PASS',end:'TURN COMPLETE',roulette:'ROULETTE',over:'GAME OVER'};
   $('phaseLabel').textContent=label[game.phase]||'READY';
   $('turnTitle').textContent=game.phase==='over'?'Game over':actor.name+'’s turn';
   $('message').textContent=game.message;
@@ -336,6 +346,7 @@ function render(){
   $('mode').value=game.mode;
   scene.updatePositions(game.players,game.turn);
   renderDetails();
+  roulette?.render();
 }
 function renderDetails(){
   if(!game)return;
@@ -352,7 +363,7 @@ function renderDetails(){
   }else{
     detail=({go:'Collect $200 when you pass GO.',jail:'Just visiting, unless sent here by Go To Jail.',
       gojail:'Go directly to Jail and miss your next turn.',freeparking:'Free Parking: no payment or action.',
-      casino:'Prototype Casino: win $125 or lose $75.',bullish:'Positive financial event.',bearish:'Negative financial event.',expense:'Fee based on developments (pending implementation).'})[s.type]||'';
+      casino:'American roulette is played after the last active player ends each round.',bullish:'Positive financial event.',bearish:'Negative financial event.',expense:'Fee based on developments (pending implementation).'})[s.type]||'';
   }
   $('detailBody').textContent=detail;
 }
@@ -402,12 +413,17 @@ window.addEventListener('keydown',e=>{
   if(e.key.toLowerCase()==='v')changeView(scene.mode==='follow'?'overview':'follow');
 });
 
+roulette=createRouletteController({
+  getGame:()=>game,save,render,log,scene,afterRound:advanceAfterRoulette
+});
 game=load();
 if(game){
   if(!['male','female'].includes(game.players[0].piece))game.players[0].piece=selectedPiece();
   $('soloPiece').value=game.players[0].piece;
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.updatePositions(game.players,game.turn);scene.focus(game.turn);
-  selected=game.players[game.turn].at;scene.makeSelection(selected);render();scheduleBot();
+  selected=game.players[game.turn].at;scene.makeSelection(selected);
+  roulette.restore();
+  render();scheduleBot();
 }else reset('solo');
 // Public debug helpers: available only to the developer via the browser console.
 window.MyCityDebug=Object.freeze({board:BOARD,getState:()=>structuredClone(game),selectSpace:i=>{if(i>=0&&i<40){selected=i;scene.makeSelection(i);renderDetails()}}});
