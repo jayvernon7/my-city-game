@@ -101,8 +101,8 @@ function renderOwnedProperties(){
     return;
   }
   list.innerHTML=entries.map(space=>{
-    const type=space.type==='transport'?'Car Shop':space.type==='utility'?'Utility':'Property';
-    const color=space.color?COLORS[space.color]:'#81bfc1';
+    const type=space.type==='transport'?'Car Shop':'Property';
+    const color=PLAYER_COLORS[game.turn];
     return '<div class="owned-property">'+
       '<span class="owned-property-swatch" style="background:'+color+'"></span>'+
       '<div><div class="owned-property-name">'+escapeHTML(space.name)+'</div>'+
