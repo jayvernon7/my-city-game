@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createRouletteTable, ROULETTE_ORIGIN } from './roulette3d.js';
-import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=ownership-bands-20261103-2';
+import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=carshop-full-color-20261103-3';
 
 const SIDE = 33;
 const CORNER = 4.6;
@@ -101,7 +101,7 @@ function goToJailTexture(){
   return texture;
 }
 
-function longTileTexture(space,index){
+function longTileTexture(space,index,ownerColor=null){
   const {w:tileW,d:tileD}=tileSize(index);
   // Higher resolution with one to three intentional lines, centered with
   // generous spacing. Side rotations are applied separately by labelAngle.
@@ -111,8 +111,8 @@ function longTileTexture(space,index){
   canvas.height=Math.round(tileD*scale);
   const ctx=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height;
-  // Property lettering remains on white, independent of ownership colors.
-  ctx.fillStyle=['property','transport'].includes(space.type)?'#ffffff':'#faf7ed';
+  // Property lettering remains on white; Car Shops adopt their owner's color.
+  ctx.fillStyle=space.type==='transport'?(ownerColor||'#ffffff'):(space.type==='property'?'#ffffff':'#faf7ed');
   ctx.fillRect(0,0,w,h);
   ctx.strokeStyle='#000000';ctx.lineWidth=12;ctx.strokeRect(7,7,w-14,h-14);
   const padding=Math.max(28,Math.min(w,h)*.13);
@@ -227,6 +227,7 @@ export class MyCityScene {
       let b=box(SIDE-2*CORNER+.08,.03,.045,0x000000);b.position.set(0,.51,coord);this.scene.add(b);
     }
     this.ownershipBands=new Map();
+    this.carShopLabels=new Map();
     for(const space of BOARD){
       const i=space.index,loc=tileLocation(i),{w,d}=tileSize(i);
       const tile=box(w-.14,.18,d-.14,CREAM,.89);
@@ -241,6 +242,7 @@ export class MyCityScene {
       let label=new THREE.Mesh(new THREE.PlaneGeometry(w-.17,d-.17),new THREE.MeshBasicMaterial({map:texture,transparent:false}));
       label.rotation.x=-Math.PI/2;label.position.set(loc.x,.633,loc.z);label.userData.index=i;
       this.scene.add(label);this.clickMeshes.push(label);
+      if(space.type==='transport')this.carShopLabels.set(i,label);
       if(space.color){
         // Ownership marker: white inset by default, framed with a permanent
         // black outline. Only the inset changes color when purchased.
@@ -668,6 +670,17 @@ export class MyCityScene {
       const owner=owners[index];
       const color=owner>=0 && owner<PLAYER_COLORS.length?PLAYER_COLORS[owner]:'#ffffff';
       fill.material.color.set(color);
+    }
+    // Tint the whole Car Shop space; keep labels and black border intact.
+    for(const [index,label] of this.carShopLabels){
+      const owner=owners[index];
+      const ownerColor=owner>=0 && owner<PLAYER_COLORS.length?PLAYER_COLORS[owner]:null;
+      if(label.userData.ownerColor===ownerColor)continue;
+      const previousTexture=label.material.map;
+      label.material.map=longTileTexture(BOARD[index],index,ownerColor);
+      label.material.needsUpdate=true;
+      label.userData.ownerColor=ownerColor;
+      previousTexture?.dispose();
     }
   }
   async movePawn(playerId,to,duration=390){
