@@ -34,12 +34,12 @@ export const BOARD = [
   ['Go To Jail','gojail'],
   ['Pembroke Ave','property','green',300],
   ['Greenfield Rd','property','green',300],
-  ['Bearish','bearish'],
+  ['Free Parking','freeparking'],
   ['7 Mile','property','green',320],
   ['Car Shop #4','transport',null,200],
   ['Bullish','bullish'],
   ['Marlowe','property','blue',350],
-  ['Free Parking','freeparking'],
+  ['Bearish','bearish'],
   ['Coyle','property','blue',400]
 ].map(([name,type,color=null,price=0],index)=>({index,name,type,color,price}));
 export const COLORS = {
@@ -80,6 +80,6 @@ if (BOARD.length !== 40 || new Set(BOARD.map(s=>JSON.stringify(gridPosition(s.in
   throw Error('Invalid board: requires 40 unique spaces');
 }
 if (BOARD[6].name !== 'Campbell Rd' || BOARD[7].name !== 'Bearish' || BOARD[8].name !== 'Robbins Dr' ||
-    BOARD[32].name !== 'Greenfield Rd' || BOARD[33].name !== 'Bearish' || BOARD[34].name !== '7 Mile') {
+    BOARD[32].name !== 'Greenfield Rd' || BOARD[33].name !== 'Free Parking' || BOARD[34].name !== '7 Mile') {
   throw Error('Key space positions are incorrect');
 }
