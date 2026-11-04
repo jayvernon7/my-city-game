@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { createRouletteTable, ROULETTE_ORIGIN } from './roulette3d.js';
-import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=block1-swap-20261103-4';
+import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_WHEEL_CLOCKWISE } from './roulette3d.js?v=roulette-round-20261103-5';
+import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=roulette-round-20261103-5';
 
 const SIDE = 33;
 const CORNER = 4.6;
@@ -54,8 +54,24 @@ function textTexture(space){
   const start=labelMid-((lines.length-1)*lineHeight)/2;
   c.fillStyle=INK;c.textAlign='center';c.textBaseline='middle';c.font=`900 ${font}px Georgia,serif`;
   lines.forEach((line,i)=>{c.fillText(line,320,start+i*lineHeight,548)});
-  if(special){
-    c.font='bold 125px system-ui, sans-serif';c.fillStyle=space.type==='chance'?'#e05d5b':space.type==='casino'?'#c68b3c':'#558c8a';
+  if(space.type==='casino'){
+    // Custom hand-drawn roulette wheel icon; no diamond glyph.
+    const cx=320,cy=160,r=106;
+    c.save();c.lineWidth=12;c.strokeStyle='#80603a';
+    c.beginPath();c.arc(cx,cy,r+9,0,Math.PI*2);c.stroke();
+    for(let k=0;k<12;k++){
+      const a=-Math.PI/2+k*Math.PI/6,b=a+Math.PI/6;
+      c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,r,a,b);c.closePath();
+      c.fillStyle=k===0?'#167e53':k%2?'#bb3138':'#1b2328';c.fill();
+      c.strokeStyle='#e2bf78';c.lineWidth=2.4;c.stroke();
+    }
+    c.fillStyle='#eac681';c.beginPath();c.arc(cx,cy,44,0,Math.PI*2);c.fill();
+    c.fillStyle='#593b27';c.beginPath();c.arc(cx,cy,22,0,Math.PI*2);c.fill();
+    c.fillStyle='#ffffff';c.beginPath();c.arc(cx+11,cy-r+8,12,0,Math.PI*2);c.fill();
+    c.restore();
+  }else if(special){
+    c.font='bold 125px system-ui,sans-serif';
+    c.fillStyle=space.type==='bearish'?'#bc5555':'#558c8a';
     c.fillText(icon,320,160);
   }
   if(space.type==='property'){
@@ -376,6 +392,39 @@ export class MyCityScene {
   makeRouletteTable(){
     this.rouletteTable=createRouletteTable(THREE);
     this.scene.add(this.rouletteTable);
+  }
+  async spinRoulette(result){
+    const rotor=this.rouletteTable?.userData.spinRotor;
+    const ball=this.rouletteTable?.userData.spinBall;
+    if(!rotor||!ball)return;
+    this.setMode('roulette');
+    const index=ROULETTE_WHEEL_CLOCKWISE.findIndex(n=>String(n)===String(result));
+    if(index<0)return;
+    const period=Math.PI*2,step=period/ROULETTE_WHEEL_CLOCKWISE.length;
+    // The selected pocket finishes at the ball's fixed landing point on the right.
+    const pocketAngle=-Math.PI/2+(index+.5)*step;
+    const initial=rotor.rotation.z;
+    const correction=(((-pocketAngle-initial)%period)+period)%period;
+    const final=initial+period*7+correction;
+    const start=performance.now(),duration=3000;
+    await new Promise(resolve=>{
+      const frame=now=>{
+        if(this.disposed){resolve();return}
+        const t=Math.min(1,(now-start)/duration);
+        const ease=1-Math.pow(1-t,3.6);
+        rotor.rotation.z=initial+(final-initial)*ease;
+        const ballOrbit=(1-t)*period*10;
+        const angle=ballOrbit;
+        ball.position.set(Math.cos(angle)*4.48,.70,-Math.sin(angle)*4.48);
+        if(t<1)requestAnimationFrame(frame);
+        else{
+          rotor.rotation.z=final%period;
+          ball.position.set(4.48,.70,0);
+          resolve();
+        }
+      };
+      requestAnimationFrame(frame);
+    });
   }
   makeAtmosphere(){
     const ground=box(190,.12,190,0x0e343b);ground.position.y=-1.3;ground.receiveShadow=true;this.scene.add(ground);
