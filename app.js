@@ -1,5 +1,5 @@
-import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=free-parking-20261028-2';
-import {MyCityScene} from './scene3d.js?v=free-parking-20261028-2';
+import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=board-layout-20261103-1';
+import {MyCityScene} from './scene3d.js?v=board-layout-20261103-1';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -8,7 +8,7 @@ const selectedPiece=()=>localStorage.getItem(PIECE_KEY)==='female'?'female':'mal
 const SYMBOLS=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const buyable=i=>['property','transport','utility'].includes(BOARD[i].type);
+const buyable=i=>['property','transport'].includes(BOARD[i].type);
 let game,scene,epoch=0,botTimeout=null,selected=0;
 
 try {
@@ -140,22 +140,23 @@ function showLandingCard(index){
   const card=$('landingCard');if(!card)return;
   $('landingCardName').textContent=space.name;
   $('landingCardType').textContent=space.type==='transport'?'CAR SHOP':'PROPERTY';
-  $('landingCardStripe').style.background=space.color?COLORS[space.color]:'#6998a0';
-  $('landingCardPrice').textContent=MONEY(space.price);
   const owner=game.owners[index];
+  $('landingCardStripe').style.background=owner>=0?PLAYER_COLORS[owner]:'#ffffff';
+  $('landingCardPrice').textContent=MONEY(space.price);
   $('landingCardRent').textContent=owner>=0?MONEY(rentFor(index,game.rollTotal||7)):
     MONEY(space.type==='transport'?25:Math.max(2,Math.round(space.price*.12)));
   $('landingCardOwner').textContent=owner<0?'AVAILABLE TO BUY':
     'OWNED BY '+game.players[owner].name;
   card.hidden=false;
 }
-const CHANCE=[
-  ['Pay for a car repair: $100.',-100],['Surprise bonus! Collect $150.',150],
-  ['Pay a $50 ticket.',-50],['Collect $75 from a lucky find.',75],['You earned $100 from your side hustle!',100]
+// Placeholder event amounts until the economy is balanced.
+const BEARISH=[
+  ['Pay for a car repair: $100.',-100],['Pay a $50 ticket.',-50],
+  ['Unexpected penalty: pay $75.',-75]
 ];
-const CHEST=[
-  ['Community grant: collect $100.',100],['Unexpected bill: pay $50.',-50],
-  ['Birthday gift: collect $50.',50],['Home repair: pay $75.',-75],['Find $25 on the sidewalk.',25]
+const BULLISH=[
+  ['Community grant: collect $100.',100],['Birthday gift: collect $50.',50],
+  ['Find $25 on the sidewalk.',25]
 ];
 async function landed(i,roll,moveEpoch){
   const s=BOARD[i],p=current();selected=i;scene.makeSelection(i);
@@ -175,10 +176,14 @@ async function landed(i,roll,moveEpoch){
     const amount=Math.random()<.5?125:-75;
     changeCash(p,amount);log('🎰 Casino! '+p.name+(amount>0?' won '+MONEY(amount):' lost '+MONEY(-amount))+'.');
   }
-  else if(s.type==='chance'||s.type==='chest'){
-    const cards=s.type==='chance'?CHANCE:CHEST;
+  else if(s.type==='bullish'||s.type==='bearish'){
+    const cards=s.type==='bullish'?BULLISH:BEARISH;
     const [text,amount]=cards[Math.floor(Math.random()*cards.length)];
-    changeCash(p,amount);log((s.type==='chance'?'❔ ':'🎁 ')+text);
+    changeCash(p,amount);log((s.type==='bullish'?'📈 ':'📉 ')+text);
+  }
+  else if(s.type==='expense'){
+    // Actual development inventory is not yet implemented in this demo.
+    log('🚨 '+p.name+' landed on Unexpected Expense (fees pending economy implementation).');
   }
   else if(buyable(i)){
     const owner=game.owners[i];
@@ -337,9 +342,9 @@ function renderDetails(){
   const s=BOARD[selected];
   $('spaceNumber').textContent='#'+String(selected+1).padStart(2,'0');
   $('detailTitle').textContent=s.name;
-  const types={property:s.color+' property',transport:'transportation',utility:'utility',chance:'chance card',chest:'community chest',go:'start',jail:'jail / visiting',gojail:'go to jail',casino:'special event',freeparking:'free parking'};
+  const types={property:'property',transport:'car shop',bullish:'bullish event',bearish:'bearish event',expense:'unexpected expense',go:'start',jail:'jail / visiting',gojail:'go to jail',casino:'special event',freeparking:'free parking'};
   $('detailType').textContent=types[s.type];
-  $('detailColor').style.background=s.color?COLORS[s.color]:'#f4ca78';
+  $('detailColor').style.background=game.owners[selected]>=0?PLAYER_COLORS[game.owners[selected]]:(s.type==='property'?'#ffffff':'#f4ca78');
   let detail='';
   if(buyable(selected)){
     const owner=game.owners[selected];detail=`Purchase: ${MONEY(s.price)} · ${owner===-1?'Currently unowned':'Owned by '+game.players[owner].name}`;
@@ -347,7 +352,7 @@ function renderDetails(){
   }else{
     detail=({go:'Collect $200 when you pass GO.',jail:'Just visiting, unless sent here by Go To Jail.',
       gojail:'Go directly to Jail and miss your next turn.',freeparking:'Free Parking: no payment or action.',
-      casino:'Prototype Casino: win $125 or lose $75.',chance:'Draw a random Chance card.',chest:'Draw a random Community Chest card.'})[s.type]||'';
+      casino:'Prototype Casino: win $125 or lose $75.',bullish:'Positive financial event.',bearish:'Negative financial event.',expense:'Fee based on developments (pending implementation).'})[s.type]||'';
   }
   $('detailBody').textContent=detail;
 }
