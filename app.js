@@ -1,5 +1,5 @@
-import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=carshop-full-color-20261103-3';
-import {MyCityScene} from './scene3d.js?v=carshop-full-color-20261103-3';
+import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=block1-swap-20261103-4';
+import {MyCityScene} from './scene3d.js?v=block1-swap-20261103-4';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
