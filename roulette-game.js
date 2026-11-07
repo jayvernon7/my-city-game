@@ -55,13 +55,23 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
   const root=document.getElementById('rouletteGame');
   const chips=document.getElementById('rouletteChips');
   const numbers=document.getElementById('rouletteNumbers');
+  const zero=document.getElementById('rouletteZero');
+  const columns=document.getElementById('rouletteColumns');
+  const dozens=document.getElementById('rouletteDozens');
   const outside=document.getElementById('rouletteOutside');
   chips.innerHTML=CHIPS.map(([v,color])=>'<button type="button" class="r-chip" data-chip="'+v+'" style="--chip:'+color+';'+(v===1?'color:#141c20;':'')+'">$'+v+'</button>').join('');
-  numbers.innerHTML=['0','00',...Array.from({length:36},(_,i)=>i+1)].map(n=>{
-    const color=n==='0'||n==='00'?'green':RED.has(Number(n))?'red':'black';
-    return '<button type="button" class="r-number '+color+'" data-bet="number:'+n+'">'+n+'</button>';
-  }).join('');
-  outside.innerHTML=OUTSIDE.map(([key,label,returns])=>'<button type="button" class="r-outside '+key+'" data-bet="'+key+'">'+label+'<small>'+returns+'</small></button>').join('');
+  // Casino table order: top row 3–36, middle 2–35, bottom 1–34.
+  // The rows match the existing col1/col2/col3 payout logic.
+  const makeNumber=n=>'<button type="button" class="r-number '+(RED.has(n)?'red':'black')
+    +'" data-bet="number:'+n+'" title="Straight '+n+' · 35:1">'+n+'</button>';
+  numbers.innerHTML=[3,2,1].flatMap(first=>
+    Array.from({length:12},(_,i)=>first+i*3)).map(makeNumber).join('');
+  zero.innerHTML=['0','00'].map(n=>'<button type="button" class="r-number r-zero green" data-bet="number:'+n+'" title="Straight '+n+' · 35:1">'+n+'</button>').join('');
+  const makeOutside=([key,label,returns])=>'<button type="button" class="r-outside '+key
+    +'" data-bet="'+key+'" title="'+label+' · '+returns+'">'+label+'<small>'+returns+'</small></button>';
+  columns.innerHTML=['col3','col2','col1'].map(k=>makeOutside(OUTSIDE.find(([key])=>key===k))).join('');
+  dozens.innerHTML=['dozen1','dozen2','dozen3'].map(k=>makeOutside(OUTSIDE.find(([key])=>key===k))).join('');
+  outside.innerHTML=['low','even','red','black','odd','high'].map(k=>makeOutside(OUTSIDE.find(([key])=>key===k))).join('');
 
   function start(nextTurn,options={}){
     const game=getGame();
@@ -167,6 +177,12 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
       document.getElementById('roulettePlayer').textContent=p.name+' • '+money(p.cash)+' balance';
       document.getElementById('rouletteLimit').textContent=money(spent)+' / '+money(Math.min(100,p.cash))+' in bets';
       document.getElementById('rouletteBets').innerHTML=bets.length?bets.map(b=>'<span class="r-wager">'+esc(labelOf(b.key))+' '+money(b.amount)+'</span>').join(''):'<span class="r-muted">Choose a chip, then tap a number or outside bet.</span>';
+      // Mark the felt squares where this player has already put chips.
+      for(const node of root.querySelectorAll('[data-bet]')){
+        const staked=bets.filter(b=>b.key===node.dataset.bet).reduce((sum,b)=>sum+b.amount,0);
+        node.classList.toggle('bet-selected',staked>0);
+        node.setAttribute('aria-label',labelOf(node.dataset.bet)+(staked?' — '+money(staked)+' bet':''));
+      }
       document.getElementById('rouletteNext').textContent=spent?'LOCK BETS & NEXT →':'SKIP & NEXT →';
       document.getElementById('rouletteUndo').disabled=!bets.length;
       for(const b of chips.querySelectorAll('[data-chip]')){
