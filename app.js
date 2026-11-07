@@ -496,6 +496,167 @@ function doEndTurn(){
   scene.focus(game.turn);
   log('It’s '+current().name+'’s turn.');save();render();scheduleBot();
 }
+function canManage(){
+  return game&&!setup&&!current().bot&&!['moving','roulette','over'].includes(game.phase);
+}
+function openManage(index=null){
+  if(!canManage())return;
+  $('debtPanel').hidden=true;$('tradePanel').hidden=true;
+  $('managePanel').hidden=false;
+  renderManage(index);
+}
+function renderManage(index=null){
+  const ids=BOARD.filter((s,i)=>game.owners[i]===game.turn).map(s=>s.index);
+  const currentIndex=index!==null?index:Number($('manageProperty').value);
+  $('manageProperty').innerHTML=ids.map(i=>'<option value="'+i+'">'+escapeHTML(BOARD[i].name)+'</option>').join('');
+  if(ids.includes(currentIndex))$('manageProperty').value=String(currentIndex);
+  else if(ids.length)$('manageProperty').value=String(ids[0]);
+  $('manageProperty').disabled=!ids.length;
+  $('manageHelp').textContent=ids.length?'Develop, sell improvements, mortgage, or trade your spaces.':'You do not own any spaces yet.';
+  $('manageDebt').hidden=game.phase!=='debt';
+  if(game.phase==='debt')$('manageDebt').textContent='PAYMENT DUE: '+MONEY(game.debt.amount)+' • CASH AVAILABLE: '+MONEY(current().cash);
+  const i=Number($('manageProperty').value),space=BOARD[i];
+  $('manageButtons').innerHTML='';
+  if(!ids.length){$('manageDetails').textContent='Purchase a property or Car Shop to manage it.';return}
+  const dev=game.buildings[i],mortgaged=game.mortgaged[i];
+  const stats=KINDS.map(k=>RULES.developments[k].label+': '+(dev[k]||0)).join(' • ');
+  $('manageDetails').textContent=space.name+' • Block '+(blockFor(i)+1)+' • '+(space.type==='property'?usedSpots(dev)+'/'+capacityFor(i)+' slots • '+stats:'Car Shop')
+    +' • Current Rent: '+MONEY(rentFor(i))+' • '+(mortgaged?'MORTGAGED':'ACTIVE');
+  function addButton(label,action,kind='',disabled=false){
+    const el=document.createElement('button');
+    el.textContent=label;el.dataset.action=action;el.dataset.kind=kind;
+    el.type='button';el.disabled=disabled;$('manageButtons').appendChild(el);
+  }
+  if(space.type==='property'){
+    for(const kind of KINDS){
+      const label=RULES.developments[kind].label;
+      addButton('ADD '+label+' • '+MONEY(costFor(i,kind)),'build',kind,!canBuild(game,BOARD,i,kind,game.turn)||game.phase==='debt');
+      addButton('SELL '+label+' • +'+MONEY(developmentResale(i,kind)),'sell',kind,!(dev[kind]>0));
+    }
+  }
+  addButton('MORTGAGE • +'+MONEY(mortgageValue(space)),'mortgage','',!canMortgage(game,BOARD,i,game.turn));
+  addButton('UNMORTGAGE • '+MONEY(Math.ceil(mortgageValue(space)*1.1)),'unmortgage','',!mortgaged||current().cash<Math.ceil(mortgageValue(space)*1.1)||game.phase==='debt');
+}
+function performManage(action,kind){
+  if(!canManage())return;
+  const i=Number($('manageProperty').value),p=current();
+  if(game.owners[i]!==game.turn)return;
+  if(action==='build'&&canBuild(game,BOARD,i,kind,game.turn)){
+    p.cash-=costFor(i,kind);game.buildings[i][kind]++;
+    log('🏠 '+p.name+' added a '+RULES.developments[kind].label+' to '+BOARD[i].name+'.');
+  }else if(action==='sell'&&game.buildings[i]?.[kind]>0){
+    game.buildings[i][kind]--;p.cash+=developmentResale(i,kind);
+    log('💵 '+p.name+' sold a '+RULES.developments[kind].label+' on '+BOARD[i].name+'.');
+  }else if(action==='mortgage'&&canMortgage(game,BOARD,i,game.turn)){
+    game.mortgaged[i]=true;p.cash+=mortgageValue(BOARD[i]);
+    log('🏦 '+p.name+' mortgaged '+BOARD[i].name+'.');
+  }else if(action==='unmortgage'&&game.mortgaged[i]&&game.phase!=='debt'){
+    const due=Math.ceil(mortgageValue(BOARD[i])*1.1);
+    if(p.cash<due)return;p.cash-=due;game.mortgaged[i]=false;
+    log('🏦 '+p.name+' unmortgaged '+BOARD[i].name+'.');
+  }else return;
+  renderManage(i);save();render();winnerCheck();save();render();
+}
+function openTrade(){
+  if(!canManage())return;
+  $('managePanel').hidden=true;$('debtPanel').hidden=true;
+  $('tradePanel').hidden=false;
+  $('tradeError').textContent='';
+  const actor=game.turn;
+  $('tradeFrom').innerHTML='<option value="'+actor+'">'+escapeHTML(current().name)+'</option>';
+  const options=game.players.map((p,id)=>!p.bankrupt&&id!==actor?'<option value="'+id+'">'+escapeHTML(p.name)+'</option>':'').join('');
+  $('tradeTo').innerHTML=options;
+  $('tradePay').value='0';$('tradeGet').value='0';
+  renderTradeOptions();
+}
+function renderTradeOptions(){
+  if($('tradePanel').hidden)return;
+  const from=game.turn,to=Number($('tradeTo').value);
+  const make=(owner)=>'<option value="">No property</option>'+BOARD.filter((s,i)=>game.owners[i]===owner)
+    .map(s=>'<option value="'+s.index+'">'+escapeHTML(s.name)+(game.mortgaged[s.index]?' (mortgaged)':'')+'</option>').join('');
+  $('tradeGive').innerHTML=make(from);$('tradeReceive').innerHTML=make(to);
+}
+function submitTrade(){
+  if(!canManage())return;
+  const from=game.turn,to=Number($('tradeTo').value);
+  const give=$('tradeGive').value===''?null:Number($('tradeGive').value);
+  const take=$('tradeReceive').value===''?null:Number($('tradeReceive').value);
+  const pay=Number($('tradePay').value),get=Number($('tradeGet').value);
+  const error=$('tradeError');
+  error.textContent='';
+  if(!Number.isInteger(to)||to<0||to>=game.players.length||to===from||game.players[to].bankrupt){
+    error.textContent='Choose another active player.';return;
+  }
+  if((give===null&&take===null)||!Number.isInteger(pay)||!Number.isInteger(get)||pay<0||get<0){
+    error.textContent='Select at least one property and use valid nonnegative cash amounts.';return;
+  }
+  if(pay>current().cash||get>game.players[to].cash){
+    error.textContent='A player cannot offer more cash than they have.';return;
+  }
+  if(give!==null&&(game.owners[give]!==from||hasBuildings(game,give))||
+     take!==null&&(game.owners[take]!==to||hasBuildings(game,take))){
+    error.textContent='Only owned spaces without developments may be traded. Sell improvements first.';return;
+  }
+  const description=current().name+' offers '+(give!==null?BOARD[give].name+' + ':'')+MONEY(pay)
+    +' for '+(take!==null?BOARD[take].name+' + ':'')+MONEY(get)+'.';
+  const accepted=game.players[to].bot
+    ?(take===null&&pay>=(give===null?0:BOARD[give].price))||
+      (take!==null&&pay>=BOARD[take].price*1.25+(get||0))
+    :window.confirm(game.players[to].name+': Accept this offer?\n\n'+description+'\n\nOK = Accept • Cancel = Decline');
+  if(!accepted){
+    log('🤝 '+game.players[to].name+' declined the offer.');
+    error.textContent='Offer declined. Adjust the terms to make a counteroffer.';
+    save();render();return;
+  }
+  current().cash+=get-pay;game.players[to].cash+=pay-get;
+  if(give!==null)game.owners[give]=to;
+  if(take!==null)game.owners[take]=from;
+  log('🤝 DEAL ACCEPTED! '+description);
+  redrawAssets();$('tradePanel').hidden=true;
+  save();render();winnerCheck();save();render();
+  if(game.phase==='debt')$('debtPanel').hidden=false;
+}
+function showDebtUI(){
+  const active=game?.phase==='debt'&&!!game.debt;
+  $('debtPanel').hidden=!active||!$('managePanel').hidden||!$('tradePanel').hidden;
+  if(!active)return;
+  $('debtTitle').textContent=current().name+' • PAYMENT DUE';
+  $('debtSummary').textContent='You owe '+MONEY(game.debt.amount)+' for '+game.debt.reason+'. Current cash: '+MONEY(current().cash)
+    +'. Sell developments, mortgage property, or negotiate a trade to raise funds.';
+  $('debtPay').disabled=current().cash<game.debt.amount;
+}
+$('manageBtn').addEventListener('click',()=>openManage());
+$('tradeBtn').addEventListener('click',openTrade);
+$('rulesBtn').addEventListener('click',()=>{$('rulesPanel').hidden=false});
+$('closeRules').addEventListener('click',()=>{$('rulesPanel').hidden=true});
+$('closeManage').addEventListener('click',()=>{$('managePanel').hidden=true;showDebtUI()});
+$('closeTrade').addEventListener('click',()=>{$('tradePanel').hidden=true;showDebtUI()});
+$('openMyProperties').addEventListener('click',()=>{$('managePanel').hidden=true;setOwnedPropertiesOpen(true);showDebtUI()});
+$('openTrade').addEventListener('click',openTrade);
+$('manageProperty').addEventListener('change',()=>renderManage());
+$('manageButtons').addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-action]');if(btn)performManage(btn.dataset.action,btn.dataset.kind)
+});
+$('tradeTo').addEventListener('change',renderTradeOptions);
+$('tradeOffer').addEventListener('click',submitTrade);
+$('tradeCounter').hidden=true;
+$('debtManage').addEventListener('click',()=>openManage());
+$('debtPay').addEventListener('click',payDebt);
+$('debtBankrupt').addEventListener('click',()=>{
+  if(window.confirm('Declare bankruptcy and leave the game? Try selling, mortgaging, or trading first.'))bankruptCurrent()
+});
+function autoInvestBot(){
+  const id=game.turn;
+  if(!current().bot||current().cash<450)return;
+  const owned=BOARD.filter((s,i)=>game.owners[i]===id&&s.type==='property');
+  if(!owned.length)return;
+  const i=owned[Math.floor(Math.random()*owned.length)].index;
+  const kind=current().cash>700?'apartment':'house';
+  if(canBuild(game,BOARD,i,kind,id)){
+    current().cash-=costFor(i,kind);game.buildings[i][kind]++;
+    log('🏗️ '+current().name+' developed '+BOARD[i].name+'.');
+  }
+}
 function scheduleBot(){
   clearTimeout(botTimeout);
   if(!game||setup||!current().bot||game.phase==='moving'||game.phase==='over')return;
