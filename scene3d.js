@@ -616,52 +616,117 @@ export class MyCityScene {
     return new THREE.Vector3(loc.x+dx,.75,loc.z+dz);
   }
   makeHumanPlayer(shirtColor='#f8f8f5',playerColor=PLAYER_COLORS[0]){
-    // Low-poly male character with player-selected shirt color,
-    // black pants and black shoes.
+    // MY CITY character #1: young adult Black man, age 21.
+    // Stylized cel-animation-inspired facial proportions: prominent angular
+    // eyebrows, expressive eyes, short low fade and a closely trimmed goatee.
+    // Adult height (~1.94 world units), similar to the elder reference.
+    // Every shape is a real Three.js mesh, not a 2D sprite or billboard.
     const person=new THREE.Group();
-    const skin=new THREE.MeshStandardMaterial({color:0x75432c,roughness:.87});
-    const skinShade=new THREE.MeshStandardMaterial({color:0x653822,roughness:.88});
-    const shirt=new THREE.MeshStandardMaterial({color:shirtColor,roughness:.76});
-    const pants=new THREE.MeshStandardMaterial({color:0x18191d,roughness:.88});
-    const shoes=new THREE.MeshStandardMaterial({color:0x0c0d10,roughness:.58});
-    const hair=new THREE.MeshStandardMaterial({color:0x131212,roughness:1});
-    const face=new THREE.MeshStandardMaterial({color:0x1d1614,roughness:1});
-    const add=(geometry,material,x,y,z,rx=0,ry=0,rz=0)=>{
-      const mesh=new THREE.Mesh(geometry,material);
-      mesh.position.set(x,y,z);
-      mesh.rotation.set(rx,ry,rz);
-      mesh.castShadow=true;
-      mesh.receiveShadow=true;
-      person.add(mesh);
-      return mesh;
+    person.name='MY CITY — Young Adult Male 01';
+    const material=(color,roughness=.82)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0,flatShading:false});
+    const skin=material(0x935e3c),skinLight=material(0xb27a53),skinShade=material(0x643d2a);
+    const hair=material(0x111115,.95),fade=material(0x282124),brow=material(0x191618);
+    const eyeWhite=material(0xf5e9df,.55),iris=material(0x362b23,.44),pupil=material(0x0b0b0d,.36);
+    const lips=material(0x683d35),white=material(0xf3f0e7),dark=material(0x171b25);
+    const tee=material(shirtColor,.78),pants=material(0x242833),shoes=material(0xf1eee6,.58);
+    const soles=material(0x16191d,.82),laces=material(0xc9d1d0);
+    const mesh=(parent,geometry,mat,x=0,y=0,z=0,rx=0,ry=0,rz=0)=>{
+      const item=new THREE.Mesh(geometry,mat);
+      item.position.set(x,y,z);item.rotation.set(rx,ry,rz);
+      item.castShadow=true;item.receiveShadow=true;
+      parent.add(item);return item;
     };
-    // Forward is +Z, so the shoes project toward the front.
+    const box=(parent,w,h,d,mat,x,y,z,rx=0,ry=0,rz=0)=>
+      mesh(parent,new THREE.BoxGeometry(w,h,d),mat,x,y,z,rx,ry,rz);
+    const orb=(parent,rx,ry,rz,mat,x,y,z)=>
+      mesh(parent,new THREE.SphereGeometry(1,18,12),mat,x,y,z) &&
+      parent.children[parent.children.length-1];
+    // Feet, pants and sneakers. The entire limbs pivot while walking.
+    const legs=[];
     for(const side of [-1,1]){
-      const x=side*.14;
-      add(new THREE.BoxGeometry(.21,.38,.22),pants,x,.34,0);
-      add(new THREE.BoxGeometry(.23,.15,.37),shoes,x,.085,.10);
-      // Short sleeves end above the exposed forearms.
-      add(new THREE.CylinderGeometry(.115,.13,.28,10),shirt,side*.30,1.06,0,0,0,side*.22);
-      add(new THREE.CylinderGeometry(.090,.085,.31,10),skin,side*.345,.77,0,0,0,side*.10);
-      add(new THREE.SphereGeometry(.088,10,8),skinShade,side*.36,.61,.015);
+      const leg=new THREE.Group();
+      leg.position.set(side*.145,.76,0);
+      person.add(leg);legs.push(leg);
+      box(leg,.235,.49,.245,pants,0,-.24,0);
+      box(leg,.245,.13,.305,pants,0,-.52,0);
+      box(leg,.268,.145,.385,shoes,0,-.665,.10);
+      box(leg,.27,.055,.41,soles,0,-.747,.115);
+      for(let n=0;n<3;n++)box(leg,.12,.014,.024,laces,0,-.594,.19+n*.05);
     }
-    // Torso / white crewneck.
-    add(new THREE.BoxGeometry(.48,.53,.29),shirt,0,1.07,0);
-    add(new THREE.CylinderGeometry(.11,.12,.09,12),skin,0,1.40,0);
-    add(new THREE.SphereGeometry(.235,18,12),skin,0,1.64,0);
-    // Close-cropped black hair, with a clear face visible underneath.
-    add(new THREE.SphereGeometry(.235,18,10,0,Math.PI*2,0,Math.PI*.42),hair,0,1.685,0);
+    // Waist and relaxed, untucked plain short-sleeve shirt.
+    box(person,.48,.17,.32,pants,0,.76,0);
+    const torso=mesh(person,new THREE.CylinderGeometry(.32,.26,.61,8),tee,0,1.104,0);
+    torso.scale.z=.78;
+    box(person,.56,.06,.32,tee,0,.83,0);
+    const neck=mesh(person,new THREE.CylinderGeometry(.102,.115,.15,12),skin,0,1.462,.012);
+    // White crew-neck rim, visible against whichever shirt color player chooses.
+    const collar=mesh(person,new THREE.TorusGeometry(.116,.021,6,22),white,0,1.386,.045);
+    collar.rotation.x=Math.PI/2.5;
+    const arms=[];
     for(const side of [-1,1]){
-      add(new THREE.SphereGeometry(.021,8,6),face,side*.085,1.67,.212);
+      const arm=new THREE.Group();
+      arm.position.set(side*.33,1.31,0);person.add(arm);arms.push(arm);
+      const sleeve=mesh(arm,new THREE.CylinderGeometry(.14,.142,.235,10),tee,side*.062,-.104,0,0,0,side*-.22);
+      mesh(arm,new THREE.CylinderGeometry(.095,.09,.33,10),skin,side*.105,-.38,.015,0,0,side*-.06);
+      mesh(arm,new THREE.SphereGeometry(.094,12,9),skin,side*.11,-.575,.02);
+      // The elbow and sleeve get a tiny darker seam for illustrated definition.
+      mesh(arm,new THREE.TorusGeometry(.126,.012,5,14),skinShade,side*.08,-.238,0,Math.PI/2,0,0);
     }
-    add(new THREE.SphereGeometry(.030,8,6),skinShade,0,1.59,.228);
-    // A small ring keeps the avatar visible among the board spaces.
-    const ring=new THREE.Mesh(
-      new THREE.TorusGeometry(.34,.045,7,32),
-      new THREE.MeshBasicMaterial({color:playerColor,transparent:true,opacity:.82})
-    );
-    ring.rotation.x=-Math.PI/2;ring.position.y=.015;
-    person.add(ring);
+    // Young adult head, slightly enlarged for readable animated expressions.
+    // Forward is +Z, keeping the features visible from the game's camera.
+    const head=new THREE.Group();
+    head.position.set(0,1.667,.005);person.add(head);
+    const cranium=mesh(head,new THREE.SphereGeometry(1,24,18),skin,0,0,0);
+    cranium.scale.set(.252,.292,.229);
+    const jaw=mesh(head,new THREE.CylinderGeometry(.175,.127,.16,6),skin,0,-.184,.044);
+    jaw.scale.z=1.02;
+    // Low fade: close-cropped side hair, slightly raised dark top and
+    // crisp low hairline across the forehead rather than an oversized afro.
+    const top=mesh(head,new THREE.SphereGeometry(1,24,10,0,Math.PI*2,0,Math.PI*.49),hair,0,.051,-.008);
+    top.scale.set(.258,.287,.232);
+    box(head,.393,.058,.048,hair,0,.193,.188);
+    for(const side of [-1,1]){
+      const temple=mesh(head,new THREE.SphereGeometry(1,12,9),fade,side*.225,.112,-.026);
+      temple.scale.set(.042,.122,.13);
+      // Ears remain visible below the hair fade.
+      const ear=mesh(head,new THREE.SphereGeometry(1,12,10),skin,side*.253,-.046,-.006);
+      ear.scale.set(.071,.101,.059);
+      const earInset=mesh(head,new THREE.SphereGeometry(1,10,8),skinShade,side*.301,-.044,.029);
+      earInset.scale.set(.021,.057,.022);
+      // Stylized cheekbone / jaw shadow.
+      const cheek=mesh(head,new THREE.SphereGeometry(1,12,8),skinLight,side*.154,-.092,.169);
+      cheek.scale.set(.067,.051,.034);
+      // White sclera + iris + pupil; slightly angled eyes, not round dots.
+      const eye=mesh(head,new THREE.SphereGeometry(1,16,10),eyeWhite,side*.102,.016,.208);
+      eye.scale.set(.077,.055,.044);
+      const eyeIris=mesh(head,new THREE.SphereGeometry(1,14,9),iris,side*.101,.013,.248);
+      eyeIris.scale.set(.033,.037,.012);
+      mesh(head,new THREE.SphereGeometry(.019,10,8),pupil,side*.102,.013,.262);
+      mesh(head,new THREE.SphereGeometry(.008,8,6),white,side*.092,.030,.275);
+      // Sharp, expressive eyebrows supply the Boondocks-inspired attitude.
+      box(head,.154,.041,.037,brow,side*.105,.116,.235,0,0,side*-.16);
+      // Thin lower eyelid line.
+      box(head,.142,.012,.019,skinShade,side*.102,-.038,.242,0,0,side*.09);
+    }
+    // Angular brow ridge, straight nose and subtle nostril shadows.
+    const bridge=mesh(head,new THREE.BoxGeometry(.058,.125,.072),skinLight,0,-.035,.235);
+    bridge.rotation.x=-.14;
+    mesh(head,new THREE.SphereGeometry(1,12,9),skin,0,-.116,.264).scale.set(.075,.048,.077);
+    for(const side of [-1,1])
+      mesh(head,new THREE.SphereGeometry(1,9,7),skinShade,side*.050,-.123,.310).scale.set(.014,.014,.010);
+    // Distinctive close-trimmed mustache and goatee, no full beard.
+    box(head,.091,.025,.020,hair,-.050,-.163,.259,0,0,-.10);
+    box(head,.091,.025,.020,hair,.050,-.163,.259,0,0,.10);
+    mesh(head,new THREE.SphereGeometry(1,12,9),lips,0,-.192,.248).scale.set(.087,.023,.021);
+    const goatee=mesh(head,new THREE.ConeGeometry(.093,.134,6),hair,0,-.289,.184);
+    goatee.rotation.x=Math.PI;
+    mesh(head,new THREE.SphereGeometry(1,12,9),hair,0,-.252,.230).scale.set(.083,.043,.031);
+    // Player-chosen shirt color still determines this character's ownership.
+    const ring=mesh(person,new THREE.TorusGeometry(.37,.048,7,36),
+      new THREE.MeshBasicMaterial({color:playerColor,transparent:true,opacity:.86}),0,.02,0);
+    ring.rotation.x=Math.PI/2;
+    person.userData.walkRig={legs,arms,head};
+    person.userData.characterId='young-adult-male-01';
     return person;
   }
   makePoliceOfficer(){
@@ -1182,7 +1247,22 @@ export class MyCityScene {
     const dt=Math.min(this.clock.getDelta(),.05);this.elapsed+=dt;
     if(this.motion){
       const m=this.motion,t=clamp((this.elapsed-m.start)/m.duration,0,1),s=smooth(t),pawn=this.pawns[m.playerId];
-      pawn.position.lerpVectors(m.from,m.to,s);pawn.position.y+=Math.sin(t*Math.PI)*.66;
+      pawn.position.lerpVectors(m.from,m.to,s);
+      const rig=pawn.userData.walkRig;
+      if(rig){
+        // Grounded walking instead of the old hopping board-piece motion.
+        const movingDir=m.to.clone().sub(m.from);
+        pawn.rotation.y=Math.atan2(movingDir.x,movingDir.z);
+        const stride=Math.sin(t*Math.PI*5.5)*.44*Math.sin(t*Math.PI);
+        rig.legs[0].rotation.x=stride;rig.legs[1].rotation.x=-stride;
+        rig.arms[0].rotation.x=-stride*.6;rig.arms[1].rotation.x=stride*.6;
+        rig.head.rotation.z=Math.sin(t*Math.PI*5.5)*.025;
+        pawn.position.y+=Math.abs(Math.sin(t*Math.PI*5.5))*.04;
+        if(t>=1){
+          for(const limb of [...rig.legs,...rig.arms])limb.rotation.x=0;
+          rig.head.rotation.z=0;
+        }
+      }else pawn.position.y+=Math.sin(t*Math.PI)*.66;
       if(t>=1){pawn.position.copy(m.to);this.motion=null;m.resolve()}
     }
     if(this.escort){
