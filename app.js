@@ -331,6 +331,7 @@ async function landed(i,roll,moveEpoch){
   if(s.type==='go'){log(p.name+' landed on GO.');}
   else if(s.type==='jail'){log(p.name+' is just visiting Jail.');}
   else if(s.type==='gojail'){
+    game.bonusRoll=false;game.doubleCount=0;
     log('🚨 '+p.name+' was sent directly to Jail!');save();render();
     await scene.escortToJail(game.turn);
     if(moveEpoch!==epoch)return;
@@ -346,27 +347,27 @@ async function landed(i,roll,moveEpoch){
   else if(s.type==='bullish'||s.type==='bearish'){
     const cards=s.type==='bullish'?BULLISH:BEARISH;
     const [text,amount]=cards[Math.floor(Math.random()*cards.length)];
-    changeCash(p,amount);log((s.type==='bullish'?'📈 ':'📉 ')+text);
+    if(amount>=0){changeCash(p,amount);log('📈 '+p.name+' earned '+MONEY(amount)+'. '+text)}
+    else resolvePayment(-amount,null,'Bearish: '+text);
   }
   else if(s.type==='expense'){
-    // Actual development inventory is not yet implemented in this demo.
-    log('🚨 '+p.name+' landed on Unexpected Expense (fees pending economy implementation).');
+    const expense=unexpectedForPlayer(game,game.turn);
+    if(expense>0)resolvePayment(expense,null,'Unexpected Expense');
+    else log('🚨 '+p.name+' had no developments to charge on Unexpected Expense.');
   }
   else if(buyable(i)){
     const owner=game.owners[i];
     if(owner!==-1 && owner!==game.turn){
       const price=rentFor(i,roll);
-      // In this starter game rent is transferred directly to the owner.
-      const payment=Math.min(price,Math.max(p.cash,0));
-      changeCash(p,-price);changeCash(game.players[owner],payment);
-      log(p.name+' paid '+MONEY(payment)+' rent to '+game.players[owner].name+' on '+s.name+'.');
+      if(price>0)resolvePayment(price,owner,'rent on '+s.name);
+      else log(p.name+' landed on mortgaged '+s.name+'; no rent charged.');
     }
     else if(owner===game.turn)log(p.name+' owns '+s.name+'.');
     else if(p.cash>=s.price){game.pending=i;game.phase='decision';log(p.name+' can buy '+s.name+' for '+MONEY(s.price)+'.');}
     else log(p.name+' cannot afford '+s.name+'.');
   }
   scene.updateOwners(game.owners);
-  if(!winnerCheck() && game.phase!=='decision')game.phase='end';
+  if(!winnerCheck() && game.phase!=='decision'&&game.phase!=='debt')game.phase=game.bonusRoll?'roll':'end';
   save();render();showLandingCard(i);scheduleBot();
 }
 async function roll(){
@@ -377,13 +378,40 @@ async function doRoll(){
   if(game.phase!=='roll'||current().bankrupt)return;
   hideLandingCard();hideRoulettePreview();
   const actor=game.turn,p=current(),thisEpoch=++epoch;
-  if(p.jailed>0){
-    p.jailed--;game.dice=[0,0];game.rollTotal=0;
-    // This served jail turn completes the sentence; lift the cage now.
-    scene.updatePositions(game.players,game.turn);
-    log(p.name+' misses this turn in Jail.');setPhase('end');scheduleBot();return;
-  }
   const a=Math.floor(Math.random()*6)+1,b=Math.floor(Math.random()*6)+1,steps=a+b;
+  if(p.jailed>0){
+    if(a===b){
+      p.jailed=0;game.doubleCount=0;game.bonusRoll=false;
+      log('🎲 '+p.name+' rolled doubles and escaped Jail!');
+      scene.setJailCage(actor,false);
+    }else{
+      p.jailed++;
+      game.dice=[a,b];game.rollTotal=steps;
+      if(p.jailed>3){
+        // Third unsuccessful attempt: jail fee becomes a payable obligation.
+        p.jailed=0;game.bonusRoll=false;
+        scene.setJailCage(actor,false);
+        const paid=resolvePayment(RULES.jailFee,null,'Jail release after three attempts');
+        if(!paid){save();render();scheduleBot();return;}
+        log(p.name+' served three failed Jail rolls and paid '+MONEY(RULES.jailFee)+'.');
+      }else{
+        log('🔒 '+p.name+' did not roll doubles and remains in Jail (attempt '+p.jailed+'/3).');
+        game.phase='end';save();render();scheduleBot();return;
+      }
+    }
+  }else if(a===b){
+    game.doubleCount++;
+    if(game.doubleCount>=3){
+      game.bonusRoll=false;game.doubleCount=0;
+      game.phase='moving';log('🚓 Three doubles in a row! '+p.name+' goes directly to Jail.');
+      save();render();
+      await scene.escortToJail(actor);
+      if(thisEpoch!==epoch)return;
+      p.at=10;p.jailed=1;selected=10;scene.makeSelection(10);
+      game.phase='end';save();render();scheduleBot();return;
+    }
+    game.bonusRoll=true;
+  }else{game.doubleCount=0;game.bonusRoll=false;}
   const from=p.at;game.dice=[a,b];game.rollTotal=0;
   scene.focus(actor);
   game.phase='moving';log(p.name+' rolled '+a+' + '+b+'. Watch the dice, then follow the piece!');
@@ -414,7 +442,7 @@ async function doRoll(){
       // Keep HUD readable while the cinematic camera follows the pawn.
       $('players').querySelectorAll('.player-sub')[actor].textContent='Moving · '+BOARD[target].name;
     }
-    if(from+steps>=40){changeCash(p,200);log(p.name+' passed GO and collected $200.');}
+    if(from+steps>=40){changeCash(p,RULES.go);log(p.name+' passed GO and collected '+MONEY(RULES.go)+'.');}
     game.pending=-1;
     await landed(p.at,steps,thisEpoch);
     if(thisEpoch!==epoch)return;
@@ -438,14 +466,15 @@ function doBuy(){
   log('🏠 '+p.name+' bought '+BOARD[i].name+' for '+MONEY(BOARD[i].price)+'.');
   scene.updateOwners(game.owners);
   showLandingCard(i);
-  setPhase('end');scheduleBot();
+  setPhase(game.bonusRoll?'roll':'end');scheduleBot();
 }
 function pass(){if(game.phase!=='decision'||current().bot)return;doPass()}
-function doPass(){if(game.phase!=='decision')return;log(current().name+' skipped buying '+BOARD[game.pending].name+'.');game.pending=-1;setPhase('end');scheduleBot()}
+function doPass(){if(game.phase!=='decision')return;log(current().name+' skipped buying '+BOARD[game.pending].name+'.');game.pending=-1;setPhase(game.bonusRoll?'roll':'end');scheduleBot()}
 function endTurn(){if(game.phase!=='end'||current().bot)return;doEndTurn()}
 function advanceAfterRoulette(next){
+  if(winnerCheck()){save();render();return}
   game.round++;
-  game.turn=next;game.phase='roll';game.pending=-1;game.rollTotal=0;game.dice=[1,1];
+  game.turn=next;game.phase='roll';game.pending=-1;game.rollTotal=0;game.dice=[1,1];game.doubleCount=0;game.bonusRoll=false;game.doubleCount=0;game.bonusRoll=false;
   scene.focus(game.turn);
   log('🎲 Roulette finished. Round '+game.round+' begins with '+current().name+'.');
   save();render();scheduleBot();
