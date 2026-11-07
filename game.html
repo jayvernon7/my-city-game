@@ -594,7 +594,7 @@ body.game-screen{height:100dvh;overflow:hidden}
         <button id="rouletteBackToBoard" type="button">BACK TO BOARD →</button>
       </div>
     </section>
-    <div class="mc-toolbar"><button type="button" id="manageBtn">🏠 MANAGE</button><button type="button" id="tradeBtn">🤝 TRADE</button><button type="button" id="rulesBtn">📖 RULES</button></div>
+    <div class="mc-toolbar"><button type="button" id="manageBtn">🏠 MANAGE</button><button type="button" id="tradeBtn">🤝 TRADE</button><button type="button" id="diceBetBtn">🎲 DICE BET</button><button type="button" id="rulesBtn">📖 RULES</button></div>
      <div class="roll-dock" aria-label="Dice controls">
       <div class="dice-display" id="diceDisplay" aria-label="Dice results">
         <span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span>
@@ -619,7 +619,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   <h3>TRADING & MONEY</h3><p>Offer to buy properties or trade properties and cash with other players. Sell developments to the bank for half their cost. Once all your developments are sold, you can mortgage properties for half their purchase price. To unmortgage, repay the mortgage plus 10% interest. Mortgaged spaces collect no rent.</p>
   <h3>PAYMENTS & BANKRUPTCY</h3><p>When you cannot pay, raise funds by selling developments, mortgaging, or arranging trades. If you still cannot pay, declare bankruptcy. Rent debt transfers your remaining cash and eligible assets to the creditor; bank debt returns remaining spaces to the market.</p>
   <h3>JAIL & EVENTS</h3><p>Go To Jail moves you directly to Jail without GO money. You can pay $50 or try for doubles on your next three turns; after a third failed attempt you must pay $50. Bullish pays rewards; Bearish costs money; Unexpected Expense charges based on your owned houses, apartments, and businesses. Free Parking has no effect.</p>
-  <h3>CASINO</h3><p>Roulette opens to all active players at the end of every round. Chips are $1, $5, $10, $20, $50 and $100, with a $100 total bet cap per player (or their cash balance, if lower). Single-number, color, parity, dozen, and column bets pay American roulette odds.</p>
+  <h3>DICE SIDE BETS</h3><p>Before rolling, two active local players can agree to an equal-stake wager (up to $200 each) on whether the next dice total is higher or lower than 7. Seven is a push. Stakes are reserved until the dice settle.</p><h3>CASINO</h3><p>Roulette opens to all active players at the end of every round. Chips are $1, $5, $10, $20, $50 and $100, with a $100 total bet cap per player (or their cash balance, if lower). Single-number, color, parity, dozen, and column bets pay American roulette odds.</p>
   <p class="mc-note">Development prices, rents, and event fees are test values based on classic Monopoly's $1,500 starting economy. These may change after balancing. Local play rules are implemented here; online Supabase rooms have a separate rules implementation.</p>
  </div>
 </section>
@@ -653,6 +653,20 @@ body.game-screen{height:100dvh;overflow:hidden}
   <label for="tradeGet">CASH YOU RECEIVE</label><input id="tradeGet" type="number" min="0" step="1" value="0">
   <p id="tradeError" class="mc-debt" role="alert"></p>
   <div class="mc-actions"><button id="tradeOffer" type="button">SUBMIT OFFER</button><button id="tradeCounter" type="button" class="mc-secondary" hidden>COUNTER</button></div>
+ </div>
+</section>
+<section id="diceBetPanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="diceBetTitle">
+ <div class="mc-modal-card">
+  <button id="closeDiceBet" class="mc-close" type="button" aria-label="Close dice bets">×</button>
+  <h2 id="diceBetTitle">🎲 DICE SIDE BET</h2>
+  <p>Bet with another player on the current roller's next dice total. One player picks higher than 7, the other gets lower than 7. Exactly 7 is a push and both stakes are returned.</p>
+  <label for="diceBetPlayer">PLAYER MAKING THE BET</label><select id="diceBetPlayer"></select>
+  <label for="diceBetAgainst">BET AGAINST</label><select id="diceBetAgainst"></select>
+  <label for="diceBetSide">YOUR PICK</label><select id="diceBetSide"><option value="high">HIGHER THAN 7 (8–12)</option><option value="low">LOWER THAN 7 (2–6)</option></select>
+  <label for="diceBetAmount">EQUAL STAKES ($1–$200)</label><input id="diceBetAmount" type="number" min="1" max="200" step="1" value="25">
+  <p id="diceBetError" class="mc-debt" role="alert"></p>
+  <div id="diceBetQueue" class="mc-note"></div>
+  <div class="mc-actions"><button id="placeDiceBet" type="button">OFFER BET</button></div>
  </div>
 </section>
 <section id="debtPanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="debtTitle">
@@ -736,7 +750,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   </div>
 </section>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=rules-20261106-2"></script>
+<script type="module" src="./app.js?v=rules-20261106-3"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
