@@ -516,6 +516,27 @@ body.game-screen{height:100dvh;overflow:hidden}
 .game-screen #setupBack{background:#173945;color:#edf9f0;border:1px solid #69877f}
 @media(max-width:500px){.game-screen .character-setup-card{padding:15px}.game-screen .character-setup-card h2{font-size:23px}.game-screen .setup-colors{gap:5px}}
 </style>
+
+<style>
+.game-screen .mc-modal[hidden]{display:none!important}
+.game-screen .mc-modal{position:fixed;inset:0;z-index:125;background:#061923df;display:grid;place-items:center;padding:14px;overflow-y:auto}
+.game-screen .mc-modal-card{position:relative;width:min(580px,100%);max-height:calc(100dvh - 30px);overflow:auto;background:linear-gradient(145deg,#173f49,#0b2932);border:1px solid #d8b47e;border-radius:15px;box-shadow:0 25px 75px #000c;padding:21px;color:#effaf2}
+.game-screen .mc-modal-card h2{margin:5px 40px 14px 0;font-size:23px;color:#f5d493}.game-screen .mc-modal-card h3{font-size:13px;margin:17px 0 5px;color:#ffdfab;letter-spacing:1px}
+.game-screen .mc-modal-card p{font-size:12px;line-height:1.55;color:#c9d8d6;margin:8px 0 12px}.game-screen .mc-note{font-size:10px!important;color:#b3c2c0!important}
+.game-screen .mc-modal-card label{display:block;margin:13px 0 5px;font-size:11px;letter-spacing:1px;font-weight:900;color:#cee3db}
+.game-screen .mc-modal-card select,.game-screen .mc-modal-card input{display:block;width:100%;border:1px solid #75a699;background:#08242c;color:#fff;font-size:15px;padding:10px;border-radius:7px}
+.game-screen .mc-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.game-screen .mc-actions button,.game-screen .mc-secondary,.game-screen .mc-close{border-radius:8px;border:1px solid #efd5a1;background:#efd092;color:#122c32;font-size:12px;font-weight:950;padding:10px 12px;cursor:pointer;min-height:42px}
+.game-screen .mc-actions button:disabled{opacity:.4;cursor:not-allowed}
+.game-screen .mc-actions .mc-secondary,.game-screen .mc-secondary{background:#20515b;color:#f4fffb;border-color:#78afa4}
+.game-screen .mc-actions .mc-danger{background:#803b3b;color:#fff;border-color:#c98282}
+.game-screen .mc-modal .mc-close{position:absolute;right:13px;top:13px;min-height:36px;padding:4px 10px;font-size:22px}
+.game-screen .mc-debt{color:#ffd2a1!important;font-weight:900}
+.game-screen #manageDetails{background:#0c3036;border:1px solid #436c64;border-radius:8px;margin-top:11px;padding:10px;font-size:12px;line-height:1.6}
+.game-screen .mc-toolbar{display:flex;gap:7px;flex-wrap:wrap;padding:5px 12px;background:#102d37}
+.game-screen .mc-toolbar button{border-radius:7px;border:1px solid #789c94;color:#e9f4ed;background:#1a434a;padding:9px 11px;font-size:11px;font-weight:900;cursor:pointer}
+.game-screen .mc-toolbar button:hover{border-color:#ead194}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -573,7 +594,8 @@ body.game-screen{height:100dvh;overflow:hidden}
         <button id="rouletteBackToBoard" type="button">BACK TO BOARD →</button>
       </div>
     </section>
-    <div class="roll-dock" aria-label="Dice controls">
+    <div class="mc-toolbar"><button type="button" id="manageBtn">🏠 MANAGE</button><button type="button" id="tradeBtn">🤝 TRADE</button><button type="button" id="rulesBtn">📖 RULES</button></div>
+     <div class="roll-dock" aria-label="Dice controls">
       <div class="dice-display" id="diceDisplay" aria-label="Dice results">
         <span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span>
       </div>
@@ -586,7 +608,59 @@ body.game-screen{height:100dvh;overflow:hidden}
     </div>
   </main>
 
-  <section id="rouletteGame" class="roulette-game" hidden role="region" aria-label="Roulette round" aria-live="off">
+  
+<section id="rulesPanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+ <div class="mc-modal-card">
+  <button id="closeRules" class="mc-close" type="button" aria-label="Close rules">×</button>
+  <h2 id="rulesTitle">MY CITY · HOW TO PLAY</h2>
+  <p><strong>Goal:</strong> Be the first to hold $10,000 in cash, or become the last remaining player. Everyone begins with $1,500.</p>
+  <h3>YOUR TURN</h3><p>Roll two dice, move clockwise, and resolve the square. Buy unowned properties or Car Shops when you land on them. Pay rent to an owner when you land on their space. Passing GO earns $200.</p>
+  <h3>INVESTMENTS</h3><p>You may build on any property you own, without requiring a complete color set. Houses take 1 development slot, apartments 2 and businesses 3. Blocks 1–4 have 3, 4, 5 and 6 slots per property. Buildings increase rent; Car Shops increase in rent as you collect more of them.</p>
+  <h3>TRADING & MONEY</h3><p>Offer to buy properties or trade properties and cash with other players. Sell developments to the bank for half their cost. Once all your developments are sold, you can mortgage properties for half their purchase price. To unmortgage, repay the mortgage plus 10% interest. Mortgaged spaces collect no rent.</p>
+  <h3>PAYMENTS & BANKRUPTCY</h3><p>When you cannot pay, raise funds by selling developments, mortgaging, or arranging trades. If you still cannot pay, declare bankruptcy. Rent debt transfers your remaining cash and eligible assets to the creditor; bank debt returns remaining spaces to the market.</p>
+  <h3>JAIL & EVENTS</h3><p>Go To Jail moves you directly to Jail without GO money. You can pay $50 or try for doubles on your next three turns; after a third failed attempt you must pay $50. Bullish pays rewards; Bearish costs money; Unexpected Expense charges based on your owned houses, apartments, and businesses. Free Parking has no effect.</p>
+  <h3>CASINO</h3><p>Roulette opens to all active players at the end of every round. Chips are $1, $5, $10, $20, $50 and $100, with a $100 total bet cap per player (or their cash balance, if lower). Single-number, color, parity, dozen, and column bets pay American roulette odds.</p>
+  <p class="mc-note">Development prices, rents, and event fees are test values based on classic Monopoly's $1,500 starting economy. These may change after balancing. Local play rules are implemented here; online Supabase rooms have a separate rules implementation.</p>
+ </div>
+</section>
+<section id="managePanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="manageTitle">
+ <div class="mc-modal-card">
+  <button id="closeManage" class="mc-close" type="button" aria-label="Close management">×</button>
+  <h2 id="manageTitle">PROPERTY MANAGEMENT</h2>
+  <p id="manageDebt" class="mc-debt" hidden></p>
+  <p id="manageHelp"></p>
+  <label for="manageProperty">YOUR SPACE</label>
+  <select id="manageProperty"></select>
+  <div id="manageDetails"></div>
+  <div id="manageButtons" class="mc-actions"></div>
+  <hr>
+  <h3>PLAYER-TO-PLAYER OFFERS</h3>
+  <p>Make a cash offer to purchase another player's property, or offer your space in exchange. Local players accept, decline, or counter on this device.</p>
+  <button id="openTrade" type="button" class="mc-secondary">MAKE AN OFFER</button>
+  <button id="openMyProperties" type="button" class="mc-secondary">VIEW MY PROPERTIES</button>
+ </div>
+</section>
+<section id="tradePanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tradeTitle">
+ <div class="mc-modal-card">
+  <button id="closeTrade" class="mc-close" type="button" aria-label="Close trade">×</button>
+  <h2 id="tradeTitle">NEGOTIATE A DEAL</h2>
+  <p>Each side may include a property and cash. Properties must have no developments before they are traded; mortgages transfer with the deed.</p>
+  <label for="tradeFrom">OFFER FROM</label><select id="tradeFrom"></select>
+  <label for="tradeTo">OFFER TO</label><select id="tradeTo"></select>
+  <label for="tradeGive">YOUR PROPERTY (OPTIONAL)</label><select id="tradeGive"></select>
+  <label for="tradeReceive">THEIR PROPERTY (OPTIONAL)</label><select id="tradeReceive"></select>
+  <label for="tradePay">CASH YOU PAY</label><input id="tradePay" type="number" min="0" step="1" value="0">
+  <label for="tradeGet">CASH YOU RECEIVE</label><input id="tradeGet" type="number" min="0" step="1" value="0">
+  <p id="tradeError" class="mc-debt" role="alert"></p>
+  <div class="mc-actions"><button id="tradeOffer" type="button">SUBMIT OFFER</button><button id="tradeCounter" type="button" class="mc-secondary" hidden>COUNTER</button></div>
+ </div>
+</section>
+<section id="debtPanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="debtTitle">
+ <div class="mc-modal-card"><h2 id="debtTitle">PAYMENT DUE</h2><p id="debtSummary"></p>
+  <div class="mc-actions"><button id="debtPay" type="button">PAY DEBT</button><button id="debtManage" type="button" class="mc-secondary">RAISE MONEY</button><button id="debtBankrupt" type="button" class="mc-danger">DECLARE BANKRUPTCY</button></div>
+ </div>
+</section>
+<section id="rouletteGame" class="roulette-game" hidden role="region" aria-label="Roulette round" aria-live="off">
     <div class="roulette-shell">
       <header class="roulette-game-head">
         <div><span id="rouletteRound" class="r-eyebrow">ROUND 1 · AMERICAN ROULETTE</span><h2>🎰 ROULETTE</h2></div>
@@ -662,7 +736,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   </div>
 </section>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=player-selection-20261106-1"></script>
+<script type="module" src="./app.js?v=rules-20261106-2"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
