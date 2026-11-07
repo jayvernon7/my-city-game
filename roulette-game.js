@@ -1,6 +1,6 @@
 // Round-end American double-zero roulette: game currency only.
 // Standard single-number, even-money, dozen and column payouts.
-import { ROULETTE_WHEEL_CLOCKWISE } from './roulette3d.js?v=rules-20261106-final-1';
+import { ROULETTE_WHEEL_CLOCKWISE } from './roulette3d.js?v=buildings-roulette-20261106-2';
 
 const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const CHIPS = [[1,'#e9e4cf'],[5,'#e05b5b'],[10,'#468fdc'],[20,'#168b67'],[50,'#7d5ed3'],[100,'#25282d']];
