@@ -638,9 +638,6 @@ export class MyCityScene {
     };
     const box=(parent,w,h,d,mat,x,y,z,rx=0,ry=0,rz=0)=>
       mesh(parent,new THREE.BoxGeometry(w,h,d),mat,x,y,z,rx,ry,rz);
-    const orb=(parent,rx,ry,rz,mat,x,y,z)=>
-      mesh(parent,new THREE.SphereGeometry(1,18,12),mat,x,y,z) &&
-      parent.children[parent.children.length-1];
     // Feet, pants and sneakers. The entire limbs pivot while walking.
     const legs=[];
     for(const side of [-1,1]){
