@@ -1,5 +1,6 @@
 // Round-end American double-zero roulette: game currency only.
-// Standard single-number, even-money, dozen and column payouts.
+// Standard US single-number, even-money, dozen, column, four-number corner
+// and six-number double-street line payouts.
 import { ROULETTE_WHEEL_CLOCKWISE } from './roulette3d.js?v=buildings-roulette-20261106-2';
 
 const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
@@ -24,9 +25,32 @@ function outcome(){
   } while(n>=limit);
   return ROULETTE_WHEEL_CLOCKWISE[n%38];
 }
+function numbersForInside(key){
+  if(key.startsWith('corner:')){
+    const m=/^corner:(\\d+):([01])$/.exec(key);
+    if(!m)return [];
+    const c=Number(m[1]),r=Number(m[2]);
+    if(c<0||c>10)return [];
+    return [c*3+3-r,c*3+2-r,(c+1)*3+3-r,(c+1)*3+2-r];
+  }
+  if(key.startsWith('line:')){
+    const m=/^line:(\\d+)$/.exec(key);
+    if(!m)return [];
+    const c=Number(m[1]);
+    return c>=0&&c<=10?Array.from({length:6},(_,i)=>c*3+i+1):[];
+  }
+  return [];
+}
+function validBetKey(key){
+  if(key.startsWith('number:'))return /^(?:0|00|[1-9]|[12]\\d|3[0-6])$/.test(key.slice(7));
+  if(key.startsWith('corner:')||key.startsWith('line:'))return numbersForInside(key).length>0;
+  return OUTSIDE.some(([v])=>v===key);
+}
 function winner(bet,number){
   const value=String(number);
   if(bet.key.startsWith('number:'))return bet.key.slice(7)===value;
+  if(bet.key.startsWith('corner:')||bet.key.startsWith('line:'))
+    return numbersForInside(bet.key).includes(Number(number))&&number!=='0'&&number!=='00';
   const n=Number(number);
   if(number==='0'||number==='00')return false;
   if(bet.key==='red')return RED.has(n);
@@ -39,8 +63,11 @@ function winner(bet,number){
   if(bet.key.startsWith('col'))return ((n-1)%3)+1===Number(bet.key.slice(3));
   return false;
 }
-const odds = key => key.startsWith('number:')?35:(key.startsWith('dozen')||key.startsWith('col'))?2:1;
-const labelOf = key => key.startsWith('number:')?key.slice(7):(OUTSIDE.find(([k])=>k===key)?.[1]||key);
+const odds = key => key.startsWith('number:')?35:key.startsWith('corner:')?8:key.startsWith('line:')?5:(key.startsWith('dozen')||key.startsWith('col'))?2:1;
+const labelOf = key => key.startsWith('number:')?key.slice(7):
+  key.startsWith('corner:')?'Corner '+numbersForInside(key).join('/'):
+  key.startsWith('line:')?'Six-line '+numbersForInside(key).join('/'):
+  (OUTSIDE.find(([k])=>k===key)?.[1]||key);
 const totalOf = bets => bets.reduce((sum,b)=>sum+b.amount,0);
 const activePlayer = (game,s) => game.players[s.sequence[s.cursor]];
 const chosenBets = (s,id) => s.bets[id]||[];
@@ -72,6 +99,48 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
   columns.innerHTML=['col3','col2','col1'].map(k=>makeOutside(OUTSIDE.find(([key])=>key===k))).join('');
   dozens.innerHTML=['dozen1','dozen2','dozen3'].map(k=>makeOutside(OUTSIDE.find(([key])=>key===k))).join('');
   outside.innerHTML=['low','even','red','black','odd','high'].map(k=>makeOutside(OUTSIDE.find(([key])=>key===k))).join('');
+  // Intersection bets sit ON the shared borders of the real betting grid.
+  // 22 corners cover a 2x2 group; 11 double streets cover six numbers.
+  const inside=[];
+  for(let c=0;c<11;c++){
+    for(let r=0;r<2;r++){
+      const key='corner:'+c+':'+r;
+      inside.push('<button type="button" class="r-intersection r-corner" data-bet="'+key
+        +'" style="left:'+((c+1)*100/12)+'%;top:'+((r+1)*100/3)+'%" title="'+labelOf(key)+' · 8:1" aria-label="'+labelOf(key)+' · 8 to 1">4</button>');
+    }
+    const key='line:'+c;
+    inside.push('<button type="button" class="r-intersection r-sixline" data-bet="'+key
+      +'" style="left:'+((c+1)*100/12)+'%;top:50%" title="'+labelOf(key)+' · 5:1" aria-label="'+labelOf(key)+' · 5 to 1">6</button>');
+  }
+  numbers.insertAdjacentHTML('beforeend',inside.join(''));
+  function paintWagers(s,game){
+    const all=[];
+    for(const id of s.sequence){
+      for(const bet of chosenBets(s,id))all.push({bet,id});
+    }
+    for(const node of root.querySelectorAll('[data-bet]')){
+      const matching=all.filter(item=>item.bet.key===node.dataset.bet);
+      const prev=node.querySelector('.r-table-chips');
+      if(prev)prev.remove();
+      node.classList.toggle('bet-selected',matching.length>0);
+      node.classList.toggle('winning-pocket',s.stage==='result'&&node.dataset.bet==='number:'+s.result);
+      const total=matching.reduce((sum,item)=>sum+item.bet.amount,0);
+      const label=labelOf(node.dataset.bet);
+      node.setAttribute('aria-label',label+(total?' — '+money(total)+' wagered':''));
+      if(!matching.length)continue;
+      const stack=document.createElement('span');
+      stack.className='r-table-chips';
+      const chipsShown=matching.slice(-3);
+      stack.innerHTML=chipsShown.map(({bet,id})=>{
+        const color=CHIPS.find(([v])=>v===bet.amount)?.[1]||'#e9e4cf';
+        const owner=game.players[id];
+        const ring=/^#[0-9a-f]{6}$/i.test(owner.color||'')?owner.color:'#f5d89d';
+        return '<span class="r-table-chip" style="--r-chip:'+color+';--r-ring:'+ring
+          +'" title="'+esc(owner.name)+' · '+money(bet.amount)+'">'+money(bet.amount)+'</span>';
+      }).join('')+(matching.length>3?'<span class="r-table-more">+'+(matching.length-3)+'</span>':'');
+      node.appendChild(stack);
+    }
+  }
 
   function start(nextTurn,options={}){
     const game=getGame();
@@ -101,10 +170,7 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
   function place(key){
     const game=getGame(),s=ensureSession(game);
     if(!s||game.phase!=='roulette'||s.stage!=='betting')return;
-    const valid=key.startsWith('number:')?
-      ['0','00',...Array.from({length:36},(_,i)=>String(i+1))].includes(key.slice(7)):
-      OUTSIDE.some(([v])=>v===key);
-    if(!valid)return;
+    if(!validBetKey(key))return;
     const p=activePlayer(game,s),spent=totalOf(s.bets[s.sequence[s.cursor]]);
     if(spent+s.chip>100||spent+s.chip>p.cash){
       document.getElementById('rouletteNotice').textContent='Maximum $100 per player, limited by your available balance.';
@@ -132,7 +198,12 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
     s.stage='spinning';
     s.result=outcome();
     save();render();
-    try{await scene.spinRoulette(s.result)}catch(e){console.warn('Roulette wheel animation interrupted',e)}
+    try{
+      // Result is read back from the visibly occupied wheel pocket.
+      s.result=await scene.spinRoulette(s.result);
+    }catch(e){
+      console.warn('Roulette animation unavailable; using preselected pocket',e);
+    }
     if(getGame()!==game||game.roulette!==s)return;
     const results=[];
     for(const id of s.sequence){
@@ -177,12 +248,6 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
       document.getElementById('roulettePlayer').textContent=p.name+' • '+money(p.cash)+' balance';
       document.getElementById('rouletteLimit').textContent=money(spent)+' / '+money(Math.min(100,p.cash))+' in bets';
       document.getElementById('rouletteBets').innerHTML=bets.length?bets.map(b=>'<span class="r-wager">'+esc(labelOf(b.key))+' '+money(b.amount)+'</span>').join(''):'<span class="r-muted">Choose a chip, then tap a number or outside bet.</span>';
-      // Mark the felt squares where this player has already put chips.
-      for(const node of root.querySelectorAll('[data-bet]')){
-        const staked=bets.filter(b=>b.key===node.dataset.bet).reduce((sum,b)=>sum+b.amount,0);
-        node.classList.toggle('bet-selected',staked>0);
-        node.setAttribute('aria-label',labelOf(node.dataset.bet)+(staked?' — '+money(staked)+' bet':''));
-      }
       document.getElementById('rouletteNext').textContent=spent?'LOCK BETS & NEXT →':'SKIP & NEXT →';
       document.getElementById('rouletteUndo').disabled=!bets.length;
       for(const b of chips.querySelectorAll('[data-chip]')){
@@ -212,6 +277,9 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
       }).join('');
       document.getElementById('rouletteNotice').textContent='Payouts include the returned stake. All balances have been updated.';
     }
+    // The placed colored chips remain visible while every player bets, the wheel
+    // spins, and results are shown. Chip border follows the player's shirt color.
+    paintWagers(s,game);
   }
   root.addEventListener('click',e=>{
     const chip=e.target.closest('[data-chip]');
