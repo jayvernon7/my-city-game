@@ -1,8 +1,8 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=roulette-round-20261103-5';
 import {MyCityScene} from './scene3d.js?v=roulette-round-20261103-5';
-import {createRouletteController} from './roulette-game.js?v=roulette-round-20261103-5';
+import {createRouletteController} from './roulette-game.js?v=rules-20261106-4';
 import {RULES,KINDS,blockFor,capacityFor,emptyBuild,usedSpots,costFor,rentFor as calcRent,
-  unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-2';
+  unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-4';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -337,7 +337,7 @@ function showLandingCard(index){
   $('landingCardStripe').style.background=owner>=0?PLAYER_COLORS[owner]:'#ffffff';
   $('landingCardPrice').textContent=MONEY(space.price);
   $('landingCardRent').textContent=owner>=0?MONEY(rentFor(index,game.rollTotal||7)):
-    MONEY(space.type==='transport'?25:Math.max(2,Math.round(space.price*.12)));
+    MONEY(space.type==='transport'?25:Math.max(2,Math.round(space.price*.10)));
   $('landingCardOwner').textContent=owner<0?'AVAILABLE TO BUY':
     'OWNED BY '+game.players[owner].name;
   card.hidden=false;
