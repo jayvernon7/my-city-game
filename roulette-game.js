@@ -47,6 +47,7 @@ const chosenBets = (s,id) => s.bets[id]||[];
 function ensureSession(game){
   const s=game.roulette;
   if(!s || !Array.isArray(s.sequence) || !Array.isArray(s.bets))return null;
+  if(typeof s.roundEnd!=='boolean')s.roundEnd=true;
   return s;
 }
 
