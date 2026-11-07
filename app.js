@@ -1,6 +1,6 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=rules-20261106-final-1';
-import {MyCityScene} from './scene3d.js?v=rules-20261106-final-1';
-import {createRouletteController} from './roulette-game.js?v=rules-20261106-final-1';
+import {MyCityScene} from './scene3d.js?v=buildings-roulette-20261106-2';
+import {createRouletteController} from './roulette-game.js?v=buildings-roulette-20261106-2';
 import {RULES,KINDS,blockFor,capacityFor,emptyBuild,usedSpots,costFor,rentFor as calcRent,
   unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-final-1';
 
