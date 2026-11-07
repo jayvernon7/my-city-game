@@ -554,6 +554,42 @@ body.game-screen{height:100dvh;overflow:hidden}
 .game-screen .mc-result-row strong{display:block;font-size:15px;margin-bottom:7px;color:#ffe0a9}
 .game-screen .mc-result-row span{display:inline-block;margin:3px 10px 3px 0;color:#d4e8e0}
 </style>
+
+<style>
+/* Five recent meaningful player actions, anchored to the lower-left corner. */
+.game-screen .player-activity-feed{
+  position:fixed;left:14px;bottom:max(16px,env(safe-area-inset-bottom));
+  z-index:24;width:min(320px,calc(100vw - 28px));padding:12px 13px;
+  background:#0a2630e8;border:1px solid #66918d;border-radius:11px;
+  color:#eef8f3;box-shadow:0 8px 26px #0008;pointer-events:none;
+}
+.game-screen .player-activity-heading{
+  display:flex;justify-content:space-between;gap:10px;align-items:center;
+  color:#f0d79e;font-size:10px;font-weight:950;letter-spacing:1.3px;
+  border-bottom:1px solid #416361;padding-bottom:7px;margin-bottom:7px;
+}
+.game-screen .player-activity-heading span{color:#9ebcb8;font-size:9px}
+.game-screen .player-activity-list{
+  margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;
+  font-size:11px;line-height:1.35;overflow-wrap:anywhere;
+}
+.game-screen .player-activity-list li{display:block;padding-left:0}
+.game-screen .player-activity-list strong{color:#ffdfa5}
+.game-screen .player-activity-list span{color:#e3f0eb}
+.game-screen .player-activity-list .activity-empty{color:#a7c7c3;font-style:italic}
+@media(max-width:720px){
+  .game-screen .player-activity-feed{
+    left:7px;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 6px);
+    width:min(225px,49vw);padding:8px 9px;border-radius:8px;
+  }
+  .game-screen .player-activity-heading{font-size:9px;letter-spacing:.5px}
+  .game-screen .player-activity-list{font-size:9px;gap:5px}
+}
+@media(orientation:landscape) and (max-height:600px){
+  .game-screen .player-activity-feed{width:min(220px,30vw);padding:7px 9px}
+  .game-screen .player-activity-list{font-size:9px;gap:3px}
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -611,7 +647,14 @@ body.game-screen{height:100dvh;overflow:hidden}
         <button id="rouletteBackToBoard" type="button">BACK TO BOARD →</button>
       </div>
     </section>
-    <div class="mc-toolbar"><button type="button" id="manageBtn">🏠 MANAGE</button><button type="button" id="tradeBtn">🤝 TRADE</button><button type="button" id="diceBetBtn">🎲 DICE BET</button><button type="button" id="rulesBtn">📖 RULES</button></div>
+    
+<section id="playerActivityFeed" class="player-activity-feed" aria-label="Player activity">
+  <div class="player-activity-heading">PLAYER ACTIVITY <span>LAST 5</span></div>
+  <ol id="playerActivityList" class="player-activity-list" aria-live="polite" aria-relevant="additions text">
+    <li class="activity-empty">No player activity yet</li>
+  </ol>
+</section>
+<div class="mc-toolbar"><button type="button" id="manageBtn">🏠 MANAGE</button><button type="button" id="tradeBtn">🤝 TRADE</button><button type="button" id="diceBetBtn">🎲 DICE BET</button><button type="button" id="rulesBtn">📖 RULES</button></div>
      <div class="roll-dock" aria-label="Dice controls">
       <div class="dice-display" id="diceDisplay" aria-label="Dice results">
         <span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span>
@@ -778,7 +821,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   </div>
 </section>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=rules-20261106-final-1"></script>
+<script type="module" src="./app.js?v=player-activity-20261106-1"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
