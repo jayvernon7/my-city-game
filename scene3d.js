@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_WHEEL_CLOCKWISE } from './roulette3d.js?v=rules-20261106-final-1';
-import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=rules-20261106-final-1';
+import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=buildings-roulette-20261106-2';
 
 const SIDE = 33;
 const CORNER = 4.6;
