@@ -1,10 +1,11 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=rules-20261106-final-1';
-import {MyCityScene} from './scene3d.js?v=young-male-character-20261106-1';
+import {MyCityScene} from './scene3d.js?v=fbx-preview-20261106-1';
 import {createRouletteController} from './roulette-game.js?v=roulette-inside-physics-20261106-1';
 import {RULES,KINDS,blockFor,capacityFor,emptyBuild,usedSpots,costFor,rentFor as calcRent,
   unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-final-1';
 
 const $=id=>document.getElementById(id);
+const characterTestMode=new URLSearchParams(location.search).get('characterTest')==='1';
 const SAVE_KEY='my-city-threejs-demo-v1';
 const PIECE_KEY='my-city-solo-piece';
 const COLOR_OPTIONS=[['Coral','#fb715e'],['Blue','#55a9ff'],['Green','#64dd9b'],['Purple','#d59aff'],['Yellow','#f3ca50'],['Orange','#ec9250'],['Pink','#f074b7'],['Teal','#47c6be']];
@@ -37,6 +38,20 @@ try {
   throw err;
 }
 
+if(characterTestMode){
+  const tools=$('characterPreviewTools');
+  tools.hidden=false;
+  const status=$('characterPreviewStatus');
+  $('characterPreviewFile').addEventListener('change',async event=>{
+    const file=event.target.files?.[0];if(!file)return;
+    status.textContent='Loading '+file.name+'…';
+    try{
+      const clips=await scene.loadCharacterPreview(file);
+      status.textContent='Loaded '+file.name+' — '+clips+'. Roll dice to try him in the real game.';
+    }catch(error){status.textContent='Could not load: '+error.message;console.error(error);}
+  });
+  $('characterPreviewTurn').addEventListener('click',()=>scene.turnCharacterPreview());
+}
 function makeNewGame(mode='solo',selections=[]){
   const count=mode==='solo'?2:Number(mode);
   const names=mode==='solo'?['You','Computer']:Array.from({length:count},(_,i)=>'Player '+(i+1));
