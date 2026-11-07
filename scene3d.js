@@ -406,15 +406,23 @@ export class MyCityScene {
       if(!types.length)continue;
       const horizontal=(i>=1&&i<=9)||(i>=21&&i<=29);
       const maxAvailable=(horizontal?this.spaces[i].w:this.spaces[i].d)-.37;
-      const spacing=Math.min(.44,maxAvailable/Math.max(1,types.length));
+      // Make developments human-avatar sized (roughly 1.7–1.9 scene units
+      // tall), without making their footprints too wide for the property.
+      // Width is deliberately compact so multiple builds can still fit.
+      const spacing=Math.min(.54,maxAvailable/Math.max(1,types.length));
       const color=PLAYER_COLORS[owners[i]]||'#63c6aa';
+      const scaleFor={
+        house:[1.75,4.7,1.75],
+        apartment:[1.75,3.45,1.75],
+        business:[1.6,5.0,1.6]
+      };
       types.forEach((kind,k)=>{
-        const miniature=this.makePropertyStructure(kind,color);
-        miniature.scale.setScalar(1.18);
+        const structure=this.makePropertyStructure(kind,color);
+        structure.scale.set(...scaleFor[kind]);
         const spread=(k-(types.length-1)/2)*spacing;
-        miniature.position.set(center.x+(horizontal?spread:0),.716,center.z+(horizontal?0:spread));
-        this.scene.add(miniature);
-        this.developmentMeshes.push(miniature);
+        structure.position.set(center.x+(horizontal?spread:0),.716,center.z+(horizontal?0:spread));
+        this.scene.add(structure);
+        this.developmentMeshes.push(structure);
       });
     }
   }
