@@ -130,6 +130,7 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
       const returned=bets.reduce((sum,b)=>sum+(winner(b,s.result)?b.amount*(odds(b.key)+1):0),0);
       const net=returned-stake;
       p.cash+=net;
+      if(game.stats?.[id])game.stats[id].roulette=(game.stats[id].roulette||0)+net;
       results.push({id,stake,returned,net});
       if(stake)log('🎰 '+p.name+' '+(net>=0?'won '+money(net):'lost '+money(-net))+' on roulette.');
     }
