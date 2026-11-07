@@ -447,13 +447,13 @@ export class MyCityScene {
     const dz=[-.29,-.29,.30,.30][playerId]||0;
     return new THREE.Vector3(loc.x+dx,.75,loc.z+dz);
   }
-  makeHumanPlayer(){
+  makeHumanPlayer(shirtColor='#f8f8f5',playerColor=PLAYER_COLORS[0]){
     // Low-poly, readable first-player character: Black man in a
     // white short-sleeve shirt, black pants and black shoes.
     const person=new THREE.Group();
     const skin=new THREE.MeshStandardMaterial({color:0x75432c,roughness:.87});
     const skinShade=new THREE.MeshStandardMaterial({color:0x653822,roughness:.88});
-    const shirt=new THREE.MeshStandardMaterial({color:0xf8f8f5,roughness:.76});
+    const shirt=new THREE.MeshStandardMaterial({color:shirtColor,roughness:.76});
     const pants=new THREE.MeshStandardMaterial({color:0x18191d,roughness:.88});
     const shoes=new THREE.MeshStandardMaterial({color:0x0c0d10,roughness:.58});
     const hair=new THREE.MeshStandardMaterial({color:0x131212,roughness:1});
@@ -621,12 +621,12 @@ export class MyCityScene {
         start:this.elapsed,duration:3.7,resolve};
     });
   }
-  makeFemalePlayer(){
+  makeFemalePlayer(shirtColor='#f8f8f5',playerColor=PLAYER_COLORS[1]){
     // Player 2: Black woman, long black hair, white short-sleeve
     // shirt, black pants and white shoes. Same scale as Player 1.
     const person=new THREE.Group();
     const skin=new THREE.MeshStandardMaterial({color:0x75432c,roughness:.86});
-    const shirt=new THREE.MeshStandardMaterial({color:0xf8f8f5,roughness:.77});
+    const shirt=new THREE.MeshStandardMaterial({color:shirtColor,roughness:.77});
     const pants=new THREE.MeshStandardMaterial({color:0x17191d,roughness:.88});
     const shoes=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.53});
     const hair=new THREE.MeshStandardMaterial({color:0x101014,roughness:.94});
@@ -665,7 +665,7 @@ export class MyCityScene {
     make(new THREE.SphereGeometry(.026,8,6),skin,0,1.59,.278);
     const ring=new THREE.Mesh(
       new THREE.TorusGeometry(.34,.045,7,32),
-      new THREE.MeshBasicMaterial({color:PLAYER_COLORS[1],transparent:true,opacity:.82})
+      new THREE.MeshBasicMaterial({color:playerColor,transparent:true,opacity:.82})
     );
     ring.rotation.x=-Math.PI/2;
     ring.position.y=.015;
@@ -683,13 +683,13 @@ export class MyCityScene {
     players.forEach((p,i)=>{
       if(i===0 || i===1 || p.piece==='male' || p.piece==='female'){
         const character=(p.piece==='female'||(!p.piece&&i===1))
-          ?this.makeFemalePlayer():this.makeHumanPlayer();
+          ?this.makeFemalePlayer(p.color||PLAYER_COLORS[i],p.color||PLAYER_COLORS[i]):this.makeHumanPlayer(p.color||PLAYER_COLORS[i],p.color||PLAYER_COLORS[i]);
         character.position.copy(this.tokenPosition(p.at,i));
         this.scene.add(character);
         this.pawns.push(character);
         return;
       }
-      const color=new THREE.Color(PLAYER_COLORS[i]);
+      const color=new THREE.Color(p.color||PLAYER_COLORS[i]);
       const group=new THREE.Group();
       const mat=new THREE.MeshStandardMaterial({color,roughness:.32,metalness:.25});
       const base=new THREE.Mesh(new THREE.CylinderGeometry(.3,.39,.14,24),mat);base.position.y=.06;base.castShadow=true;group.add(base);
