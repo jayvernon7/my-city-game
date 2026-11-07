@@ -188,7 +188,7 @@ function winnerCheck(){
   if(rich>=0||alive.length===1){
     game.winner=rich>=0?rich:game.players.indexOf(alive[0]);
     game.phase='over';
-    log('🏆 '+game.players[game.winner].name+' won MY CITY'+(rich>=0?' with '+MONEY(game.players[rich].cash)+'!':'!');
+    log('🏆 '+game.players[game.winner].name+' won MY CITY'+(rich>=0?' with '+MONEY(game.players[rich].cash)+'!':'!'));
     return true;
   }
   return false;
