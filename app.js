@@ -342,7 +342,8 @@ async function landed(i,roll,moveEpoch){
     log(p.name+' landed on Free Parking. No payment or action.');
   }
   else if(s.type==='casino'){
-    log('🎰 '+p.name+' landed on Casino. All active players can play roulette after this round!');
+    log('🎰 '+p.name+' landed on Casino and can play a private roulette spin!');
+    roulette.start(game.turn,{onlyPlayers:[game.turn],roundEnd:false});
   }
   else if(s.type==='bullish'||s.type==='bearish'){
     const cards=s.type==='bullish'?BULLISH:BEARISH;
@@ -367,7 +368,7 @@ async function landed(i,roll,moveEpoch){
     else log(p.name+' cannot afford '+s.name+'.');
   }
   scene.updateOwners(game.owners);
-  if(!winnerCheck() && game.phase!=='decision'&&game.phase!=='debt')game.phase=game.bonusRoll?'roll':'end';
+  if(!winnerCheck() && game.phase!=='decision'&&game.phase!=='debt'&&game.phase!=='roulette')game.phase=game.bonusRoll?'roll':'end';
   save();render();showLandingCard(i);scheduleBot();
 }
 async function roll(){
@@ -471,10 +472,16 @@ function doBuy(){
 function pass(){if(game.phase!=='decision'||current().bot)return;doPass()}
 function doPass(){if(game.phase!=='decision')return;log(current().name+' skipped buying '+BOARD[game.pending].name+'.');game.pending=-1;setPhase(game.bonusRoll?'roll':'end');scheduleBot()}
 function endTurn(){if(game.phase!=='end'||current().bot)return;doEndTurn()}
-function advanceAfterRoulette(next){
+function advanceAfterRoulette(next,roundEnd=true){
   if(winnerCheck()){save();render();return}
+  if(!roundEnd){
+    game.phase=game.bonusRoll?'roll':'end';
+    scene.focus(game.turn);
+    log('🎰 Private Casino roulette finished. '+current().name+' may continue their turn.');
+    save();render();scheduleBot();return;
+  }
   game.round++;
-  game.turn=next;game.phase='roll';game.pending=-1;game.rollTotal=0;game.dice=[1,1];game.doubleCount=0;game.bonusRoll=false;game.doubleCount=0;game.bonusRoll=false;
+  game.turn=next;game.phase='roll';game.pending=-1;game.rollTotal=0;game.dice=[1,1];game.doubleCount=0;game.bonusRoll=false;
   scene.focus(game.turn);
   log('🎲 Roulette finished. Round '+game.round+' begins with '+current().name+'.');
   save();render();scheduleBot();
