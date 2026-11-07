@@ -657,6 +657,56 @@ body.game-screen{height:100dvh;overflow:hidden}
  .financial-event-card{top:40%}
 }
 </style>
+<style>
+/* Interactive roulette inside bets. Corner chips go on four-square junctions;
+   six-lines are on the boundary between two adjoining numbered columns. */
+.game-screen .roulette-numbers{position:relative;isolation:isolate}
+.game-screen .roulette-felt [data-bet]{position:relative;isolation:isolate}
+.game-screen .roulette-numbers .r-intersection{
+  position:absolute;z-index:7;transform:translate(-50%,-50%);
+  display:flex;align-items:center;justify-content:center;
+  width:19px;height:19px;padding:0;
+  border:2px solid #f3df9a;border-radius:50%;
+  background:#125c42;color:#ffe0a0;font-size:9px;font-weight:950;
+  box-shadow:0 1px 4px #001e15b0;cursor:pointer;
+}
+.game-screen .roulette-numbers .r-sixline{
+  width:20px;height:15px;border-radius:5px;background:#174d66;
+  border-color:#d3eeff;color:#ffffff;
+}
+.game-screen .roulette-felt .r-intersection:focus-visible{
+  outline:3px solid white;outline-offset:2px;
+}
+.game-screen .roulette-felt .r-intersection.bet-selected{background:#ffda8e;color:#182b27}
+.game-screen .roulette-felt .r-table-chips{
+  pointer-events:none;position:absolute;z-index:8;right:0;top:0;
+  display:flex;align-items:flex-start;flex-wrap:nowrap;
+  gap:0;max-width:100%;min-width:0;
+}
+.game-screen .roulette-felt .r-table-chip{
+  position:relative;flex:0 0 auto;width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+  border:3px solid var(--r-ring);border-radius:50%;
+  background:var(--r-chip);box-shadow:0 1px 3px #000b,inset 0 0 0 1px #fff8;
+  color:#152a2e;text-shadow:0 1px #fff8;font-size:7px;font-weight:1000;
+}
+.game-screen .roulette-felt .r-table-chip+.r-table-chip{margin-left:-9px}
+.game-screen .roulette-felt .r-table-more{
+  font-size:8px;padding:2px;border-radius:5px;background:#fffbd9;color:#193830;
+}
+.game-screen .roulette-felt .r-intersection .r-table-chips{
+  top:-12px;right:-11px;max-width:none;z-index:10;
+}
+.game-screen .roulette-felt .winning-pocket{
+  outline:3px solid #ffed93!important;outline-offset:-2px;
+  box-shadow:inset 0 0 8px #ffeba9,0 0 10px #ffdc74;
+}
+.game-screen .roulette-table-hint{font-size:10px;line-height:1.5}
+@media(max-width:720px){
+ .game-screen .roulette-numbers .r-intersection{width:18px;height:18px;font-size:8px}
+ .game-screen .roulette-numbers .r-sixline{height:14px}
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -837,7 +887,7 @@ body.game-screen{height:100dvh;overflow:hidden}
               <div id="rouletteOutside" class="roulette-outside" role="group" aria-label="Even money bets"></div>
             </div>
           </div>
-          <p class="roulette-table-hint">Green 0 / 00 • Red and black numbers • Straight 35:1 • Dozens / columns 2:1 • Outside 1:1</p>
+          <p class="roulette-table-hint">Tap numbers (35:1), <strong>4</strong> at a four-number corner (8:1), or <strong>6</strong> at a six-number line (5:1). Chip stacks appear directly on your bets. Dozens/columns 2:1 · Outside 1:1.</p>
         </div>
         <div class="r-label">YOUR BETS</div>
         <div id="rouletteBets" class="roulette-bets" aria-live="polite"></div>
