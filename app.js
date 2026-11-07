@@ -5,6 +5,8 @@ import {createRouletteController} from './roulette-game.js?v=roulette-round-2026
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
 const PIECE_KEY='my-city-solo-piece';
+const COLOR_OPTIONS=[['Coral','#fb715e'],['Blue','#55a9ff'],['Green','#64dd9b'],['Purple','#d59aff'],['Yellow','#f3ca50'],['Orange','#ec9250'],['Pink','#f074b7'],['Teal','#47c6be']];
+let setup=null;
 const selectedPiece=()=>localStorage.getItem(PIECE_KEY)==='female'?'female':'male';
 const SYMBOLS=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -32,11 +34,13 @@ try {
   throw err;
 }
 
-function makeNewGame(mode='solo'){
+function makeNewGame(mode='solo',selections=[]){
   const count=mode==='solo'?2:Number(mode);
   const names=mode==='solo'?['You','Computer']:Array.from({length:count},(_,i)=>'Player '+(i+1));
   return {version:1,mode,round:1,turn:0,phase:'roll',roulette:null,pending:-1,dice:[1,1],rollTotal:0,
-    players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,piece:i===0?selectedPiece():i===1?'female':'male'})),
+    players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,
+      piece:selections[i]?.piece||(i===0?selectedPiece():i===1?'female':'male'),
+      color:selections[i]?.color||COLOR_OPTIONS[i][1]})),
     owners:Array(40).fill(-1),logs:['Welcome to My City! Each player starts with $1,500.'],
     message:'Roll the dice to begin your journey.',winner:null};
 }
@@ -52,11 +56,112 @@ function load(){
     return x;
   }catch{return null}
 }
-function reset(mode){
+function syncPlayerColors(){
+  if(!game)return;
+  game.players.forEach((p,i)=>{
+    const valid=COLOR_OPTIONS.some(([,hex])=>hex===p.color);
+    if(!valid)p.color=COLOR_OPTIONS[i%COLOR_OPTIONS.length][1];
+    PLAYER_COLORS[i]=p.color;
+  });
+}
+function showSetup(mode='solo'){
+  const selectedMode=['solo','2','3','4'].includes(mode)?mode:'solo';
+  setup={mode:selectedMode,index:0,choices:[],draft:{piece:selectedPiece(),color:COLOR_OPTIONS[0][1]}};
+  $('characterSetup').hidden=false;
+  $('setupMode').value=selectedMode;
+  updateSetupUI();
+}
+function setupCount(){return setup?.mode==='solo'?1:Number(setup?.mode||2)}
+function setupDraft(index){
+  const existing=setup.choices[index];
+  if(existing)return {...existing};
+  const used=new Set(setup.choices.slice(0,index).map(p=>p.color));
+  const color=COLOR_OPTIONS.find(([,hex])=>!used.has(hex))?.[1]||COLOR_OPTIONS[0][1];
+  return {piece:index===0?selectedPiece():'male',color};
+}
+function updateSetupUI(){
+  if(!setup)return;
+  const idx=setup.index;
+  const name=setup.mode==='solo'?'Your Character':'Player '+(idx+1);
+  $('setupTitle').textContent='Choose '+name;
+  $('setupSubtitle').textContent=setup.mode==='solo'
+    ?'Pick your character and color. Your shirt and owned spaces will match.'
+    :'Set up each player before the game starts. Players must use different ownership colors.';
+  $('setupMode').disabled=idx!==0;
+  for(const button of document.querySelectorAll('#characterSetup [data-piece]')){
+    button.setAttribute('aria-pressed',String(button.dataset.piece===setup.draft.piece));
+  }
+  const used=new Set(setup.choices.slice(0,idx).map(p=>p.color));
+  $('setupColors').innerHTML=COLOR_OPTIONS.map(([name,hex])=>{
+    const active=setup.draft.color===hex,unavailable=used.has(hex);
+    return '<button type="button" class="setup-swatch" data-color="'+hex+'" aria-label="'+name+'" title="'+name+'" aria-pressed="'+active+'" '+(unavailable?'disabled':'')+' style="--swatch:'+hex+'"><span></span></button>';
+  }).join('');
+  const colorName=COLOR_OPTIONS.find(([,hex])=>hex===setup.draft.color)?.[0]||'Custom';
+  $('setupPreviewTitle').textContent=(setup.draft.piece==='female'?'Female':'Male')+' • '+colorName;
+  $('setupShirtPreview').setAttribute('fill',setup.draft.color);
+  $('setupHair').setAttribute('d',setup.draft.piece==='female'
+    ?'M17 14Q15 -3 30 0Q47 -3 45 14L49 40L41 43L40 18Q30 9 20 18L19 43L12 40Z'
+    :'M19 10Q20 -3 32 2Q40 3 41 11L37 7Q30 3 23 8Z');
+  $('setupBack').textContent=idx>0?'← PREVIOUS PLAYER':'← HOME';
+  $('setupNext').textContent=idx+1<setupCount()?'NEXT PLAYER →':'START GAME →';
+}
+function submitSetup(){
+  if(!setup)return;
+  setup.choices[setup.index]={...setup.draft};
+  if(setup.index+1<setupCount()){
+    setup.index++;
+    setup.draft=setupDraft(setup.index);
+    updateSetupUI();
+    return;
+  }
+  const mode=setup.mode,choices=[...setup.choices];
+  if(mode==='solo'){
+    const used=choices[0].color;
+    const botColor=COLOR_OPTIONS.find(([,hex])=>hex!==used)?.[1]||'#55a9ff';
+    choices.push({piece:'female',color:botColor});
+    localStorage.setItem(PIECE_KEY,choices[0].piece);
+  }
+  setup=null;
+  $('characterSetup').hidden=true;
+  reset(mode,choices);
+}
+$('setupMode').addEventListener('change',()=>{
+  if(!setup)return;
+  setup.mode=$('setupMode').value;
+  setup.choices=[];setup.index=0;setup.draft=setupDraft(0);
+  updateSetupUI();
+});
+$('characterSetup').addEventListener('click',event=>{
+  if(!setup)return;
+  const piece=event.target.closest('[data-piece]');
+  if(piece){
+    setup.draft.piece=piece.dataset.piece;updateSetupUI();return;
+  }
+  const color=event.target.closest('[data-color]');
+  if(color && !color.disabled){
+    setup.draft.color=color.dataset.color;updateSetupUI();
+  }
+});
+$('setupNext').addEventListener('click',submitSetup);
+$('setupBack').addEventListener('click',()=>{
+  if(!setup)return;
+  if(setup.index>0){
+    setup.index--;
+    setup.draft=setupDraft(setup.index);
+    updateSetupUI();
+  }else if(game){
+    setup=null;
+    $('characterSetup').hidden=true;
+  }else{
+    window.location.href='./index.html';
+  }
+});
+function reset(mode,selections=[]){
   hideRoulettePreview();hideLandingCard();
   $('rouletteGame').hidden=true;
   epoch++;clearTimeout(botTimeout);
-  game=makeNewGame(mode);
+  game=makeNewGame(mode,selections);
+  syncPlayerColors();
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.focus(0);scene.updatePositions(game.players,0);
   selected=0;scene.makeSelection(selected);
   $('mode').value=mode;
@@ -404,7 +509,7 @@ $('soloPiece').addEventListener('change',()=>{
 });
 $('restartBtn').addEventListener('click',()=>{$('dialog').hidden=false});
 $('cancelDialog').addEventListener('click',()=>{$('dialog').hidden=true});
-$('confirmDialog').addEventListener('click',()=>{$('dialog').hidden=true;reset($('mode').value)});
+$('confirmDialog').addEventListener('click',()=>{$('dialog').hidden=true;showSetup($('mode').value)});
 $('dialog').addEventListener('click',e=>{if(e.target===$('dialog'))$('dialog').hidden=true});
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){$('dialog').hidden=true;setOwnedPropertiesOpen(false);if(!$('roulettePreview').hidden){hideRoulettePreview();changeView('follow')}return}
@@ -419,11 +524,12 @@ roulette=createRouletteController({
 game=load();
 if(game){
   if(!['male','female'].includes(game.players[0].piece))game.players[0].piece=selectedPiece();
+  syncPlayerColors();
   $('soloPiece').value=game.players[0].piece;
   scene.setPlayers(game.players);scene.updateOwners(game.owners);scene.updatePositions(game.players,game.turn);scene.focus(game.turn);
   selected=game.players[game.turn].at;scene.makeSelection(selected);
   roulette.restore();
   render();scheduleBot();
-}else reset('solo');
+}else showSetup('solo');
 // Public debug helpers: available only to the developer via the browser console.
 window.MyCityDebug=Object.freeze({board:BOARD,getState:()=>structuredClone(game),selectSpace:i=>{if(i>=0&&i<40){selected=i;scene.makeSelection(i);renderDetails()}}});
