@@ -66,6 +66,7 @@ function syncPlayerColors(){
 }
 function showSetup(mode='solo'){
   const selectedMode=['solo','2','3','4'].includes(mode)?mode:'solo';
+  clearTimeout(botTimeout);
   setup={mode:selectedMode,index:0,choices:[],draft:{piece:selectedPiece(),color:COLOR_OPTIONS[0][1]}};
   $('characterSetup').hidden=false;
   $('setupMode').value=selectedMode;
@@ -152,6 +153,7 @@ $('setupBack').addEventListener('click',()=>{
   }else if(game){
     setup=null;
     $('characterSetup').hidden=true;
+    scheduleBot();
   }else{
     window.location.href='./index.html';
   }
@@ -409,7 +411,7 @@ function doEndTurn(){
 }
 function scheduleBot(){
   clearTimeout(botTimeout);
-  if(!game||!current().bot||game.phase==='moving'||game.phase==='over')return;
+  if(!game||setup||!current().bot||game.phase==='moving'||game.phase==='over')return;
   botTimeout=setTimeout(async()=>{
     if(!game||!current().bot)return;
     if(game.phase==='roll')await doRoll();
