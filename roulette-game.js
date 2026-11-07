@@ -149,6 +149,7 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
       bets:game.players.map(()=>[]),result:null,results:[]};
     game.phase='roulette';
     scene.setMode('roulette');
+    scene.updateRouletteChips(game.roulette,game.players);
     log(options.roundEnd===false?'🎰 Casino landing! Private roulette is open for '+game.players[sequence[0]].name+'.':'🎰 Round '+game.round+' complete. Roulette is open to every active player!');
     autoBetBots();
     save();render();
@@ -225,14 +226,16 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
     if(!s||s.stage!=='result'||game.phase!=='roulette')return;
     game.roulette=null;
     root.hidden=true;
+    scene.updateRouletteChips(null);
     scene.setMode('follow');
     afterRound(s.nextTurn,s.roundEnd!==false);
   }
 
   function renderUI(){
     const game=getGame(),s=ensureSession(game);
-    if(!s||game.phase!=='roulette'){root.hidden=true;return}
+    if(!s||game.phase!=='roulette'){root.hidden=true;scene.updateRouletteChips(null);return}
     root.hidden=false;
+    scene.updateRouletteChips(s,game.players);
     document.getElementById('rouletteRound').textContent=(s.roundEnd?'ROUND '+game.round+' • GROUP':'PRIVATE CASINO')+' • AMERICAN ROULETTE';
     const betting=s.stage==='betting';
     document.getElementById('rouletteBetUI').hidden=!betting;
@@ -297,7 +300,7 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
   document.getElementById('rouletteSkip').addEventListener('click',()=>{
     const game=getGame(),s=ensureSession(game);
     if(!s||game.phase!=='roulette'||s.roundEnd||s.stage==='spinning'||s.stage==='result')return;
-    game.roulette=null;root.hidden=true;scene.setMode('follow');afterRound(s.nextTurn,false);
+    game.roulette=null;root.hidden=true;scene.updateRouletteChips(null);scene.setMode('follow');afterRound(s.nextTurn,false);
   });
   document.getElementById('rouletteContinue').addEventListener('click',continueGame);
   return {start,render:renderUI,restore(){
