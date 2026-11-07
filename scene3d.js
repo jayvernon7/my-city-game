@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_WHEEL_CLOCKWISE } from './roulette3d.js?v=rules-20261106-final-1';
 import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=buildings-roulette-20261106-2';
 
-const SIDE = 33;
-const CORNER = 4.6;
+// Enlarged board: wider property spaces and deeper property cards.
+const SIDE = 38;
+const CORNER = 5.3;
 const TILE = (SIDE-2*CORNER)/9;
 const HALF = SIDE/2;
 const CREAM = 0xf7f3e6;
@@ -238,10 +239,10 @@ export class MyCityScene {
   }
   makeLights(){
     this.scene.add(new THREE.HemisphereLight('#ffffff','#63837a',2.5));
-    const sun=new THREE.DirectionalLight('#fff2d7',3.5);sun.position.set(-11,28,17);
+    const sun=new THREE.DirectionalLight('#fff2d7',3.5);sun.position.set(-12,31,20);
     sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
-    sun.shadow.camera.left=-23;sun.shadow.camera.right=23;
-    sun.shadow.camera.top=23;sun.shadow.camera.bottom=-23;
+    sun.shadow.camera.left=-26;sun.shadow.camera.right=26;
+    sun.shadow.camera.top=26;sun.shadow.camera.bottom=-26;
     sun.shadow.camera.near=1;sun.shadow.camera.far=60;
     sun.shadow.bias=-.0003;sun.shadow.normalBias=.01;
     this.scene.add(sun);
@@ -405,10 +406,11 @@ export class MyCityScene {
       if(!types.length)continue;
       const horizontal=(i>=1&&i<=9)||(i>=21&&i<=29);
       const maxAvailable=(horizontal?this.spaces[i].w:this.spaces[i].d)-.37;
-      const spacing=Math.min(.38,maxAvailable/Math.max(1,types.length));
+      const spacing=Math.min(.44,maxAvailable/Math.max(1,types.length));
       const color=PLAYER_COLORS[owners[i]]||'#63c6aa';
       types.forEach((kind,k)=>{
         const miniature=this.makePropertyStructure(kind,color);
+        miniature.scale.setScalar(1.18);
         const spread=(k-(types.length-1)/2)*spacing;
         miniature.position.set(center.x+(horizontal?spread:0),.716,center.z+(horizontal?0:spread));
         this.scene.add(miniature);
@@ -1164,7 +1166,7 @@ export class MyCityScene {
       (this.mode==='roulette'||this.mode==='rouletteExplore')?1.1:.6;
     const aspect=this.camera.aspect;
     const narrow=aspect<1?1/Math.max(aspect,.47):1;
-    const distance=(this.cinematicDice?13.2:(this.mode==='roulette'?27:this.mode==='overview'?54:this.mode==='rouletteExplore'?27:this.mode==='explore'?27:17))*this.zoom*
+    const distance=(this.cinematicDice?13.2:(this.mode==='roulette'?27:this.mode==='overview'?60:this.mode==='rouletteExplore'?27:this.mode==='explore'?29:19))*this.zoom*
       (this.cinematicDice?Math.max(1,narrow*.6):(this.mode==='roulette'?Math.max(1,narrow*.79):this.mode==='overview'?Math.max(1,narrow*.93):Math.max(1,narrow*.75)));
     const horizontal=distance*Math.cos(this.elevation),vertical=distance*Math.sin(this.elevation);
     const desired=new THREE.Vector3(target.x+horizontal*Math.sin(this.azimuth),target.y+vertical,target.z+horizontal*Math.cos(this.azimuth));
