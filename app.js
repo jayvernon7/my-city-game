@@ -751,6 +751,50 @@ function settleDiceBets(total){
 $('diceBetBtn').addEventListener('click',openDiceBet);
 $('closeDiceBet').addEventListener('click',()=>{$('diceBetPanel').hidden=true});
 $('placeDiceBet').addEventListener('click',placeDiceBet);
+function showFinalResults(){
+  if(!game||game.phase!=='over'||game.winnerShown)return;
+  game.winnerShown=true;
+  const winner=game.players[game.winner];
+  $('winnerTitle').textContent='🏆 '+winner.name.toUpperCase()+' WINS!';
+  $('winnerSummary').textContent=winner.cash>=RULES.winCash
+    ?'First to the '+MONEY(RULES.winCash)+' cash goal!'
+    :'Last player standing! Other players went bankrupt or left the game.';
+  $('winnerStats').innerHTML=game.players.map((p,i)=>{
+    const x=game.stats?.[i]||newStats();
+    const owned=game.owners.filter(o=>o===i).length;
+    const item=(label,amount)=>'<span>'+label+': '+MONEY(amount)+'</span>';
+    return '<div class="mc-result-row"><strong>'+escapeHTML(p.name)+(i===game.winner?' 🏆':'')+'</strong>'
+      +item('Final cash',p.cash)+item('Properties',owned)+item('Rent earned',x.rentCollected)
+      +item('Rent paid',x.rentPaid)+item('GO income',x.goIncome)+item('Roulette net',x.roulette)
+      +item('Dice bets net',x.diceBets)+item('Bullish',x.bullish)+item('Bearish paid',x.bearish)
+      +item('Unexpected expenses',x.unexpected)
+      +'<span>Developments purchased: '+x.builds+'</span><span>Trades made: '+x.trades+'</span></div>';
+  }).join('');
+  $('winnerPanel').hidden=false;save();
+}
+function resignCurrent(){
+  if(!game||setup||game.phase==='moving'||game.phase==='roulette'||game.phase==='over'||current().bot)return;
+  if(!window.confirm('Resign as '+current().name+'? Your remaining properties will return to the market. This cannot be undone.'))return;
+  if(game.phase==='debt'){bankruptCurrent();return}
+  const id=game.turn;
+  game.sideBets.forEach(b=>{
+    game.players[b.from].cash+=b.amount;
+    game.players[b.to].cash+=b.amount;
+  });
+  game.sideBets=[];
+  game.owners.forEach((owner,i)=>{
+    if(owner===id){game.owners[i]=-1;game.mortgaged[i]=false;game.buildings[i]=emptyBuild()}
+  });
+  current().bankrupt=true;current().cash=0;game.doubleCount=0;game.bonusRoll=false;game.phase='end';
+  log('🏳️ '+current().name+' resigned. All properties are back on the market.');
+  redrawAssets();
+  if(winnerCheck()){save();render();return}
+  doEndTurn();
+}
+$('resignBtn').addEventListener('click',resignCurrent);
+$('closeWinner').addEventListener('click',()=>{$('winnerPanel').hidden=true});
+$('winnerViewBoard').addEventListener('click',()=>{$('winnerPanel').hidden=true});
+$('winnerNewGame').addEventListener('click',()=>{$('winnerPanel').hidden=true;showSetup(game.mode)});
 function scheduleBot(){
   clearTimeout(botTimeout);
   if(!game||setup||!current().bot||game.phase==='moving'||game.phase==='over')return;
@@ -800,6 +844,7 @@ function render(){
   scene.updatePositions(game.players,game.turn);
   renderDetails();
   showDebtUI();
+  showFinalResults();
   roulette?.render();
 }
 function renderDetails(){
