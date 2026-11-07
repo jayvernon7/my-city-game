@@ -666,7 +666,8 @@ function scheduleBot(){
     else if(game.phase==='decision'){
       if(game.pending>=0&&current().cash>=BOARD[game.pending].price+230)doBuy();else doPass();
     }
-    else if(game.phase==='end')doEndTurn();
+    else if(game.phase==='debt')handleDebtBot();
+    else if(game.phase==='end'){autoInvestBot();doEndTurn();}
   },900);
 }
 function render(){
@@ -675,7 +676,7 @@ function render(){
   // Display only the balance of the player whose turn it is.
   $('activeBalanceAmount').textContent=MONEY(actor.cash);
   renderOwnedProperties();
-  const label={roll:'ROLL',moving:'MOVING',decision:'BUY OR PASS',end:'TURN COMPLETE',roulette:'ROULETTE',over:'GAME OVER'};
+  const label={roll:'ROLL',moving:'MOVING',decision:'BUY OR PASS',end:'TURN COMPLETE',debt:'PAYMENT DUE',roulette:'ROULETTE',over:'GAME OVER'};
   $('phaseLabel').textContent=label[game.phase]||'READY';
   $('turnTitle').textContent=game.phase==='over'?'Game over':actor.name+'’s turn';
   $('message').textContent=game.message;
@@ -684,7 +685,7 @@ function render(){
   $('dieB').textContent=showingResult?SYMBOLS[game.dice[1]-1]:'⚀';
   $('rollTotal').textContent=showingResult?'TOTAL '+game.rollTotal:
     game.phase==='moving'?'ROLLING…':'READY TO ROLL';
-  $('rollBtn').disabled=game.phase!=='roll'||!human;
+  $('rollBtn').disabled=game.phase!=='roll'||!human;\n  $('payJailBtn').hidden=!(actor.jailed>0&&game.phase==='roll'&&!actor.bot);\n  $('payJailBtn').disabled=actor.cash<RULES.jailFee;
   $('rollBtn').textContent=game.phase==='moving'?'🎲 ROLLING…':
     game.phase==='roll'?(human?'🎲 ROLL DICE':'COMPUTER TURN'):'ROLL USED';
   $('buyBtn').disabled=game.phase!=='decision'||!human;
@@ -701,6 +702,7 @@ function render(){
   $('mode').value=game.mode;
   scene.updatePositions(game.players,game.turn);
   renderDetails();
+  showDebtUI();
   roulette?.render();
 }
 function renderDetails(){
@@ -714,11 +716,17 @@ function renderDetails(){
   let detail='';
   if(buyable(selected)){
     const owner=game.owners[selected];detail=`Purchase: ${MONEY(s.price)} · ${owner===-1?'Currently unowned':'Owned by '+game.players[owner].name}`;
-    if(owner!==-1)detail+=` · Estimated rent: ${MONEY(rentFor(selected,game.rollTotal||7))}`;
+    if(owner!==-1){
+      detail+=' · Rent: '+MONEY(rentFor(selected))+(game.mortgaged[selected]?' (MORTGAGED)':'');
+      if(s.type==='property'){
+        const dev=game.buildings[selected];
+        detail+=' · '+usedSpots(dev)+'/'+capacityFor(selected)+' development spots · '+KINDS.map(k=>RULES.developments[k].label+': '+dev[k]).join(', ');
+      }
+    }
   }else{
     detail=({go:'Collect $200 when you pass GO.',jail:'Just visiting, unless sent here by Go To Jail.',
       gojail:'Go directly to Jail and miss your next turn.',freeparking:'Free Parking: no payment or action.',
-      casino:'American roulette is played after the last active player ends each round.',bullish:'Positive financial event.',bearish:'Negative financial event.',expense:'Fee based on developments (pending implementation).'})[s.type]||'';
+      casino:'American roulette is played after the last active player ends each round.',bullish:'Positive financial event.',bearish:'Negative financial event.',expense:'Pay '+RULES.unexpected.map((fee,i)=>['house','apartment','business'][i]+' '+MONEY(fee)).join(', ')+' per development you own.'})[s.type]||'';
   }
   $('detailBody').textContent=detail;
 }
@@ -739,6 +747,18 @@ $('rollBtn').addEventListener('click',roll);
 $('buyBtn').addEventListener('click',buy);
 $('passBtn').addEventListener('click',pass);
 $('endBtn').addEventListener('click',endTurn);
+const jailButton=document.createElement('button');
+jailButton.id='payJailBtn';jailButton.type='button';jailButton.hidden=true;
+jailButton.className='alt-btn';jailButton.textContent='PAY $50 TO LEAVE JAIL';
+$('endBtn').parentElement.appendChild(jailButton);
+jailButton.addEventListener('click',()=>{
+  if(game.phase!=='roll'||current().jailed<=0||current().cash<RULES.jailFee||current().bot)return;
+  current().cash-=RULES.jailFee;current().jailed=0;
+  scene.setJailCage(game.turn,false);
+  log(current().name+' paid '+MONEY(RULES.jailFee)+' to leave Jail and may roll.');
+  save();render();
+});
+
 function changeView(mode){
   scene.setMode(mode);
   $('followView').classList.toggle('chosen',mode==='follow');$('overviewView').classList.toggle('chosen',mode==='overview');
