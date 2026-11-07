@@ -448,8 +448,8 @@ export class MyCityScene {
     return new THREE.Vector3(loc.x+dx,.75,loc.z+dz);
   }
   makeHumanPlayer(shirtColor='#f8f8f5',playerColor=PLAYER_COLORS[0]){
-    // Low-poly, readable first-player character: Black man in a
-    // white short-sleeve shirt, black pants and black shoes.
+    // Low-poly male character with player-selected shirt color,
+    // black pants and black shoes.
     const person=new THREE.Group();
     const skin=new THREE.MeshStandardMaterial({color:0x75432c,roughness:.87});
     const skinShade=new THREE.MeshStandardMaterial({color:0x653822,roughness:.88});
@@ -490,7 +490,7 @@ export class MyCityScene {
     // A small ring keeps the avatar visible among the board spaces.
     const ring=new THREE.Mesh(
       new THREE.TorusGeometry(.34,.045,7,32),
-      new THREE.MeshBasicMaterial({color:0xffcb79,transparent:true,opacity:.82})
+      new THREE.MeshBasicMaterial({color:playerColor,transparent:true,opacity:.82})
     );
     ring.rotation.x=-Math.PI/2;ring.position.y=.015;
     person.add(ring);
@@ -622,8 +622,8 @@ export class MyCityScene {
     });
   }
   makeFemalePlayer(shirtColor='#f8f8f5',playerColor=PLAYER_COLORS[1]){
-    // Player 2: Black woman, long black hair, white short-sleeve
-    // shirt, black pants and white shoes. Same scale as Player 1.
+    // Female character with long black hair, player-selected shirt,
+    // black pants and white shoes, at the same scale as the male.
     const person=new THREE.Group();
     const skin=new THREE.MeshStandardMaterial({color:0x75432c,roughness:.86});
     const shirt=new THREE.MeshStandardMaterial({color:shirtColor,roughness:.77});
