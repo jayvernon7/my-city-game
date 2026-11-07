@@ -211,9 +211,30 @@ function resolvePayment(amount,creditor,reason){
   log('⚠ '+current().name+' owes '+MONEY(amount)+' for '+reason+'. Raise money or declare bankruptcy.');
   return false;
 }
+function liquidateForDebt(){
+  if(game.phase!=='debt'||!game.debt)return;
+  const id=game.turn,p=current(),target=game.debt.amount;
+  for(const kind of KINDS){
+    for(let i=0;i<40&&p.cash<target;i++){
+      while(game.owners[i]===id&&game.buildings[i][kind]>0&&p.cash<target){
+        game.buildings[i][kind]--;p.cash+=developmentResale(i,kind);
+        log('💵 '+p.name+' sold '+RULES.developments[kind].label+' at '+BOARD[i].name+' to cover debt.');
+      }
+    }
+  }
+  for(let i=0;i<40&&p.cash<target;i++){
+    if(game.owners[i]===id&&canMortgage(game,BOARD,i,id)){
+      game.mortgaged[i]=true;p.cash+=mortgageValue(BOARD[i]);
+      log('🏦 '+p.name+' mortgaged '+BOARD[i].name+' to cover debt.');
+    }
+  }
+  redrawAssets();
+}
 function bankruptCurrent(){
   const payer=current(),id=game.turn,debt=game.debt;
   if(!debt||game.phase!=='debt')return;
+  liquidateForDebt();
+  if(payer.cash>=debt.amount){payDebt();return}
   const creditor=debt.creditor,validCreditor=Number.isInteger(creditor)&&creditor>=0;
   if(validCreditor){
     game.players[creditor].cash+=payer.cash;
@@ -232,19 +253,7 @@ function bankruptCurrent(){
 }
 function handleDebtBot(){
   if(game.phase!=='debt')return;
-  const id=game.turn;
-  for(const kind of KINDS){
-    for(let i=0;i<40&&current().cash<game.debt.amount;i++){
-      while(game.owners[i]===id&&game.buildings[i][kind]>0&&current().cash<game.debt.amount){
-        game.buildings[i][kind]--;current().cash+=developmentResale(i,kind);
-      }
-    }
-  }
-  for(let i=0;i<40&&current().cash<game.debt.amount;i++){
-    if(game.owners[i]===id&&canMortgage(game,BOARD,i,id)){
-      game.mortgaged[i]=true;current().cash+=mortgageValue(BOARD[i]);
-    }
-  }
+  liquidateForDebt();
   if(current().cash>=game.debt.amount)payDebt();else bankruptCurrent();
 }
 function payDebt(){
