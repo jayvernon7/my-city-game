@@ -229,7 +229,7 @@ export class MyCityScene {
     this.focusIndex=0;this.selected=0;this.cinematicDice=false;
     this.exploreTarget=new THREE.Vector3(0,.6,0);
     this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;this.escort=null;this.jailCages=new Map();
-    this.previewFBX=null;this.previewMixer=null;this.previewActions={};this.previewFacing=0;
+    this.previewFBX=null;this.previewMixer=null;this.previewActions={};this.previewFacing=-Math.PI/2;this.previewBaseScale=1;this.previewSize=1.7;this.previewBusy=false;
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];this.developmentMeshes=[];this.developmentSignature='';
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
     this.makeLights();this.makeBoard();this.makeCity();this.makeDice();this.makeRouletteTable();this.makeAtmosphere();
@@ -948,12 +948,27 @@ export class MyCityScene {
     const bytes=await file.arrayBuffer();
     const model=new FBXLoader().parse(bytes,'');
     model.updateMatrixWorld(true);
-    const bounds=new THREE.Box3().setFromObject(model);
+    // Use renderable mesh geometry to avoid giant FBX skeleton/helper bounds.
+    model.updateMatrixWorld(true);
+    const bounds=new THREE.Box3().makeEmpty();
+    model.traverse(obj=>{
+      if(!obj.isMesh || !obj.geometry)return;
+      obj.geometry.computeBoundingBox();
+      if(obj.geometry.boundingBox){
+        const box=obj.geometry.boundingBox.clone().applyMatrix4(obj.matrixWorld);
+        if(!box.isEmpty())bounds.union(box);
+      }
+    });
+    if(bounds.isEmpty())bounds.setFromObject(model);
     const size=new THREE.Vector3();bounds.getSize(size);
     if(!Number.isFinite(size.y)||size.y<.0001)throw Error('This FBX has no usable character geometry.');
     const middle=new THREE.Vector3();bounds.getCenter(middle);
     model.position.x-=middle.x;model.position.z-=middle.z;model.position.y-=bounds.min.y;
-    const scaled=new THREE.Group();scaled.scale.setScalar(2.08/size.y);scaled.add(model);
+    this.previewBaseScale=3.0/size.y;
+    const scaled=new THREE.Group();
+    scaled.scale.setScalar(this.previewBaseScale*this.previewSize);
+    scaled.rotation.y=this.previewFacing;
+    scaled.add(model);
     model.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
     const pawn=new THREE.Group();pawn.add(scaled);pawn.userData.characterPreview=true;
     const mixer=new THREE.AnimationMixer(model),clips=model.animations||[];
@@ -979,9 +994,33 @@ export class MyCityScene {
     }
   }
   turnCharacterPreview(){
-    if(!this.previewFBX)return;
-    this.previewFacing=(this.previewFacing+Math.PI/2)%(Math.PI*2);
-    this.previewFBX.children[0].rotation.y=this.previewFacing;
+    this.previewFacing+=Math.PI/2;
+    if(this.previewFBX)this.previewFBX.children[0].rotation.y=this.previewFacing;
+  }
+  sizeCharacterPreview(value){
+    if(!Number.isFinite(value))return;
+    this.previewSize=clamp(value,.5,3.5);
+    if(this.previewFBX)this.previewFBX.children[0].scale.setScalar(this.previewBaseScale*this.previewSize);
+  }
+  async testCharacterPreview(){
+    if(!this.previewFBX)throw Error('Load Athletic_man.fbx first.');
+    if(this.previewBusy||this.motion||this.escort)throw Error('Finish the current movement first.');
+    this.previewBusy=true;
+    const pawn=this.previewFBX,home=pawn.position.clone();
+    this.mode='follow';this.focusIndex=0;
+    const oldZoom=this.zoom;this.zoom=.75;
+    try {
+      // Independent movement preview: no dice, turn, cash, or game-state changes.
+      const at=Number.isInteger(this.previewTestAt)?this.previewTestAt:0;
+      // Snap to saved Player 1 game-space position before every repeat.
+      pawn.position.copy(this.tokenPosition(at,0));
+      for(let step=1;step<=12;step++)await this.movePawn(0,(at+step)%40,410);
+    } finally {
+      this.setCharacterPreviewWalking(false);
+      pawn.position.copy(home);
+      this.zoom=oldZoom;
+      this.previewBusy=false;
+    }
   }
   updatePositions(players,activeIndex){
     this.focusIndex=activeIndex;
