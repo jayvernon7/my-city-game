@@ -707,6 +707,38 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .roulette-numbers .r-sixline{height:14px}
 }
 </style>
+<style>
+/* Place secondary actions inside the existing Settings and Portfolio drawers. */
+.game-screen .portfolio-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 13px;
+}
+.game-screen .portfolio-actions button{
+  min-height:42px;border:1px solid #8bb6a9;border-radius:9px;
+  background:#20514d;color:#f9fff3;font-size:12px;font-weight:900;
+  cursor:pointer;
+}
+.game-screen .portfolio-actions button:hover{background:#317565}
+.game-screen .portfolio-actions button:disabled{opacity:.45;cursor:not-allowed}
+.game-screen .settings-card #rulesBtn{width:100%;margin:7px 0 10px}
+/* Dice bet is the pre-roll face of the dice box. After rolling, the exact
+   same box displays the two dice and total without shifting the layout. */
+.game-screen .roll-dock>.dice-display{pointer-events:auto}
+.game-screen .roll-dock>.dice-display .dice-box-bet{
+  width:100%;min-width:155px;min-height:42px;padding:9px 13px;
+  color:#ffecb2;background:#245c51;border:1px solid #c6ad72;
+  border-radius:8px;cursor:pointer;font-weight:950;letter-spacing:.4px;
+  font-size:13px;white-space:nowrap;
+}
+.game-screen .roll-dock>.dice-display .dice-box-bet:hover{background:#317c69}
+.game-screen .roll-dock>.dice-display .dice-box-bet:disabled{opacity:.5;cursor:not-allowed}
+.game-screen .roll-dock>.dice-display [hidden]{display:none!important}
+@media(max-width:720px){
+ .game-screen .portfolio-actions button{min-height:36px;font-size:10px}
+ .game-screen .roll-dock>.dice-display .dice-box-bet{
+   min-width:116px;min-height:32px;font-size:10px;padding:7px 9px
+ }
+}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -731,7 +763,7 @@ body.game-screen{height:100dvh;overflow:hidden}
       <section class="control-card players-card"><div class="card-heading"><span>💰 BANK ACCOUNTS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
       <div class="turn-state" hidden aria-hidden="true"><span id="phaseLabel">READY</span><span id="turnTitle">Your turn</span><span id="message">Roll the dice to begin.</span></div>
       <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
-      <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><div class="settings-line"><label for="soloPiece">Change piece</label><select id="soloPiece"><option value="male">Male character</option><option value="female">Woman character</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button><button id="resignBtn" class="reset-btn" type="button">↩ RESIGN / LEAVE GAME</button></section>
+      <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><div class="settings-line"><label for="soloPiece">Change piece</label><select id="soloPiece"><option value="male">Male character</option><option value="female">Woman character</option></select></div><button id="rulesBtn" class="reset-btn" type="button">📖 Game Rules</button><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button><button id="resignBtn" class="reset-btn" type="button">↩ RESIGN / LEAVE GAME</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
     <div id="activeBalance" class="active-balance" aria-label="Current player's balance and properties">
@@ -749,6 +781,10 @@ body.game-screen{height:100dvh;overflow:hidden}
       <div class="owned-properties-head">
         <div><span class="owned-properties-eyebrow">MY CITY · PORTFOLIO</span><h2 id="ownedPropertiesTitle">My Properties</h2></div>
         <button id="closeOwnedProperties" type="button" class="owned-properties-close" aria-label="Close properties">×</button>
+      </div>
+      <div class="portfolio-actions" role="group" aria-label="Portfolio actions">
+        <button type="button" id="manageBtn">🏠 MANAGE</button>
+        <button type="button" id="tradeBtn">🤝 TRADE</button>
       </div>
       <p id="ownedPropertiesCount" class="owned-properties-count">0 properties</p>
       <div id="ownedPropertiesList" class="owned-properties-list"></div>
@@ -771,10 +807,11 @@ body.game-screen{height:100dvh;overflow:hidden}
     <li class="activity-empty">No player activity yet</li>
   </ol>
 </section>
-<div class="mc-toolbar"><button type="button" id="manageBtn">🏠 MANAGE</button><button type="button" id="tradeBtn">🤝 TRADE</button><button type="button" id="diceBetBtn">🎲 DICE BET</button><button type="button" id="rulesBtn">📖 RULES</button></div>
+
      <div class="roll-dock" aria-label="Dice controls">
       <div class="dice-display" id="diceDisplay" aria-label="Dice results">
-        <span id="dieA">⚀</span><span id="dieB">⚀</span><span id="rollTotal" class="roll-total">READY TO ROLL</span>
+        <button id="diceBetBtn" class="dice-box-bet" type="button">🎲 DICE BET</button>
+        <span id="dieA" hidden>⚀</span><span id="dieB" hidden>⚀</span><span id="rollTotal" class="roll-total" hidden>READY TO ROLL</span>
       </div>
       <button class="primary-btn roll-main" type="button" id="rollBtn">🎲 ROLL DICE</button>
       <div class="roll-side-actions" aria-label="Turn actions">
@@ -957,7 +994,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   </div>
 </section>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=wider-property-buildings-20261106-1"></script>
+<script type="module" src="./app.js?v=nav-reorganization-20261106-1"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
