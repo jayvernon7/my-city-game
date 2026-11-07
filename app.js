@@ -1,8 +1,8 @@
-import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=roulette-round-20261103-5';
-import {MyCityScene} from './scene3d.js?v=roulette-round-20261103-5';
-import {createRouletteController} from './roulette-game.js?v=rules-20261106-4';
+import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=rules-20261106-final-1';
+import {MyCityScene} from './scene3d.js?v=rules-20261106-final-1';
+import {createRouletteController} from './roulette-game.js?v=rules-20261106-final-1';
 import {RULES,KINDS,blockFor,capacityFor,emptyBuild,usedSpots,costFor,rentFor as calcRent,
-  unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-4';
+  unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-final-1';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
