@@ -27,6 +27,47 @@ export function rouletteTargetRotation(result,ballAngle=0){
   return -Math.PI/2+(index+.5)*ROULETTE_STEP-ballAngle;
 }
 
+// Map a UI betting key to the SAME coordinates on the physical 3D felt.
+// Its artwork is 2300x1280, rotated 90 degrees and projected onto a
+// 11.65x20.9 horizontal plane centered at local z=5.73.
+export function rouletteBetPosition(key){
+  const left=260,top=278,cellW=142,cellH=162;
+  const gridEnd=left+12*cellW,dozenY=top+3*cellH+21,dozenH=123;
+  let u=null,v=null;
+  if(key.startsWith('number:')){
+    const n=key.slice(7);
+    if(n==='0'||n==='00'){
+      u=175;v=top+(n==='0'?.75:2.25)*cellH;
+    }else{
+      const number=Number(n);
+      if(!Number.isInteger(number)||number<1||number>36)return null;
+      const col=Math.floor((number-1)/3);
+      const row=2-((number-1)%3);
+      u=left+(col+.5)*cellW;v=top+(row+.5)*cellH;
+    }
+  }else if(key.startsWith('corner:')){
+    const m=/^corner:(\d+):([01])$/.exec(key);
+    if(!m||Number(m[1])>10)return null;
+    u=left+(Number(m[1])+1)*cellW;v=top+(Number(m[2])+1)*cellH;
+  }else if(key.startsWith('line:')){
+    const m=/^line:(\d+)$/.exec(key);
+    if(!m||Number(m[1])>10)return null;
+    u=left+(Number(m[1])+1)*cellW;v=top+1.5*cellH;
+  }else if(/^col[123]$/.test(key)){
+    const row=3-Number(key.slice(3));
+    u=gridEnd+77;v=top+(row+.5)*cellH;
+  }else if(/^dozen[123]$/.test(key)){
+    const index=Number(key.slice(5))-1;
+    u=left+(index*4+2)*cellW;v=dozenY+dozenH/2;
+  }else{
+    const outside=['low','even','red','black','odd','high'];
+    const index=outside.indexOf(key);
+    if(index<0)return null;
+    u=left+(index*2+1)*cellW;v=dozenY+dozenH+20+63;
+  }
+  return {x:-(v-640)/1280*11.65,y:1.13,z:5.73+(u-1150)/2300*20.9};
+}
+
 function rouletteFeltTexture(THREE){
   // Draw the authentic 12-street x 3-number layout, with 0 and 00 at
   // the leading end, three 2-to-1 boxes, dozens and six outside bets.
@@ -199,6 +240,14 @@ export function createRouletteTable(THREE){
   );
   pockets.rotation.x=-Math.PI/2;
   pockets.position.y=.46;rotor.add(pockets);
+  // Raised metal separators outline each of the 38 numbered pockets.
+  for(let i=0;i<ROULETTE_WHEEL_CLOCKWISE.length;i++){
+    const angle=-Math.PI/2+i*ROULETTE_STEP;
+    const separator=new THREE.Mesh(new THREE.BoxGeometry(1.14,.075,.027),brass);
+    separator.position.set(Math.cos(angle)*3.76,.52,Math.sin(angle)*3.76);
+    separator.rotation.y=-angle;
+    rotor.add(separator);
+  }
   const centerField=new THREE.Mesh(new THREE.CylinderGeometry(3.15,3.15,.13,96),wood);
   centerField.position.y=.485;rotor.add(centerField);
   const centerRing=new THREE.Mesh(new THREE.TorusGeometry(3.15,.105,10,96),brass);
