@@ -703,9 +703,19 @@ function showDebtUI(){
     +'. Sell developments, mortgage property, or negotiate a trade to raise funds.';
   $('debtPay').disabled=current().cash<game.debt.amount;
 }
-$('manageBtn').addEventListener('click',()=>openManage());
-$('tradeBtn').addEventListener('click',openTrade);
-$('rulesBtn').addEventListener('click',()=>{$('rulesPanel').hidden=false});
+$('manageBtn').addEventListener('click',()=>{
+  setOwnedPropertiesOpen(false);
+  openManage();
+});
+$('tradeBtn').addEventListener('click',()=>{
+  setOwnedPropertiesOpen(false);
+  openTrade();
+});
+$('rulesBtn').addEventListener('click',()=>{
+  document.body.classList.remove('settings-open');
+  $('settingsToggle').setAttribute('aria-expanded','false');
+  $('rulesPanel').hidden=false;
+});
 $('closeRules').addEventListener('click',()=>{$('rulesPanel').hidden=true});
 $('closeManage').addEventListener('click',()=>{$('managePanel').hidden=true;showDebtUI()});
 $('closeTrade').addEventListener('click',()=>{$('tradePanel').hidden=true;showDebtUI()});
@@ -862,13 +872,20 @@ function render(){
   $('turnTitle').textContent=game.phase==='over'?'Game over':actor.name+'’s turn';
   $('message').textContent=game.message;
   const showingResult=game.rollTotal>0;
+  const waitingForDice=game.phase==='moving'&&!showingResult;
+  const diceBetReady=!showingResult&&game.phase==='roll'&&human;
+  // One display: Dice Bet before the roll; dice faces + total afterwards.
+  $('diceBetBtn').hidden=!diceBetReady;
+  $('dieA').hidden=!showingResult;
+  $('dieB').hidden=!showingResult;
+  $('rollTotal').hidden=diceBetReady;
   $('dieA').textContent=showingResult?SYMBOLS[game.dice[0]-1]:'⚀';
   $('dieB').textContent=showingResult?SYMBOLS[game.dice[1]-1]:'⚀';
   $('rollTotal').textContent=showingResult?'TOTAL '+game.rollTotal:
-    game.phase==='moving'?'ROLLING…':'READY TO ROLL';
+    waitingForDice?'ROLLING…':'READY TO ROLL';
   $('manageBtn').disabled=!canManage();
   $('tradeBtn').disabled=!canManage();
-  $('diceBetBtn').disabled=game.phase!=='roll'||!human;
+  $('diceBetBtn').disabled=!diceBetReady;
   $('rollBtn').disabled=game.phase!=='roll'||!human;
   $('payJailBtn').hidden=!(actor.jailed>0&&game.phase==='roll'&&!actor.bot);
   $('payJailBtn').disabled=actor.cash<RULES.jailFee;
