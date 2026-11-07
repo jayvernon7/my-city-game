@@ -186,14 +186,14 @@ function current(){return game.players[game.turn]}
 // Separate player-action feed. Keep informational messages (rolls, movement,
 // turns, ordinary landings) out of the feed while retaining the HUD message.
 function activityFromLog(message){
-  const plain=String(message).replace(/^[^\\p{L}\\p{N}]+/u,'').trim();
+  const plain=String(message).replace(/^[^\p{L}\p{N}]+/u,'').trim();
   const players=[...game.players].sort((a,b)=>b.name.length-a.name.length);
   const actor=players.find(p=>plain.startsWith(p.name+' '));
   if(!actor)return null;
   const action=plain.slice(actor.name.length).trim();
   // Only meaningful actions and financial changes; never movement or dice rolls.
   if(!/^(?:bought |paid |earned |passed GO and collected |sold |mortgaged |unmortgaged |added |developed |wagered |won |lost |settled |is bankrupt|resigned|was sent directly to Jail)/i.test(action))return null;
-  if(/\\brolled\\b/i.test(action))return null;
+  if(/\brolled\b/i.test(action))return null;
   return {name:actor.name,action:action.replace(/[.!]+$/,'')};
 }
 function recordActivity(name,action){
