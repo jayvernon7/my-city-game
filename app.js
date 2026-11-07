@@ -1,5 +1,5 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=rules-20261106-final-1';
-import {MyCityScene} from './scene3d.js?v=fbx-preview-20261106-1';
+import {MyCityScene} from './scene3d.js?v=fbx-preview-fixes-20261106-2';
 import {createRouletteController} from './roulette-game.js?v=roulette-inside-physics-20261106-1';
 import {RULES,KINDS,blockFor,capacityFor,emptyBuild,usedSpots,costFor,rentFor as calcRent,
   unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-final-1';
@@ -47,10 +47,29 @@ if(characterTestMode){
     status.textContent='Loading '+file.name+'…';
     try{
       const clips=await scene.loadCharacterPreview(file);
-      status.textContent='Loaded '+file.name+' — '+clips+'. Roll dice to try him in the real game.';
+      status.textContent='Loaded '+file.name+' — '+clips+'. Click Test Walk (12 spaces) as many times as you like, or roll dice.';
     }catch(error){status.textContent='Could not load: '+error.message;console.error(error);}
   });
-  $('characterPreviewTurn').addEventListener('click',()=>scene.turnCharacterPreview());
+  $('characterPreviewTurn').addEventListener('click',()=>{
+    scene.turnCharacterPreview();
+    status.textContent='Rotated character 90°. Test walk again if he faces the wrong way.';
+  });
+  $('characterPreviewSize').addEventListener('input',event=>{
+    const value=Number(event.target.value);
+    scene.sizeCharacterPreview(value);
+    $('characterPreviewSizeLabel').textContent=value.toFixed(1)+'×';
+  });
+  $('characterPreviewWalk').addEventListener('click',async()=>{
+    const button=$('characterPreviewWalk');
+    button.disabled=true;
+    status.textContent='Walking 12 spaces on the real board…';
+    try{
+      await scene.testCharacterPreview();
+      status.textContent='Finished! You can press Test Walk again as often as you want.';
+    }catch(error){
+      status.textContent=error.message;
+    }finally{button.disabled=false;}
+  });
 }
 function makeNewGame(mode='solo',selections=[]){
   const count=mode==='solo'?2:Number(mode);
