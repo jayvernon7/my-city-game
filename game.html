@@ -755,7 +755,11 @@ body.game-screen{height:100dvh;overflow:hidden}
       <div id="characterPreviewTools" hidden style="position:absolute;z-index:45;left:16px;top:115px;max-width:min(340px,calc(100% - 32px));padding:12px;background:#0b2835ee;border:1px solid #84b8ac;border-radius:12px;color:white;box-shadow:0 8px 24px #0008;font:12px system-ui;">
         <strong style="display:block;margin-bottom:8px;">🧍 TEST YOUR FBX IN THE REAL GAME</strong>
         <label style="display:block;margin-bottom:8px;">Select Athletic_man.fbx <input id="characterPreviewFile" type="file" accept=".fbx" style="display:block;margin-top:7px;max-width:100%;font-size:12px;"></label>
-        <button id="characterPreviewTurn" type="button" style="background:#245466;color:white;border:1px solid #83b8b0;border-radius:7px;padding:7px 11px;cursor:pointer;">Rotate character 90°</button>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+          <button id="characterPreviewWalk" type="button" style="background:#2f785f;color:white;border:1px solid #86ccaa;border-radius:7px;padding:9px 12px;cursor:pointer;font-weight:800;">▶ Test Walk (12 spaces)</button>
+          <button id="characterPreviewTurn" type="button" style="background:#245466;color:white;border:1px solid #83b8b0;border-radius:7px;padding:9px 11px;cursor:pointer;">↻ Rotate 90°</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;">Character size <input id="characterPreviewSize" type="range" min="0.5" max="3.5" step="0.1" value="1.7" style="width:135px;max-width:55%;" aria-label="Character size"><strong id="characterPreviewSizeLabel">1.7×</strong></label>
         <p id="characterPreviewStatus" role="status" style="margin:9px 0 0;line-height:1.4;">Load your FBX, then roll the dice. This test changes only your local preview.</p>
       </div>
       <div id="viewport" class="viewport">
@@ -1000,7 +1004,7 @@ body.game-screen{height:100dvh;overflow:hidden}
   </div>
 </section>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=fbx-preview-20261106-1"></script>
+<script type="module" src="./app.js?v=fbx-preview-fixes-20261106-2"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
