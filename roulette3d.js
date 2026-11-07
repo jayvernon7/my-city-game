@@ -1,6 +1,5 @@
-// American (double-zero) roulette table: visual preview only.
-// No stakes, payouts, bets or wheel results are implemented in this phase.
-// Wheel-pocket sequence and red/black numbers follow standard US roulette.
+// American double-zero roulette: the wheel texture, animated rotor and
+// calculated winning pocket share this one authoritative pocket sequence.
 export const ROULETTE_ORIGIN = Object.freeze({x:29.0,z:0});
 export const ROULETTE_WHEEL_CLOCKWISE = Object.freeze([
   '0',28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,'00',
@@ -12,6 +11,21 @@ const COLORS = Object.freeze({
   gold:'#d7b26d',cream:'#fff7dd',felt:'#105739'
 });
 const colorOf = n => (n==='0'||n==='00')?COLORS.green:RED.has(Number(n))?COLORS.red:COLORS.black;
+export const ROULETTE_STEP = Math.PI*2/ROULETTE_WHEEL_CLOCKWISE.length;
+export const ROULETTE_POCKET_RADIUS = 3.78; // Center of the drawn numbered pockets.
+// Local image angles have +Y downward; after tilting the plane into XZ,
+// a positive rotor.z rotates the texture in the negative world angle direction.
+export function roulettePocketAtAngle(rotorAngle, ballAngle=0){
+  const angle=((ballAngle+rotorAngle+Math.PI/2)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  const index=Math.floor(angle/ROULETTE_STEP)%ROULETTE_WHEEL_CLOCKWISE.length;
+  return ROULETTE_WHEEL_CLOCKWISE[index];
+}
+export function rouletteTargetRotation(result,ballAngle=0){
+  const index=ROULETTE_WHEEL_CLOCKWISE.findIndex(n=>String(n)===String(result));
+  if(index<0)throw new Error('Unknown roulette pocket: '+result);
+  // Pocket center in the 2D texture at -90deg + (index + 1/2) * pocket step.
+  return -Math.PI/2+(index+.5)*ROULETTE_STEP-ballAngle;
+}
 
 function rouletteFeltTexture(THREE){
   // Draw the authentic 12-street x 3-number layout, with 0 and 00 at
@@ -131,7 +145,7 @@ function wheelTexture(THREE){
 export function createRouletteTable(THREE){
   const group=new THREE.Group();
   group.position.set(ROULETTE_ORIGIN.x,0,ROULETTE_ORIGIN.z);
-  group.name='American Roulette Table — preview';
+  group.name='American Roulette Table';
   const wood=new THREE.MeshStandardMaterial({color:0x5c3020,roughness:.47,metalness:.07});
   const darkWood=new THREE.MeshStandardMaterial({color:0x341c16,roughness:.54});
   const brass=new THREE.MeshStandardMaterial({color:0xcca65f,metalness:.8,roughness:.27});
@@ -176,31 +190,34 @@ export function createRouletteTable(THREE){
   rim.position.y=.17;rim.castShadow=true;wheel.add(rim);
   const rimInner=new THREE.Mesh(new THREE.CylinderGeometry(4.85,4.85,.13,96),brass);
   rimInner.position.y=.37;wheel.add(rimInner);
+  // The numbered pockets and central bowl rotate as a single physical rotor.
+  const rotor=new THREE.Group();
+  wheel.add(rotor);
   const pockets=new THREE.Mesh(
     new THREE.PlaneGeometry(9.45,9.45),
     new THREE.MeshBasicMaterial({map:wheelTexture(THREE),transparent:true})
   );
   pockets.rotation.x=-Math.PI/2;
-  pockets.position.y=.46;wheel.add(pockets);
+  pockets.position.y=.46;rotor.add(pockets);
   const centerField=new THREE.Mesh(new THREE.CylinderGeometry(3.15,3.15,.13,96),wood);
-  centerField.position.y=.485;wheel.add(centerField);
+  centerField.position.y=.485;rotor.add(centerField);
   const centerRing=new THREE.Mesh(new THREE.TorusGeometry(3.15,.105,10,96),brass);
-  centerRing.rotation.x=Math.PI/2;centerRing.position.y=.565;wheel.add(centerRing);
+  centerRing.rotation.x=Math.PI/2;centerRing.position.y=.565;rotor.add(centerRing);
   const disk=new THREE.Mesh(new THREE.CylinderGeometry(2.45,2.6,.20,72),goldDetail);
-  disk.position.y=.61;wheel.add(disk);
+  disk.position.y=.61;rotor.add(disk);
   const inset=new THREE.Mesh(new THREE.CylinderGeometry(2.16,2.16,.035,72),darkWood);
-  inset.position.y=.72;wheel.add(inset);
+  inset.position.y=.72;rotor.add(inset);
   const spindle=new THREE.Mesh(new THREE.CylinderGeometry(.23,.47,.87,24),brass);
-  spindle.position.y=1.12;spindle.castShadow=true;wheel.add(spindle);
+  spindle.position.y=1.12;spindle.castShadow=true;rotor.add(spindle);
   const knob=new THREE.Mesh(new THREE.SphereGeometry(.28,16,12),goldDetail);
-  knob.position.y=1.63;wheel.add(knob);
+  knob.position.y=1.63;rotor.add(knob);
   for(const rad of [4.88,5.17]){
     const rail=new THREE.Mesh(new THREE.TorusGeometry(rad,.075,10,110),goldDetail);
     rail.rotation.x=Math.PI/2;
     rail.position.y=rad>5?.50:.54;
     wheel.add(rail);
   }
-  // Decorative stationary ivory ball on the outer racetrack.
+  // Ivory ball starts on the outer racetrack, then drops inward and rests in a pocket.
   const ball=new THREE.Mesh(
     new THREE.SphereGeometry(.14,16,12),
     new THREE.MeshStandardMaterial({color:0xfffdf1,roughness:.28,metalness:.03})
@@ -209,7 +226,7 @@ export function createRouletteTable(THREE){
   wheel.add(ball);
 
   // Expose the visible moving parts to the round-end spin animation.
-  group.userData.spinRotor=pockets;
+  group.userData.spinRotor=rotor;
   group.userData.spinBall=ball;
   group.userData.roulettePreviewOnly=false;
   return group;
