@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_STEP, ROULETTE_POCKET_RADIUS, roulettePocketAtAngle, rouletteTargetRotation } from './roulette3d.js?v=roulette-physics-20261106-1';
+import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_STEP, ROULETTE_POCKET_RADIUS, roulettePocketAtAngle, rouletteTargetRotation, rouletteBetPosition } from './roulette3d.js?v=roulette-pockets-chips-20261106-2';
 import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=buildings-roulette-20261106-2';
 
 // Enlarged board: wider property spaces and deeper property cards.
@@ -485,7 +485,54 @@ export class MyCityScene {
   }
   makeRouletteTable(){
     this.rouletteTable=createRouletteTable(THREE);
+    this.rouletteChipGroup=new THREE.Group();
+    this.rouletteTable.add(this.rouletteChipGroup);
+    this.rouletteChipSignature=null;
     this.scene.add(this.rouletteTable);
+  }
+  updateRouletteChips(roulette,players=[]){
+    const bets=roulette?.bets||[];
+    const data=[];
+    for(let i=0;i<bets.length;i++){
+      if(!Array.isArray(bets[i]))continue;
+      for(const b of bets[i]){
+        const pos=rouletteBetPosition(b.key);
+        if(pos&&Number.isFinite(b.amount)&&b.amount>0)
+          data.push({player:i,key:b.key,amount:b.amount,pos});
+      }
+    }
+    const signature=JSON.stringify(data.map(({player,key,amount})=>[player,key,amount]));
+    if(signature===this.rouletteChipSignature)return;
+    this.rouletteChipSignature=signature;
+    for(const mesh of [...this.rouletteChipGroup.children]){
+      this.rouletteChipGroup.remove(mesh);
+      mesh.traverse(node=>{
+        node.geometry?.dispose?.();
+        (Array.isArray(node.material)?node.material:[node.material]).forEach(m=>m?.dispose?.());
+      });
+    }
+    const palette={1:'#e9e4cf',5:'#e05b5b',10:'#468fdc',20:'#168b67',50:'#7d5ed3',100:'#25282d'};
+    const stacked=new Map();
+    for(const {player,key,amount,pos} of data){
+      const index=stacked.get(key)||0;
+      stacked.set(key,index+1);
+      if(index>=6)continue; // Limit model complexity; the UI shows every wager.
+      const color=palette[amount]||'#e9e4cf';
+      const owner=players[player]?.color||PLAYER_COLORS[player]||'#fff4c5';
+      const chip=new THREE.Group();
+      const base=new THREE.Mesh(
+        new THREE.CylinderGeometry(.19,.19,.055,20),
+        new THREE.MeshStandardMaterial({color,roughness:.42,metalness:.12})
+      );
+      base.castShadow=true;chip.add(base);
+      const rim=new THREE.Mesh(
+        new THREE.TorusGeometry(.145,.038,6,20),
+        new THREE.MeshStandardMaterial({color:owner,roughness:.36})
+      );
+      rim.rotation.x=-Math.PI/2;rim.position.y=.033;chip.add(rim);
+      chip.position.set(pos.x,pos.y+Math.min(5,index)*.068,pos.z);
+      this.rouletteChipGroup.add(chip);
+    }
   }
   // Choose a pocket in advance, animate wheel and ball to that precise
   // numbered segment, then COMPUTE the result from the final wheel position.
