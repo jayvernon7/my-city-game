@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_WHEEL_CLOCKWISE } from './roulette3d.js?v=rules-20261106-final-1';
+import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_STEP, ROULETTE_POCKET_RADIUS, roulettePocketAtAngle, rouletteTargetRotation } from './roulette3d.js?v=roulette-physics-20261106-1';
 import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=buildings-roulette-20261106-2';
 
 // Enlarged board: wider property spaces and deeper property cards.
@@ -487,38 +487,55 @@ export class MyCityScene {
     this.rouletteTable=createRouletteTable(THREE);
     this.scene.add(this.rouletteTable);
   }
-  async spinRoulette(result){
+  // Choose a pocket in advance, animate wheel and ball to that precise
+  // numbered segment, then COMPUTE the result from the final wheel position.
+  // This guarantees the paid result and the visible landing pocket agree.
+  async spinRoulette(selectedPocket){
     const rotor=this.rouletteTable?.userData.spinRotor;
     const ball=this.rouletteTable?.userData.spinBall;
-    if(!rotor||!ball)return;
+    if(!rotor||!ball)throw new Error('Roulette wheel unavailable');
     this.setMode('roulette');
-    const index=ROULETTE_WHEEL_CLOCKWISE.findIndex(n=>String(n)===String(result));
-    if(index<0)return;
-    const period=Math.PI*2,step=period/ROULETTE_WHEEL_CLOCKWISE.length;
-    // The selected pocket finishes at the ball's fixed landing point on the right.
-    const pocketAngle=-Math.PI/2+(index+.5)*step;
+    const period=Math.PI*2;
+    const ballLandingAngle=0; // +X side, easily visible from the camera.
+    const desired=rouletteTargetRotation(selectedPocket,ballLandingAngle);
     const initial=rotor.rotation.z;
-    const correction=(((-pocketAngle-initial)%period)+period)%period;
-    const final=initial+period*7+correction;
-    const start=performance.now(),duration=3000;
+    const modulo=value=>((value%period)+period)%period;
+    // Make 8 complete rotor turns, finishing at the selected pocket center.
+    const delta=modulo(desired-initial);
+    const final=initial+period*8+delta;
+    const duration=5100,start=performance.now();
+    const orbitStart=8.8*period,orbitFinish=ballLandingAngle;
+    const ballInitialAngle=Math.atan2(ball.position.z,ball.position.x);
+    let completed=false;
     await new Promise(resolve=>{
-      const frame=now=>{
+      const tick=now=>{
         if(this.disposed){resolve();return}
         const t=Math.min(1,(now-start)/duration);
-        const ease=1-Math.pow(1-t,3.6);
-        rotor.rotation.z=initial+(final-initial)*ease;
-        const ballOrbit=(1-t)*period*10;
-        const angle=ballOrbit;
-        ball.position.set(Math.cos(angle)*4.48,.70,-Math.sin(angle)*4.48);
-        if(t<1)requestAnimationFrame(frame);
+        const wheelEase=1-Math.pow(1-t,3.8);
+        rotor.rotation.z=initial+(final-initial)*wheelEase;
+        // Ball spins counter to the rotor, decelerates, then rattles into
+        // the pocket rather than stopping motionless at the outer rim.
+        const ease=1-Math.pow(1-t,2.8);
+        const theta=ballInitialAngle-orbitStart*ease+ballLandingAngle*ease;
+        const drop=Math.max(0,Math.min(1,(t-.65)/.35));
+        const settle=drop*drop*(3-2*drop);
+        const r=4.84+(ROULETTE_POCKET_RADIUS-4.84)*settle;
+        const bouncing=(1-t)*Math.max(0,Math.sin(t*115))*.095;
+        ball.position.set(Math.cos(theta)*r,.78-(.78-.61)*settle+bouncing,Math.sin(theta)*r);
+        if(t<1)requestAnimationFrame(tick);
         else{
-          rotor.rotation.z=final%period;
-          ball.position.set(4.48,.70,0);
+          completed=true;
+          rotor.rotation.z=modulo(final);
+          ball.position.set(ROULETTE_POCKET_RADIUS,.61,0);
           resolve();
         }
       };
-      requestAnimationFrame(frame);
+      requestAnimationFrame(tick);
     });
+    if(!completed)throw new Error('Roulette wheel interrupted');
+    const angle=Math.atan2(ball.position.z,ball.position.x);
+    const landing=roulettePocketAtAngle(rotor.rotation.z,angle);
+    return String(landing);
   }
   makeAtmosphere(){
     const ground=box(190,.12,190,0x0e343b);ground.position.y=-1.3;ground.receiveShadow=true;this.scene.add(ground);
