@@ -14,6 +14,7 @@ const SYMBOLS=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const buyable=i=>['property','transport'].includes(BOARD[i].type);
+const newStats=()=>({rentCollected:0,rentPaid:0,goIncome:0,bullish:0,bearish:0,unexpected:0,roulette:0,diceBets:0,trades:0,builds:0});
 let game,scene,roulette,epoch=0,botTimeout=null,selected=0;
 
 try {
@@ -41,6 +42,7 @@ function makeNewGame(mode='solo',selections=[]){
   const names=mode==='solo'?['You','Computer']:Array.from({length:count},(_,i)=>'Player '+(i+1));
   return {version:2,mode,round:1,turn:0,phase:'roll',roulette:null,pending:-1,dice:[1,1],rollTotal:0,
     buildings:Array.from({length:40},emptyBuild),mortgaged:Array(40).fill(false),debt:null,doubleCount:0,bonusRoll:false,sideBets:[],
+    stats:Array.from({length:count},newStats),winnerShown:false,
     players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,
       piece:selections[i]?.piece||(i===0?selectedPiece():i===1?'female':'male'),
       color:selections[i]?.color||COLOR_OPTIONS[i][1]})),
@@ -56,7 +58,9 @@ function load(){
     if(x.players.some(p=>!Number.isInteger(p.at)||p.at<0||p.at>39||typeof p.cash!=='number'))return null;
     if(!Array.isArray(x.buildings)||x.buildings.length!==40)x.buildings=Array.from({length:40},emptyBuild);
     if(!Array.isArray(x.mortgaged)||x.mortgaged.length!==40)x.mortgaged=Array(40).fill(false);
-    x.debt=x.debt||null;x.doubleCount=x.doubleCount||0;x.bonusRoll=!!x.bonusRoll;x.sideBets=Array.isArray(x.sideBets)?x.sideBets:[];x.version=2;
+    x.debt=x.debt||null;x.doubleCount=x.doubleCount||0;x.bonusRoll=!!x.bonusRoll;x.sideBets=Array.isArray(x.sideBets)?x.sideBets:[];
+    x.stats=Array.isArray(x.stats)&&x.stats.length===x.players.length?x.stats:x.players.map(newStats);
+    x.winnerShown=!!x.winnerShown;x.version=2;
     if(!['roll','end','decision','over','roulette','debt'].includes(x.phase))x.phase='roll';
     if(x.phase==='roulette'&&!x.roulette)x.phase='end';
     return x;
@@ -167,7 +171,7 @@ $('setupBack').addEventListener('click',()=>{
 function reset(mode,selections=[]){
   hideRoulettePreview();hideLandingCard();
   $('rouletteGame').hidden=true;
-  $('diceBetPanel').hidden=true;
+  for(const id of ['diceBetPanel','rulesPanel','tradePanel','managePanel','debtPanel','winnerPanel'])$(id).hidden=true;
   epoch++;clearTimeout(botTimeout);
   game=makeNewGame(mode,selections);
   syncPlayerColors();
@@ -198,11 +202,21 @@ function redrawAssets(){
   scene.updateOwners(game.owners);
   if($('managePanel')&&!$('managePanel').hidden)renderManage();
 }
+function recordPayment(payerId,creditor,amount,reason){
+  if(!game.stats||!Number.isInteger(payerId))return;
+  const stats=game.stats[payerId];
+  if(reason.startsWith('rent on')){
+    stats.rentPaid+=amount;
+    if(Number.isInteger(creditor)&&creditor>=0)game.stats[creditor].rentCollected+=amount;
+  }else if(reason.startsWith('Unexpected Expense'))stats.unexpected+=amount;
+  else if(reason.startsWith('Bearish'))stats.bearish+=amount;
+}
 function resolvePayment(amount,creditor,reason){
   if(amount<=0)return true;
   if(current().cash>=amount){
     current().cash-=amount;
     if(Number.isInteger(creditor)&&creditor>=0)game.players[creditor].cash+=amount;
+    recordPayment(game.turn,creditor,amount,reason);
     log(current().name+' paid '+MONEY(amount)+' for '+reason+'.');
     winnerCheck();
     return true;
@@ -261,6 +275,7 @@ function payDebt(){
   const {amount,creditor,reason}=game.debt;
   current().cash-=amount;
   if(Number.isInteger(creditor)&&creditor>=0)game.players[creditor].cash+=amount;
+  recordPayment(game.turn,creditor,amount,reason);
   log('✅ '+current().name+' settled '+MONEY(amount)+' for '+reason+'.');
   game.debt=null;game.phase=game.bonusRoll?'roll':'end';game.bonusRoll=false;
   $('debtPanel').hidden=true;winnerCheck();save();render();scheduleBot();
@@ -358,7 +373,7 @@ async function landed(i,roll,moveEpoch){
   else if(s.type==='bullish'||s.type==='bearish'){
     const cards=s.type==='bullish'?BULLISH:BEARISH;
     const [text,amount]=cards[Math.floor(Math.random()*cards.length)];
-    if(amount>=0){changeCash(p,amount);log('📈 '+p.name+' earned '+MONEY(amount)+'. '+text)}
+    if(amount>=0){changeCash(p,amount);game.stats[game.turn].bullish+=amount;log('📈 '+p.name+' earned '+MONEY(amount)+'. '+text)}
     else resolvePayment(-amount,null,'Bearish: '+text);
   }
   else if(s.type==='expense'){
@@ -455,7 +470,7 @@ async function doRoll(){
       // Keep HUD readable while the cinematic camera follows the pawn.
       $('players').querySelectorAll('.player-sub')[actor].textContent='Moving · '+BOARD[target].name;
     }
-    if(from+steps>=40){changeCash(p,RULES.go);log(p.name+' passed GO and collected '+MONEY(RULES.go)+'.');}
+    if(from+steps>=40){changeCash(p,RULES.go);game.stats[actor].goIncome+=RULES.go;log(p.name+' passed GO and collected '+MONEY(RULES.go)+'.');}
     game.pending=-1;
     await landed(p.at,steps,thisEpoch);
     if(thisEpoch!==epoch)return;
@@ -561,7 +576,7 @@ function performManage(action,kind){
   const i=Number($('manageProperty').value),p=current();
   if(game.owners[i]!==game.turn)return;
   if(action==='build'&&canBuild(game,BOARD,i,kind,game.turn)){
-    p.cash-=costFor(i,kind);game.buildings[i][kind]++;
+    p.cash-=costFor(i,kind);game.buildings[i][kind]++;game.stats[game.turn].builds++;
     log('🏠 '+p.name+' added a '+RULES.developments[kind].label+' to '+BOARD[i].name+'.');
   }else if(action==='sell'&&game.buildings[i]?.[kind]>0){
     game.buildings[i][kind]--;p.cash+=developmentResale(i,kind);
@@ -630,6 +645,7 @@ function submitTrade(){
   current().cash+=get-pay;game.players[to].cash+=pay-get;
   if(give!==null)game.owners[give]=to;
   if(take!==null)game.owners[take]=from;
+  game.stats[from].trades++;game.stats[to].trades++;
   log('🤝 DEAL ACCEPTED! '+description);
   redrawAssets();$('tradePanel').hidden=true;
   save();render();winnerCheck();save();render();
@@ -672,7 +688,7 @@ function autoInvestBot(){
   const i=owned[Math.floor(Math.random()*owned.length)].index;
   const kind=current().cash>700?'apartment':'house';
   if(canBuild(game,BOARD,i,kind,id)){
-    current().cash-=costFor(i,kind);game.buildings[i][kind]++;
+    current().cash-=costFor(i,kind);game.buildings[i][kind]++;game.stats[id].builds++;
     log('🏗️ '+current().name+' developed '+BOARD[i].name+'.');
   }
 }
@@ -725,6 +741,8 @@ function settleDiceBets(total){
       const wins=(total>7&&b.side==='high')||(total<7&&b.side==='low');
       const winner=game.players[wins?b.from:b.to];
       winner.cash+=b.amount*2;
+      game.stats[wins?b.from:b.to].diceBets+=b.amount;
+      game.stats[wins?b.to:b.from].diceBets-=b.amount;
       log('🎲 '+winner.name+' won '+MONEY(b.amount)+' profit on the '+total+' dice roll!');
     }
   }
