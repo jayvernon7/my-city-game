@@ -62,14 +62,14 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
   }).join('');
   outside.innerHTML=OUTSIDE.map(([key,label,returns])=>'<button type="button" class="r-outside '+key+'" data-bet="'+key+'">'+label+'<small>'+returns+'</small></button>').join('');
 
-  function start(nextTurn){
+  function start(nextTurn,options={}){
     const game=getGame();
-    const sequence=game.players.map((p,i)=>!p.bankrupt?i:-1).filter(i=>i>=0);
-    game.roulette={nextTurn,sequence,cursor:0,stage:'betting',chip:5,
+    const sequence=game.players.map((p,i)=>(!p.bankrupt&&(!options.onlyPlayers||options.onlyPlayers.includes(i)))?i:-1).filter(i=>i>=0);
+    game.roulette={nextTurn,roundEnd:options.roundEnd!==false,sequence,cursor:0,stage:'betting',chip:5,
       bets:game.players.map(()=>[]),result:null,results:[]};
     game.phase='roulette';
     scene.setMode('roulette');
-    log('🎰 Round '+game.round+' complete. Roulette is open to every active player!');
+    log(options.roundEnd===false?'🎰 Casino landing! Private roulette is open for '+game.players[sequence[0]].name+'.':'🎰 Round '+game.round+' complete. Roulette is open to every active player!');
     autoBetBots();
     save();render();
   }
@@ -143,14 +143,14 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
     game.roulette=null;
     root.hidden=true;
     scene.setMode('follow');
-    afterRound(s.nextTurn);
+    afterRound(s.nextTurn,s.roundEnd!==false);
   }
 
   function renderUI(){
     const game=getGame(),s=ensureSession(game);
     if(!s||game.phase!=='roulette'){root.hidden=true;return}
     root.hidden=false;
-    document.getElementById('rouletteRound').textContent='ROUND '+game.round+' • AMERICAN ROULETTE';
+    document.getElementById('rouletteRound').textContent=(s.roundEnd?'ROUND '+game.round+' • GROUP':'PRIVATE CASINO')+' • AMERICAN ROULETTE';
     const betting=s.stage==='betting';
     document.getElementById('rouletteBetUI').hidden=!betting;
     document.getElementById('rouletteOutcomePanel').hidden=s.stage!=='result';
