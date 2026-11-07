@@ -530,6 +530,13 @@ if(game){
   selected=game.players[game.turn].at;scene.makeSelection(selected);
   roulette.restore();
   render();scheduleBot();
-}else showSetup('solo');
+}
+const params=new URLSearchParams(location.search);
+if(params.get('new')==='1'){
+  showSetup(params.get('mode')||'solo');
+  history.replaceState({},'',location.pathname);
+}else if(!game){
+  showSetup('solo');
+}
 // Public debug helpers: available only to the developer via the browser console.
 window.MyCityDebug=Object.freeze({board:BOARD,getState:()=>structuredClone(game),selectSpace:i=>{if(i>=0&&i<40){selected=i;scene.makeSelection(i);renderDetails()}}});
