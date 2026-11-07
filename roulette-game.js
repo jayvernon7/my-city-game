@@ -27,14 +27,14 @@ function outcome(){
 }
 function numbersForInside(key){
   if(key.startsWith('corner:')){
-    const m=/^corner:(\\d+):([01])$/.exec(key);
+    const m=/^corner:(\d+):([01])$/.exec(key);
     if(!m)return [];
     const c=Number(m[1]),r=Number(m[2]);
     if(c<0||c>10)return [];
     return [c*3+3-r,c*3+2-r,(c+1)*3+3-r,(c+1)*3+2-r];
   }
   if(key.startsWith('line:')){
-    const m=/^line:(\\d+)$/.exec(key);
+    const m=/^line:(\d+)$/.exec(key);
     if(!m)return [];
     const c=Number(m[1]);
     return c>=0&&c<=10?Array.from({length:6},(_,i)=>c*3+i+1):[];
@@ -42,7 +42,7 @@ function numbersForInside(key){
   return [];
 }
 function validBetKey(key){
-  if(key.startsWith('number:'))return /^(?:0|00|[1-9]|[12]\\d|3[0-6])$/.test(key.slice(7));
+  if(key.startsWith('number:'))return /^(?:0|00|[1-9]|[12]\d|3[0-6])$/.test(key.slice(7));
   if(key.startsWith('corner:')||key.startsWith('line:'))return numbersForInside(key).length>0;
   return OUTSIDE.some(([v])=>v===key);
 }
