@@ -28,7 +28,11 @@ export const rentFor=(game,board,index)=>{
   if(space.type!=='property')return 0;
   const dev=game.buildings[index]||emptyBuild();
   const base=Math.max(2,Math.round(space.price*.10));
-  return base+KINDS.reduce((sum,k)=>sum+(dev[k]||0)*RULES.developments[k].rent[blockFor(index)],0);
+  const group=board.filter(s=>s.type==='property'&&s.color===space.color);
+  const complete=group.length>0&&board.every((other,i)=>
+    other.type!=='property'||other.color!==space.color||game.owners[i]===owner);
+  const developmentBonus=KINDS.reduce((sum,k)=>sum+(dev[k]||0)*RULES.developments[k].rent[blockFor(index)],0);
+  return (complete&&!developmentBonus?base*2:base)+developmentBonus;
 };
 export const unexpectedDue=game=>{
   const total={house:0,apartment:0,business:0};
