@@ -470,7 +470,11 @@ async function doRoll(){
       // Keep HUD readable while the cinematic camera follows the pawn.
       $('players').querySelectorAll('.player-sub')[actor].textContent='Moving · '+BOARD[target].name;
     }
-    if(from+steps>=40){changeCash(p,RULES.go);game.stats[actor].goIncome+=RULES.go;log(p.name+' passed GO and collected '+MONEY(RULES.go)+'.');}
+    if(from+steps>=40){
+      changeCash(p,RULES.go);game.stats[actor].goIncome+=RULES.go;
+      log(p.name+' passed GO and collected '+MONEY(RULES.go)+'.');
+      if(winnerCheck()){save();render();return}
+    }
     game.pending=-1;
     await landed(p.at,steps,thisEpoch);
     if(thisEpoch!==epoch)return;
