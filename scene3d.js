@@ -498,7 +498,7 @@ export class MyCityScene {
     const period=Math.PI*2;
     const ballLandingAngle=0; // +X side, easily visible from the camera.
     const desired=rouletteTargetRotation(selectedPocket,ballLandingAngle);
-    const initial=rotor.rotation.z;
+    const initial=rotor.rotation.y;
     const modulo=value=>((value%period)+period)%period;
     // Make 8 complete rotor turns, finishing at the selected pocket center.
     const delta=modulo(desired-initial);
@@ -512,7 +512,7 @@ export class MyCityScene {
         if(this.disposed){resolve();return}
         const t=Math.min(1,(now-start)/duration);
         const wheelEase=1-Math.pow(1-t,3.8);
-        rotor.rotation.z=initial+(final-initial)*wheelEase;
+        rotor.rotation.y=initial+(final-initial)*wheelEase;
         // Ball spins counter to the rotor, decelerates, then rattles into
         // the pocket rather than stopping motionless at the outer rim.
         const ease=1-Math.pow(1-t,2.8);
@@ -525,7 +525,7 @@ export class MyCityScene {
         if(t<1)requestAnimationFrame(tick);
         else{
           completed=true;
-          rotor.rotation.z=modulo(final);
+          rotor.rotation.y=modulo(final);
           ball.position.set(ROULETTE_POCKET_RADIUS,.61,0);
           resolve();
         }
@@ -534,7 +534,7 @@ export class MyCityScene {
     });
     if(!completed)throw new Error('Roulette wheel interrupted');
     const angle=Math.atan2(ball.position.z,ball.position.x);
-    const landing=roulettePocketAtAngle(rotor.rotation.z,angle);
+    const landing=roulettePocketAtAngle(rotor.rotation.y,angle);
     return String(landing);
   }
   makeAtmosphere(){
