@@ -504,7 +504,7 @@ export class MyCityScene {
     const delta=modulo(desired-initial);
     const final=initial+period*8+delta;
     const duration=5100,start=performance.now();
-    const orbitStart=8.8*period,orbitFinish=ballLandingAngle;
+    const orbitStart=9*period;
     const ballInitialAngle=Math.atan2(ball.position.z,ball.position.x);
     let completed=false;
     await new Promise(resolve=>{
@@ -516,7 +516,7 @@ export class MyCityScene {
         // Ball spins counter to the rotor, decelerates, then rattles into
         // the pocket rather than stopping motionless at the outer rim.
         const ease=1-Math.pow(1-t,2.8);
-        const theta=ballInitialAngle-orbitStart*ease+ballLandingAngle*ease;
+        const theta=ballInitialAngle*(1-ease)-orbitStart*ease+ballLandingAngle*ease;
         const drop=Math.max(0,Math.min(1,(t-.65)/.35));
         const settle=drop*drop*(3-2*drop);
         const r=4.84+(ROULETTE_POCKET_RADIUS-4.84)*settle;
