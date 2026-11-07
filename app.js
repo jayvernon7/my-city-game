@@ -531,7 +531,7 @@ function doEndTurn(){
   log('It’s '+current().name+'’s turn.');save();render();scheduleBot();
 }
 function canManage(){
-  return game&&!setup&&!current().bot&&!['moving','roulette','over'].includes(game.phase);
+  return game&&!setup&&!current().bot&&!current().bankrupt&&!['moving','roulette','over'].includes(game.phase);
 }
 function openManage(index=null){
   if(!canManage())return;
@@ -823,6 +823,8 @@ function render(){
   $('dieB').textContent=showingResult?SYMBOLS[game.dice[1]-1]:'⚀';
   $('rollTotal').textContent=showingResult?'TOTAL '+game.rollTotal:
     game.phase==='moving'?'ROLLING…':'READY TO ROLL';
+  $('manageBtn').disabled=!canManage();
+  $('tradeBtn').disabled=!canManage();
   $('diceBetBtn').disabled=game.phase!=='roll'||!human;
   $('rollBtn').disabled=game.phase!=='roll'||!human;
   $('payJailBtn').hidden=!(actor.jailed>0&&game.phase==='roll'&&!actor.bot);
