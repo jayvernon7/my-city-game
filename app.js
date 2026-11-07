@@ -170,6 +170,7 @@ $('setupBack').addEventListener('click',()=>{
 });
 function reset(mode,selections=[]){
   hideRoulettePreview();hideLandingCard();
+  $('eventCard').hidden=true;
   $('rouletteGame').hidden=true;
   for(const id of ['diceBetPanel','rulesPanel','tradePanel','managePanel','debtPanel','winnerPanel'])$(id).hidden=true;
   epoch++;clearTimeout(botTimeout);
@@ -348,6 +349,17 @@ function showRoulettePreview(){
   $('overviewView').setAttribute('aria-pressed','false');
 }
 function hideLandingCard(){const card=$('landingCard');if(card)card.hidden=true}
+function hideEventCard(){ $('eventCard').hidden=true }
+function showEventCard(type,playerName,amount,description){
+  const gain=amount>=0;
+  $('eventCard').classList.toggle('bullish',gain);
+  $('eventCard').classList.toggle('bearish',!gain);
+  $('eventCardType').textContent=type.toUpperCase();
+  $('eventCardPlayer').textContent=playerName;
+  $('eventCardAmount').textContent=(gain?'+':'−')+MONEY(Math.abs(amount));
+  $('eventCardDescription').textContent=description;
+  $('eventCard').hidden=false;
+}
 function showLandingCard(index){
   const space=BOARD[index];
   // Only purchasable street properties and Car Shops get a card.
@@ -399,6 +411,7 @@ async function landed(i,roll,moveEpoch){
     const [text,amount]=cards[Math.floor(Math.random()*cards.length)];
     if(amount>=0){changeCash(p,amount);game.stats[game.turn].bullish+=amount;log('📈 '+p.name+' earned '+MONEY(amount)+'. '+text)}
     else resolvePayment(-amount,null,'Bearish: '+text);
+    showEventCard(s.type,p.name,amount,text);
   }
   else if(s.type==='expense'){
     const expense=unexpectedForPlayer(game,game.turn);
@@ -426,7 +439,7 @@ async function roll(){
 }
 async function doRoll(){
   if(game.phase!=='roll'||current().bankrupt)return;
-  hideLandingCard();hideRoulettePreview();
+  hideLandingCard();hideRoulettePreview();hideEventCard();
   const actor=game.turn,p=current(),thisEpoch=++epoch;
   const a=Math.floor(Math.random()*6)+1,b=Math.floor(Math.random()*6)+1,steps=a+b;
   settleDiceBets(steps);
@@ -878,6 +891,7 @@ function render(){
     :'<li class="activity-empty">No player activity yet</li>';
   $('mode').value=game.mode;
   scene.updatePositions(game.players,game.turn);
+  scene.updateDevelopments(game.buildings,game.owners);
   renderDetails();
   showDebtUI();
   showFinalResults();
@@ -921,6 +935,7 @@ $('rouletteBackToBoard').addEventListener('click',()=>{
   changeView('follow');
 });
 $('closeLandingCard')?.addEventListener('click',hideLandingCard);
+$('closeEventCard').addEventListener('click',hideEventCard);
 $('rollBtn').addEventListener('click',roll);
 $('buyBtn').addEventListener('click',buy);
 $('passBtn').addEventListener('click',pass);
