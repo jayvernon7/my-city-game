@@ -40,7 +40,7 @@ function makeNewGame(mode='solo',selections=[]){
   const count=mode==='solo'?2:Number(mode);
   const names=mode==='solo'?['You','Computer']:Array.from({length:count},(_,i)=>'Player '+(i+1));
   return {version:2,mode,round:1,turn:0,phase:'roll',roulette:null,pending:-1,dice:[1,1],rollTotal:0,
-    buildings:Array.from({length:40},emptyBuild),mortgaged:Array(40).fill(false),debt:null,doubleCount:0,bonusRoll:false,
+    buildings:Array.from({length:40},emptyBuild),mortgaged:Array(40).fill(false),debt:null,doubleCount:0,bonusRoll:false,sideBets:[],
     players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,
       piece:selections[i]?.piece||(i===0?selectedPiece():i===1?'female':'male'),
       color:selections[i]?.color||COLOR_OPTIONS[i][1]})),
@@ -56,7 +56,7 @@ function load(){
     if(x.players.some(p=>!Number.isInteger(p.at)||p.at<0||p.at>39||typeof p.cash!=='number'))return null;
     if(!Array.isArray(x.buildings)||x.buildings.length!==40)x.buildings=Array.from({length:40},emptyBuild);
     if(!Array.isArray(x.mortgaged)||x.mortgaged.length!==40)x.mortgaged=Array(40).fill(false);
-    x.debt=x.debt||null;x.doubleCount=x.doubleCount||0;x.bonusRoll=!!x.bonusRoll;x.version=2;
+    x.debt=x.debt||null;x.doubleCount=x.doubleCount||0;x.bonusRoll=!!x.bonusRoll;x.sideBets=Array.isArray(x.sideBets)?x.sideBets:[];x.version=2;
     if(!['roll','end','decision','over','roulette','debt'].includes(x.phase))x.phase='roll';
     if(x.phase==='roulette'&&!x.roulette)x.phase='end';
     return x;
@@ -167,6 +167,7 @@ $('setupBack').addEventListener('click',()=>{
 function reset(mode,selections=[]){
   hideRoulettePreview();hideLandingCard();
   $('rouletteGame').hidden=true;
+  $('diceBetPanel').hidden=true;
   epoch++;clearTimeout(botTimeout);
   game=makeNewGame(mode,selections);
   syncPlayerColors();
@@ -380,6 +381,8 @@ async function doRoll(){
   hideLandingCard();hideRoulettePreview();
   const actor=game.turn,p=current(),thisEpoch=++epoch;
   const a=Math.floor(Math.random()*6)+1,b=Math.floor(Math.random()*6)+1,steps=a+b;
+  settleDiceBets(steps);
+  if(game.phase==='over'){save();render();return;}
   if(p.jailed>0){
     if(a===b){
       p.jailed=0;game.doubleCount=0;game.bonusRoll=false;
@@ -664,6 +667,63 @@ function autoInvestBot(){
     log('🏗️ '+current().name+' developed '+BOARD[i].name+'.');
   }
 }
+function openDiceBet(){
+  if(!game||setup||game.phase!=='roll'||current().bot)return;
+  const users=game.players.map((p,i)=>p.bankrupt?'':('<option value="'+i+'">'+escapeHTML(p.name)+' ('+MONEY(p.cash)+')</option>')).join('');
+  $('diceBetPlayer').innerHTML=users;
+  $('diceBetAgainst').innerHTML=users;
+  $('diceBetPlayer').value=String(game.turn);
+  $('diceBetAgainst').value=String(game.players.findIndex((p,i)=>i!==game.turn&&!p.bankrupt));
+  $('diceBetAmount').value='25';$('diceBetSide').value='high';$('diceBetError').textContent='';
+  $('diceBetPanel').hidden=false;
+  updateDiceBetQueue();
+}
+function updateDiceBetQueue(){
+  const bets=game?.sideBets||[];
+  $('diceBetQueue').textContent=bets.length?'Pending wagers: '+bets.map(b=>game.players[b.from].name+' vs '+game.players[b.to].name+' • '+MONEY(b.amount)+' each • '+b.side).join('; '):'No side bets for the upcoming roll.';
+}
+function placeDiceBet(){
+  if(game.phase!=='roll'||current().bot)return;
+  const from=Number($('diceBetPlayer').value),to=Number($('diceBetAgainst').value);
+  const amount=Number($('diceBetAmount').value),side=$('diceBetSide').value;
+  if(!Number.isInteger(from)||!Number.isInteger(to)||from===to||!game.players[from]||!game.players[to]
+      ||game.players[from].bankrupt||game.players[to].bankrupt){
+    $('diceBetError').textContent='Choose two different active players.';return;
+  }
+  if(!Number.isInteger(amount)||amount<1||amount>200||!['high','low'].includes(side)
+      ||game.players[from].cash<amount||game.players[to].cash<amount){
+    $('diceBetError').textContent='Stake must be $1–$200 and affordable for both players.';return;
+  }
+  const offer=game.players[from].name+' bets '+MONEY(amount)+' on '+(side==='high'?'HIGHER':'LOWER')+' than 7.'
+    +' '+game.players[to].name+' takes the opposite side. Accept?';
+  const accept=game.players[to].bot?amount<=50:window.confirm(offer);
+  if(!accept){$('diceBetError').textContent='The other player declined the wager.';return}
+  game.players[from].cash-=amount;game.players[to].cash-=amount;
+  game.sideBets.push({from,to,amount,side,roller:game.turn});
+  $('diceBetError').textContent='Wager accepted! Money held until the next dice roll.';
+  log('🎲 '+game.players[from].name+' and '+game.players[to].name+' wagered '+MONEY(amount)+' each on the next dice.');
+  updateDiceBetQueue();save();render();
+}
+function settleDiceBets(total){
+  if(!Array.isArray(game.sideBets)||!game.sideBets.length)return;
+  const bets=game.sideBets.filter(b=>b.roller===game.turn);
+  game.sideBets=game.sideBets.filter(b=>b.roller!==game.turn);
+  for(const b of bets){
+    if(total===7){
+      game.players[b.from].cash+=b.amount;game.players[b.to].cash+=b.amount;
+      log('🎲 Side bet PUSH on 7 — '+MONEY(b.amount)+' returned to each player.');
+    }else{
+      const wins=(total>7&&b.side==='high')||(total<7&&b.side==='low');
+      const winner=game.players[wins?b.from:b.to];
+      winner.cash+=b.amount*2;
+      log('🎲 '+winner.name+' won '+MONEY(b.amount)+' profit on the '+total+' dice roll!');
+    }
+  }
+  winnerCheck();
+}
+$('diceBetBtn').addEventListener('click',openDiceBet);
+$('closeDiceBet').addEventListener('click',()=>{$('diceBetPanel').hidden=true});
+$('placeDiceBet').addEventListener('click',placeDiceBet);
 function scheduleBot(){
   clearTimeout(botTimeout);
   if(!game||setup||!current().bot||game.phase==='moving'||game.phase==='over')return;
@@ -692,6 +752,7 @@ function render(){
   $('dieB').textContent=showingResult?SYMBOLS[game.dice[1]-1]:'⚀';
   $('rollTotal').textContent=showingResult?'TOTAL '+game.rollTotal:
     game.phase==='moving'?'ROLLING…':'READY TO ROLL';
+  $('diceBetBtn').disabled=game.phase!=='roll'||!human;
   $('rollBtn').disabled=game.phase!=='roll'||!human;
   $('payJailBtn').hidden=!(actor.jailed>0&&game.phase==='roll'&&!actor.bot);
   $('payJailBtn').disabled=actor.cash<RULES.jailFee;
