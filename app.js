@@ -46,7 +46,7 @@ function makeNewGame(mode='solo',selections=[]){
     players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,
       piece:selections[i]?.piece||(i===0?selectedPiece():i===1?'female':'male'),
       color:selections[i]?.color||COLOR_OPTIONS[i][1]})),
-    owners:Array(40).fill(-1),logs:['Welcome to My City! Each player starts with $1,500.'],
+    owners:Array(40).fill(-1),logs:['Welcome to My City! Each player starts with $1,500.'],activities:[],
     message:'Roll the dice to begin your journey.',winner:null};
 }
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(game))}catch{}}
@@ -60,7 +60,7 @@ function load(){
     if(!Array.isArray(x.mortgaged)||x.mortgaged.length!==40)x.mortgaged=Array(40).fill(false);
     x.debt=x.debt||null;x.doubleCount=x.doubleCount||0;x.bonusRoll=!!x.bonusRoll;x.sideBets=Array.isArray(x.sideBets)?x.sideBets:[];
     x.stats=Array.isArray(x.stats)&&x.stats.length===x.players.length?x.stats:x.players.map(newStats);
-    x.winnerShown=!!x.winnerShown;x.version=2;
+    x.winnerShown=!!x.winnerShown;x.activities=Array.isArray(x.activities)?x.activities.slice(0,40):[];x.version=2;
     if(!['roll','end','decision','over','roulette','debt'].includes(x.phase))x.phase='roll';
     if(x.phase==='roulette'&&!x.roulette)x.phase='end';
     return x;
@@ -183,7 +183,31 @@ function reset(mode,selections=[]){
   save();render();scheduleBot();
 }
 function current(){return game.players[game.turn]}
-function log(msg){game.message=msg;game.logs.unshift(msg);game.logs=game.logs.slice(0,18)}
+// Separate player-action feed. Keep informational messages (rolls, movement,
+// turns, ordinary landings) out of the feed while retaining the HUD message.
+function activityFromLog(message){
+  const plain=String(message).replace(/^[^\\p{L}\\p{N}]+/u,'').trim();
+  const players=[...game.players].sort((a,b)=>b.name.length-a.name.length);
+  const actor=players.find(p=>plain.startsWith(p.name+' '));
+  if(!actor)return null;
+  const action=plain.slice(actor.name.length).trim();
+  // Only meaningful actions and financial changes; never movement or dice rolls.
+  if(!/^(?:bought |paid |earned |passed GO and collected |sold |mortgaged |unmortgaged |added |developed |wagered |won |lost |settled |is bankrupt|resigned|was sent directly to Jail)/i.test(action))return null;
+  if(/\\brolled\\b/i.test(action))return null;
+  return {name:actor.name,action:action.replace(/[.!]+$/,'')};
+}
+function recordActivity(name,action){
+  if(!game.activities)game.activities=[];
+  game.activities.unshift({name,action});
+  game.activities=game.activities.slice(0,40);
+}
+function log(msg){
+  game.message=msg;
+  game.logs.unshift(msg);
+  game.logs=game.logs.slice(0,18);
+  const event=activityFromLog(msg);
+  if(event)recordActivity(event.name,event.action);
+}
 function changeCash(p,delta){p.cash=Math.max(0,p.cash+delta)}
 function rentFor(i){return calcRent(game,BOARD,i)}
 function winnerCheck(){
@@ -651,6 +675,8 @@ function submitTrade(){
   if(take!==null)game.owners[take]=from;
   game.stats[from].trades++;game.stats[to].trades++;
   log('🤝 DEAL ACCEPTED! '+description);
+  recordActivity(current().name,'completed a trade with '+game.players[to].name);
+  recordActivity(game.players[to].name,'completed a trade with '+current().name);
   redrawAssets();$('tradePanel').hidden=true;
   save();render();winnerCheck();save();render();
   if(game.phase==='debt')$('debtPanel').hidden=false;
@@ -846,6 +872,10 @@ function render(){
       `<div class="player-sub">${props} properties · ${escapeHTML(BOARD[p.at].name)}</div></div><b class="player-cash">${MONEY(p.cash)}</b></div>`;
   }).join('');
   $('activity').innerHTML=game.logs.map(line=>`<li>${escapeHTML(line)}</li>`).join('');
+  const recent=Array.isArray(game.activities)?game.activities.slice(0,5):[];
+  $('playerActivityList').innerHTML=recent.length
+    ?recent.map(item=>'<li><strong>'+escapeHTML(item.name)+':</strong> <span>'+escapeHTML(item.action)+'</span></li>').join('')
+    :'<li class="activity-empty">No player activity yet</li>';
   $('mode').value=game.mode;
   scene.updatePositions(game.players,game.turn);
   renderDetails();
