@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_STEP, ROULETTE_POCKET_RADIUS, roulettePocketAtAngle, rouletteTargetRotation, rouletteBetPosition } from './roulette3d.js?v=roulette-pockets-chips-20261106-2';
+import { createRouletteTable, ROULETTE_ORIGIN, ROULETTE_STEP, ROULETTE_POCKET_RADIUS, roulettePocketAtAngle, rouletteTargetRotation, rouletteBetPosition } from './roulette3d.js?v=roulette-inside-physics-20261106-1';
 import { BOARD, COLORS, PLAYER_COLORS, gridPosition, DEVELOPMENTS, DEMO_DEVELOPMENTS } from './board-data.js?v=buildings-roulette-20261106-2';
 
 // Enlarged board: wider property spaces and deeper property cards.
