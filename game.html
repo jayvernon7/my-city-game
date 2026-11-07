@@ -537,6 +537,12 @@ body.game-screen{height:100dvh;overflow:hidden}
 .game-screen .mc-toolbar button{border-radius:7px;border:1px solid #789c94;color:#e9f4ed;background:#1a434a;padding:9px 11px;font-size:11px;font-weight:900;cursor:pointer}
 .game-screen .mc-toolbar button:hover{border-color:#ead194}
 </style>
+<style>
+.game-screen .mc-results{display:grid;gap:9px;margin:12px 0}
+.game-screen .mc-result-row{padding:11px;border:1px solid #5b7771;background:#10333d;border-radius:8px;font-size:12px}
+.game-screen .mc-result-row strong{display:block;font-size:15px;margin-bottom:7px;color:#ffe0a9}
+.game-screen .mc-result-row span{display:inline-block;margin:3px 10px 3px 0;color:#d4e8e0}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -561,7 +567,7 @@ body.game-screen{height:100dvh;overflow:hidden}
       <section class="control-card players-card"><div class="card-heading"><span>💰 BANK ACCOUNTS</span><span id="roundBadge" class="round-pill">ROUND 1</span></div><div id="players" class="players"></div></section>
       <div class="turn-state" hidden aria-hidden="true"><span id="phaseLabel">READY</span><span id="turnTitle">Your turn</span><span id="message">Roll the dice to begin.</span></div>
       <section class="control-card selected-card"><div class="card-heading"><span>04 / SPACE DETAILS</span><span id="spaceNumber" class="tiny-no">#01</span></div><div class="space-detail"><div class="detail-color" id="detailColor"></div><div><h3 id="detailTitle">GO</h3><div id="detailType">Start</div></div></div><p id="detailBody" class="details-text">Collect $200 each time you pass GO.</p></section>
-      <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><div class="settings-line"><label for="soloPiece">Change piece</label><select id="soloPiece"><option value="male">Male character</option><option value="female">Woman character</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button></section>
+      <section class="control-card settings-card" id="gameSettings"><div class="card-heading"><span>05 / GAME SETTINGS</span></div><div class="settings-line"><label for="mode">Play mode</label><select id="mode"><option value="solo">Solo vs computer</option><option value="2">2 players · local</option><option value="3">3 players · local</option><option value="4">4 players · local</option></select></div><div class="settings-line"><label for="soloPiece">Change piece</label><select id="soloPiece"><option value="male">Male character</option><option value="female">Woman character</option></select></div><button id="restartBtn" class="reset-btn" type="button">↻ Start new game</button><button id="resignBtn" class="reset-btn" type="button">↩ RESIGN / LEAVE GAME</button></section>
       <section class="control-card activity-card"><div class="card-heading"><span>RECENT ACTIVITY</span></div><ul id="activity" class="activity-list"></ul></section>
     </aside>
     <div id="activeBalance" class="active-balance" aria-label="Current player's balance and properties">
@@ -653,6 +659,16 @@ body.game-screen{height:100dvh;overflow:hidden}
   <label for="tradeGet">CASH YOU RECEIVE</label><input id="tradeGet" type="number" min="0" step="1" value="0">
   <p id="tradeError" class="mc-debt" role="alert"></p>
   <div class="mc-actions"><button id="tradeOffer" type="button">SUBMIT OFFER</button><button id="tradeCounter" type="button" class="mc-secondary" hidden>COUNTER</button></div>
+ </div>
+</section>
+<section id="winnerPanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="winnerTitle">
+ <div class="mc-modal-card">
+  <button id="closeWinner" class="mc-close" type="button" aria-label="Close game results">×</button>
+  <span class="setup-eyebrow">MY CITY · GAME COMPLETE</span>
+  <h2 id="winnerTitle">🏆 WINNER</h2>
+  <p id="winnerSummary"></p>
+  <div id="winnerStats" class="mc-results"></div>
+  <div class="mc-actions"><button type="button" id="winnerNewGame">NEW GAME</button><button type="button" id="winnerViewBoard" class="mc-secondary">VIEW FINAL BOARD</button></div>
  </div>
 </section>
 <section id="diceBetPanel" class="mc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="diceBetTitle">
