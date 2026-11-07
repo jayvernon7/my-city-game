@@ -486,6 +486,36 @@ body.game-screen{height:100dvh;overflow:hidden}
  .game-screen .roulette-outside{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 </style>
+
+<style>
+.game-screen .character-setup[hidden]{display:none!important}
+.game-screen .character-setup{position:fixed;inset:0;z-index:150;display:grid;place-items:center;padding:16px;overflow-y:auto;background:#071b22ef;color:#f6f6ed}
+.game-screen .character-setup-card{width:min(580px,100%);max-height:calc(100dvh - 32px);overflow-y:auto;padding:24px;background:linear-gradient(145deg,#17424a,#09262f);border:2px solid #d8b77c;border-radius:17px;box-shadow:0 24px 65px #0009}
+.game-screen .character-setup-card h2{font-size:28px;margin:7px 0 8px;color:#ffe0a1;letter-spacing:-.5px}
+.game-screen .character-setup-card p{font-size:13px;color:#c1d8d0;line-height:1.5;margin:0 0 14px}
+.game-screen .setup-eyebrow{font-size:10px;font-weight:950;letter-spacing:2px;color:#d5b47c}
+.game-screen .character-setup label{display:block;font-size:11px;font-weight:950;letter-spacing:1px;margin:14px 0 8px;color:#e5eacb}
+.game-screen .character-setup select{width:100%;padding:11px;background:#09252e;border:1px solid #6faaa1;border-radius:8px;color:#f4fff4;font-size:15px}
+.game-screen .setup-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.game-screen .setup-choice{display:flex;gap:9px;align-items:center;justify-content:center;min-height:62px;padding:10px;border:2px solid #5e827b;border-radius:10px;background:#12343c;color:#fff;font-weight:900;cursor:pointer}
+.game-screen .setup-choice[aria-pressed="true"]{border-color:#ffcf7b;background:#255453;box-shadow:inset 0 0 0 1px #ffdba0}
+.game-screen .setup-avatar{font-size:29px}
+.game-screen .setup-colors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.game-screen .setup-swatch{display:flex;align-items:center;justify-content:center;min-height:52px;border:3px solid transparent;border-radius:10px;cursor:pointer;background:#0a2832}
+.game-screen .setup-swatch>span{width:31px;height:31px;border-radius:8px;border:2px solid #ffffff98;background:var(--swatch)}
+.game-screen .setup-swatch[aria-pressed="true"]{border-color:#ffe2a8;background:#ffffff21}
+.game-screen .setup-swatch:disabled{opacity:.25;cursor:not-allowed}
+.game-screen .setup-preview{margin:18px 0;background:#071f29;border:1px solid #476e67;border-radius:11px;padding:13px;display:flex;align-items:center;gap:14px}
+.game-screen .setup-figure{width:65px;height:90px;flex:none;display:flex;align-items:center;justify-content:center;background:#163640;border-radius:8px}
+.game-screen .setup-figure svg{width:61px;height:82px}
+.game-screen .setup-preview strong{font-size:15px}
+.game-screen .setup-preview small{display:block;margin-top:6px;color:#a8cac5;font-size:11px}
+.game-screen .setup-buttons{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.game-screen .setup-buttons button{min-height:44px;padding:10px 16px;border-radius:9px;font-size:12px;font-weight:900;cursor:pointer}
+.game-screen #setupNext{background:#ffd18e;color:#123137;border:1px solid #ffe1a6}
+.game-screen #setupBack{background:#173945;color:#edf9f0;border:1px solid #69877f}
+@media(max-width:500px){.game-screen .character-setup-card{padding:15px}.game-screen .character-setup-card h2{font-size:23px}.game-screen .setup-colors{gap:5px}}
+</style>
 </head>
 <body class="game-screen">
 <div class="app"><button id="settingsToggle" class="game-settings-toggle" type="button" aria-expanded="false" aria-controls="gameSettings">⚙ SETTINGS</button><a class="game-exit" href="./index.html" aria-label="Back to home">← HOME</a>
@@ -602,8 +632,37 @@ body.game-screen{height:100dvh;overflow:hidden}
   <div class="landing-card-numbers"><div><span>PRICE</span><strong id="landingCardPrice">$0</strong></div><div><span>RENT</span><strong id="landingCardRent">$0</strong></div></div>
   <p id="landingCardOwner" class="landing-card-owner">AVAILABLE TO BUY</p>
 </aside>
+<section id="characterSetup" class="character-setup" hidden role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+  <div class="character-setup-card">
+    <span class="setup-eyebrow">MY CITY · PLAYER SETUP</span>
+    <h2 id="setupTitle">Choose Your Character</h2>
+    <p id="setupSubtitle">Choose the character and shirt color you want to use for this game. Owned properties and Car Shops will use your color.</p>
+    <label for="setupMode">GAME TYPE</label>
+    <select id="setupMode">
+      <option value="solo">Solo vs Computer</option>
+      <option value="2">2 Players · Local</option>
+      <option value="3">3 Players · Local</option>
+      <option value="4">4 Players · Local</option>
+    </select>
+    <label>CHARACTER</label>
+    <div class="setup-choices" role="group" aria-label="Choose male or female character">
+      <button type="button" class="setup-choice" data-piece="male" aria-pressed="true"><span class="setup-avatar">🧍‍♂️</span> Male</button>
+      <button type="button" class="setup-choice" data-piece="female" aria-pressed="false"><span class="setup-avatar">🧍‍♀️</span> Female</button>
+    </div>
+    <label>SHIRT / OWNERSHIP COLOR</label>
+    <div id="setupColors" class="setup-colors" role="group" aria-label="Choose your player color"></div>
+    <div class="setup-preview">
+      <div class="setup-figure"><svg viewBox="0 0 60 82" aria-hidden="true"><circle cx="30" cy="13" r="11" fill="#75432c"/><path id="setupHair" d="M19 10Q20 -3 32 2Q40 3 41 11L37 7Q30 3 23 8Z" fill="#101014"/><path id="setupShirtPreview" d="M16 27L7 38L13 47L20 39V54H40V39L47 47L53 38L44 27L37 24L30 28L23 24Z" fill="#fb715e" stroke="#0b1718" stroke-width="1.5"/><path d="M20 54H29V76H18ZM31 54H40L42 76H31Z" fill="#141820"/><path d="M18 75H29V81H16ZM31 75H42L44 81H31Z" fill="#f5f3f0"/></svg></div>
+      <div><strong id="setupPreviewTitle">Male • Coral</strong><small id="setupPreviewDetails">Your shirt and owned spaces will match this color.</small></div>
+    </div>
+    <div class="setup-buttons">
+      <button type="button" id="setupBack">← BACK</button>
+      <button type="button" id="setupNext">START GAME →</button>
+    </div>
+  </div>
+</section>
 <div class="dialog-backdrop" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">New game?</h2><p id="dialogMessage">This will reset the current game.</p><div class="dialog-actions"><button type="button" id="cancelDialog">Cancel</button><button type="button" id="confirmDialog">Start game</button></div></div></div>
-<script type="module" src="./app.js?v=roulette-round-20261103-5"></script>
+<script type="module" src="./app.js?v=player-selection-20261106-1"></script>
 <script>
 document.getElementById('settingsToggle').addEventListener('click',function(){
  const open=document.body.classList.toggle('settings-open');
