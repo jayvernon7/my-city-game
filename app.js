@@ -1,6 +1,8 @@
 import {BOARD,COLORS,PLAYER_COLORS,MONEY} from './board-data.js?v=roulette-round-20261103-5';
 import {MyCityScene} from './scene3d.js?v=roulette-round-20261103-5';
 import {createRouletteController} from './roulette-game.js?v=roulette-round-20261103-5';
+import {RULES,KINDS,blockFor,capacityFor,emptyBuild,usedSpots,costFor,rentFor as calcRent,
+  unexpectedForPlayer,mortgageValue,developmentResale,canBuild,canMortgage,hasBuildings} from './rules-engine.js?v=rules-20261106-2';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='my-city-threejs-demo-v1';
@@ -37,7 +39,8 @@ try {
 function makeNewGame(mode='solo',selections=[]){
   const count=mode==='solo'?2:Number(mode);
   const names=mode==='solo'?['You','Computer']:Array.from({length:count},(_,i)=>'Player '+(i+1));
-  return {version:1,mode,round:1,turn:0,phase:'roll',roulette:null,pending:-1,dice:[1,1],rollTotal:0,
+  return {version:2,mode,round:1,turn:0,phase:'roll',roulette:null,pending:-1,dice:[1,1],rollTotal:0,
+    buildings:Array.from({length:40},emptyBuild),mortgaged:Array(40).fill(false),debt:null,doubleCount:0,bonusRoll:false,
     players:names.map((name,i)=>({name,cash:1500,at:0,jailed:0,bankrupt:false,bot:mode==='solo'&&i===1,
       piece:selections[i]?.piece||(i===0?selectedPiece():i===1?'female':'male'),
       color:selections[i]?.color||COLOR_OPTIONS[i][1]})),
@@ -48,10 +51,13 @@ function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(game))}catch{}}
 function load(){
   try {
     const x=JSON.parse(localStorage.getItem(SAVE_KEY));
-    if(!x||x.version!==1||x.owners?.length!==40||!Array.isArray(x.players)||!['solo','2','3','4'].includes(x.mode)||x.players.length!==(x.mode==='solo'?2:Number(x.mode)))return null;
+    if(!x||![1,2].includes(x.version)||x.owners?.length!==40||!Array.isArray(x.players)||!['solo','2','3','4'].includes(x.mode)||x.players.length!==(x.mode==='solo'?2:Number(x.mode)))return null;
     if(x.turn<0||x.turn>=x.players.length)return null;
     if(x.players.some(p=>!Number.isInteger(p.at)||p.at<0||p.at>39||typeof p.cash!=='number'))return null;
-    if(!['roll','end','decision','over','roulette'].includes(x.phase))x.phase='roll';
+    if(!Array.isArray(x.buildings)||x.buildings.length!==40)x.buildings=Array.from({length:40},emptyBuild);
+    if(!Array.isArray(x.mortgaged)||x.mortgaged.length!==40)x.mortgaged=Array(40).fill(false);
+    x.debt=x.debt||null;x.doubleCount=x.doubleCount||0;x.bonusRoll=!!x.bonusRoll;x.version=2;
+    if(!['roll','end','decision','over','roulette','debt'].includes(x.phase))x.phase='roll';
     if(x.phase==='roulette'&&!x.roulette)x.phase='end';
     return x;
   }catch{return null}
@@ -173,29 +179,81 @@ function reset(mode,selections=[]){
 }
 function current(){return game.players[game.turn]}
 function log(msg){game.message=msg;game.logs.unshift(msg);game.logs=game.logs.slice(0,18)}
-function changeCash(p,delta){
-  p.cash+=delta;
-  if(p.cash<0&&!p.bankrupt){p.bankrupt=true;p.cash=0;log(p.name+' has gone bankrupt.');
-    const id=game.players.indexOf(p);game.owners=game.owners.map(o=>o===id?-1:o);
-  }
-}
-function ownsSet(owner,color){return BOARD.every((s,i)=>s.type!=='property'||s.color!==color||game.owners[i]===owner)}
-function rentFor(i,roll=7){
-  const s=BOARD[i],owner=game.owners[i];if(owner===-1)return 0;
-  if(s.type==='transport'){
-    const n=BOARD.filter((other,j)=>other.type==='transport'&&game.owners[j]===owner).length;
-    return 25*Math.pow(2,n-1);
-  }
-  if(s.type==='utility'){
-    const n=BOARD.filter((other,j)=>other.type==='utility'&&game.owners[j]===owner).length;
-    return roll*(n===2?10:4);
-  }
-  return Math.max(2,Math.round(s.price*.12))*(ownsSet(owner,s.color)?2:1);
-}
+function changeCash(p,delta){p.cash=Math.max(0,p.cash+delta)}
+function rentFor(i){return calcRent(game,BOARD,i)}
 function winnerCheck(){
+  if(game.winner!==null)return true;
+  const rich=game.players.findIndex(p=>!p.bankrupt&&p.cash>=RULES.winCash);
   const alive=game.players.filter(p=>!p.bankrupt);
-  if(alive.length===1){game.winner=game.players.indexOf(alive[0]);game.phase='over';log('🏆 '+alive[0].name+' won My City!');return true}
+  if(rich>=0||alive.length===1){
+    game.winner=rich>=0?rich:game.players.indexOf(alive[0]);
+    game.phase='over';
+    log('🏆 '+game.players[game.winner].name+' won MY CITY'+(rich>=0?' with '+MONEY(game.players[rich].cash)+'!':'!');
+    return true;
+  }
   return false;
+}
+function redrawAssets(){
+  scene.updateOwners(game.owners);
+  if($('managePanel')&&!$('managePanel').hidden)renderManage();
+}
+function resolvePayment(amount,creditor,reason){
+  if(amount<=0)return true;
+  if(current().cash>=amount){
+    current().cash-=amount;
+    if(Number.isInteger(creditor)&&creditor>=0)game.players[creditor].cash+=amount;
+    log(current().name+' paid '+MONEY(amount)+' for '+reason+'.');
+    winnerCheck();
+    return true;
+  }
+  game.debt={amount,creditor,reason};game.phase='debt';
+  log('⚠ '+current().name+' owes '+MONEY(amount)+' for '+reason+'. Raise money or declare bankruptcy.');
+  return false;
+}
+function bankruptCurrent(){
+  const payer=current(),id=game.turn,debt=game.debt;
+  if(!debt||game.phase!=='debt')return;
+  const creditor=debt.creditor,validCreditor=Number.isInteger(creditor)&&creditor>=0;
+  if(validCreditor){
+    game.players[creditor].cash+=payer.cash;
+    game.owners.forEach((owner,i)=>{
+      if(owner===id){game.owners[i]=creditor;game.buildings[i]=emptyBuild()}
+    });
+  }else{
+    game.owners.forEach((owner,i)=>{
+      if(owner===id){game.owners[i]=-1;game.mortgaged[i]=false;game.buildings[i]=emptyBuild()}
+    });
+  }
+  payer.cash=0;payer.bankrupt=true;game.debt=null;game.bonusRoll=false;game.phase='end';
+  log('💥 '+payer.name+' is bankrupt. '+(validCreditor?'Remaining assets transferred to '+game.players[creditor].name+'.':'Properties returned to the market.'));
+  $('debtPanel').hidden=true;$('managePanel').hidden=true;
+  redrawAssets();winnerCheck();save();render();scheduleBot();
+}
+function handleDebtBot(){
+  if(game.phase!=='debt')return;
+  const id=game.turn;
+  for(const kind of KINDS){
+    for(let i=0;i<40&&current().cash<game.debt.amount;i++){
+      while(game.owners[i]===id&&game.buildings[i][kind]>0&&current().cash<game.debt.amount){
+        game.buildings[i][kind]--;current().cash+=developmentResale(i,kind);
+      }
+    }
+  }
+  for(let i=0;i<40&&current().cash<game.debt.amount;i++){
+    if(game.owners[i]===id&&canMortgage(game,BOARD,i,id)){
+      game.mortgaged[i]=true;current().cash+=mortgageValue(BOARD[i]);
+    }
+  }
+  if(current().cash>=game.debt.amount)payDebt();else bankruptCurrent();
+}
+function payDebt(){
+  if(game.phase!=='debt'||!game.debt||current().cash<game.debt.amount)return;
+  const {amount,creditor,reason}=game.debt;
+  current().cash-=amount;
+  if(Number.isInteger(creditor)&&creditor>=0)game.players[creditor].cash+=amount;
+  log('✅ '+current().name+' settled '+MONEY(amount)+' for '+reason+'.');
+  game.debt=null;game.phase=game.bonusRoll?'roll':'end';game.bonusRoll=false;
+  $('debtPanel').hidden=true;winnerCheck();save();render();scheduleBot();
 }
 function setPhase(phase){game.phase=phase;save();render()}
 function renderOwnedProperties(){
