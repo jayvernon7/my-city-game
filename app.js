@@ -685,7 +685,9 @@ function render(){
   $('dieB').textContent=showingResult?SYMBOLS[game.dice[1]-1]:'⚀';
   $('rollTotal').textContent=showingResult?'TOTAL '+game.rollTotal:
     game.phase==='moving'?'ROLLING…':'READY TO ROLL';
-  $('rollBtn').disabled=game.phase!=='roll'||!human;\n  $('payJailBtn').hidden=!(actor.jailed>0&&game.phase==='roll'&&!actor.bot);\n  $('payJailBtn').disabled=actor.cash<RULES.jailFee;
+  $('rollBtn').disabled=game.phase!=='roll'||!human;
+  $('payJailBtn').hidden=!(actor.jailed>0&&game.phase==='roll'&&!actor.bot);
+  $('payJailBtn').disabled=actor.cash<RULES.jailFee;
   $('rollBtn').textContent=game.phase==='moving'?'🎲 ROLLING…':
     game.phase==='roll'?(human?'🎲 ROLL DICE':'COMPUTER TURN'):'ROLL USED';
   $('buyBtn').disabled=game.phase!=='decision'||!human;
