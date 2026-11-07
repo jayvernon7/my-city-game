@@ -157,6 +157,7 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
     document.getElementById('rouletteOutcomePanel').hidden=s.stage!=='result';
     document.getElementById('rouletteNext').hidden=!betting;
     document.getElementById('rouletteUndo').hidden=!betting;
+    document.getElementById('rouletteSkip').hidden=s.roundEnd||s.stage==='spinning'||s.stage==='result';
     document.getElementById('rouletteSpin').hidden=s.stage!=='ready';
     document.getElementById('rouletteContinue').hidden=s.stage!=='result';
     document.getElementById('rouletteSpinStatus').hidden=s.stage!=='spinning';
@@ -208,6 +209,11 @@ export function createRouletteController({getGame,save,render,log,scene,afterRou
   document.getElementById('rouletteUndo').addEventListener('click',undo);
   document.getElementById('rouletteNext').addEventListener('click',lock);
   document.getElementById('rouletteSpin').addEventListener('click',spin);
+  document.getElementById('rouletteSkip').addEventListener('click',()=>{
+    const game=getGame(),s=ensureSession(game);
+    if(!s||game.phase!=='roulette'||s.roundEnd||s.stage==='spinning'||s.stage==='result')return;
+    game.roulette=null;root.hidden=true;scene.setMode('follow');afterRound(s.nextTurn,false);
+  });
   document.getElementById('rouletteContinue').addEventListener('click',continueGame);
   return {start,render:renderUI,restore(){
     const g=getGame(),s=ensureSession(g);
