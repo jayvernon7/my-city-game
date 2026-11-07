@@ -229,6 +229,7 @@ export class MyCityScene {
     this.focusIndex=0;this.selected=0;this.cinematicDice=false;
     this.exploreTarget=new THREE.Vector3(0,.6,0);
     this.currentCamTarget=new THREE.Vector3(0,0,0);this.motion=null;this.diceMotion=null;this.escort=null;this.jailCages=new Map();
+    this.previewFBX=null;this.previewMixer=null;this.previewActions={};this.previewFacing=0;
     this.pawns=[];this.spaces=[];this.clickMeshes=[];this.ownerIndicators=[];this.developmentMeshes=[];this.developmentSignature='';
     this.cursor=new THREE.Group();this.scene.add(this.cursor);
     this.makeLights();this.makeBoard();this.makeCity();this.makeDice();this.makeRouletteTable();this.makeAtmosphere();
@@ -931,7 +932,56 @@ export class MyCityScene {
       group.position.copy(this.tokenPosition(p.at,i));
       this.scene.add(group);this.pawns.push(group);
     });
+    if(this.previewFBX && this.pawns[0]){
+      const replacement=this.previewFBX;
+      replacement.position.copy(this.pawns[0].position);
+      this.scene.remove(this.pawns[0]);this.scene.add(replacement);this.pawns[0]=replacement;
+    }
     players.forEach((p,i)=>this.setJailCage(i,!!p.jailed && p.at===10 && !p.bankrupt));
+  }
+  // Opt-in preview: load a locally selected FBX into Player 1's actual game pawn.
+  // No upload, storage or extra character slots. Normal games remain unchanged.
+  async loadCharacterPreview(file){
+    if(!file || !/\.fbx$/i.test(file.name))throw Error('Choose an .fbx character file.');
+    if(file.size>40*1024*1024)throw Error('Please select an FBX under 40 MB.');
+    const {FBXLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/loaders/FBXLoader.js');
+    const bytes=await file.arrayBuffer();
+    const model=new FBXLoader().parse(bytes,'');
+    model.updateMatrixWorld(true);
+    const bounds=new THREE.Box3().setFromObject(model);
+    const size=new THREE.Vector3();bounds.getSize(size);
+    if(!Number.isFinite(size.y)||size.y<.0001)throw Error('This FBX has no usable character geometry.');
+    const middle=new THREE.Vector3();bounds.getCenter(middle);
+    model.position.x-=middle.x;model.position.z-=middle.z;model.position.y-=bounds.min.y;
+    const scaled=new THREE.Group();scaled.scale.setScalar(2.08/size.y);scaled.add(model);
+    model.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
+    const pawn=new THREE.Group();pawn.add(scaled);pawn.userData.characterPreview=true;
+    const mixer=new THREE.AnimationMixer(model),clips=model.animations||[];
+    const choose=pattern=>clips.find(c=>pattern.test(c.name||''));
+    const idle=choose(/idle|stand/i),walk=choose(/walk/i)||clips[0];
+    const actions={idle:idle?mixer.clipAction(idle):null,walk:walk?mixer.clipAction(walk):null};
+    actions.idle?.play();
+    const old=this.pawns[0];
+    pawn.position.copy(old?.position||this.tokenPosition(0,0));
+    if(old)this.scene.remove(old);
+    this.scene.add(pawn);this.pawns[0]=pawn;
+    this.previewFBX=pawn;this.previewMixer=mixer;this.previewActions=actions;this.previewWalking=false;
+    return clips.map(c=>c.name||'Unnamed').join(', ')||'No animations found';
+  }
+  setCharacterPreviewWalking(walking){
+    if(!this.previewFBX || this.previewWalking===walking)return;
+    this.previewWalking=walking;
+    const next=walking?this.previewActions.walk:this.previewActions.idle;
+    const prev=walking?this.previewActions.idle:this.previewActions.walk;
+    if(next!==prev){
+      prev?.fadeOut(.15);
+      next?.reset().fadeIn(.15).play();
+    }
+  }
+  turnCharacterPreview(){
+    if(!this.previewFBX)return;
+    this.previewFacing=(this.previewFacing+Math.PI/2)%(Math.PI*2);
+    this.previewFBX.children[0].rotation.y=this.previewFacing;
   }
   updatePositions(players,activeIndex){
     this.focusIndex=activeIndex;
@@ -970,6 +1020,7 @@ export class MyCityScene {
     const dest=this.tokenPosition(to,playerId);
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){pawn.position.copy(dest);return}
     if(this.motion){this.motion.resolve();this.motion=null}
+    if(playerId===0)this.setCharacterPreviewWalking(true);
     return new Promise(resolve=>{
       this.motion={playerId,from:pawn.position.clone(),to:dest,start:this.elapsed,duration:duration/1000,resolve};
     });
@@ -1242,6 +1293,7 @@ export class MyCityScene {
   }
   animate(){
     const dt=Math.min(this.clock.getDelta(),.05);this.elapsed+=dt;
+    this.previewMixer?.update(dt);
     if(this.motion){
       const m=this.motion,t=clamp((this.elapsed-m.start)/m.duration,0,1),s=smooth(t),pawn=this.pawns[m.playerId];
       pawn.position.lerpVectors(m.from,m.to,s);
@@ -1259,8 +1311,13 @@ export class MyCityScene {
           for(const limb of [...rig.legs,...rig.arms])limb.rotation.x=0;
           rig.head.rotation.z=0;
         }
+      }else if(pawn.userData.characterPreview){
+        const dir=m.to.clone().sub(m.from);
+        const targetYaw=Math.atan2(dir.x,dir.z);
+        const delta=Math.atan2(Math.sin(targetYaw-pawn.rotation.y),Math.cos(targetYaw-pawn.rotation.y));
+        pawn.rotation.y+=delta*Math.min(1,dt*11);
       }else pawn.position.y+=Math.sin(t*Math.PI)*.66;
-      if(t>=1){pawn.position.copy(m.to);this.motion=null;m.resolve()}
+      if(t>=1){pawn.position.copy(m.to);this.motion=null;if(m.playerId===0)this.setCharacterPreviewWalking(false);m.resolve()}
     }
     if(this.escort){
       const m=this.escort;
