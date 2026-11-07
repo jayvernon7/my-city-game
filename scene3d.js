@@ -406,19 +406,21 @@ export class MyCityScene {
       if(!types.length)continue;
       const horizontal=(i>=1&&i<=9)||(i>=21&&i<=29);
       const maxAvailable=(horizontal?this.spaces[i].w:this.spaces[i].d)-.37;
-      // Make developments human-avatar sized (roughly 1.7–1.9 scene units
-      // tall), without making their footprints too wide for the property.
-      // Width is deliberately compact so multiple builds can still fit.
-      const spacing=Math.min(.54,maxAvailable/Math.max(1,types.length));
+      // Widen purchased houses, apartments and storefronts without changing
+      // their player-avatar-sized height. Space models along the ownership
+      // strip so even a fully developed property remains readable.
+      const spacing=Math.min(.62,maxAvailable/Math.max(1,types.length));
       const color=PLAYER_COLORS[owners[i]]||'#63c6aa';
       const scaleFor={
-        house:[1.75,4.7,1.75],
-        apartment:[1.75,3.45,1.75],
-        business:[1.6,5.0,1.6]
+        house:[2.22,4.7,2.02],
+        apartment:[2.22,3.45,2.02],
+        business:[2.08,5.0,1.84]
       };
       types.forEach((kind,k)=>{
         const structure=this.makePropertyStructure(kind,color);
-        structure.scale.set(...scaleFor[kind]);
+        // Keep the broad facade parallel to the owning tile's long axis.
+        const [along,height,across]=scaleFor[kind];
+        structure.scale.set(horizontal?along:across,height,horizontal?across:along);
         const spread=(k-(types.length-1)/2)*spacing;
         structure.position.set(center.x+(horizontal?spread:0),.716,center.z+(horizontal?0:spread));
         this.scene.add(structure);
